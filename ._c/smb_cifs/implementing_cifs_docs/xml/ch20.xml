@@ -1,0 +1,543 @@
+<?xml version="1.0" encoding="US-ASCII"?>
+<!DOCTYPE oim SYSTEM "oimxml.dtd" [
+  <!ENTITY nbsp  "&#160;">
+  <!ENTITY lsquo "&#8216;">
+  <!ENTITY rsquo "&#8217;">
+  <!ENTITY minus "&#8211;">
+  <!ENTITY mdash "&#8212;">
+  <!ENTITY times "&#xd7;">
+  <!ENTITY copy "&#xa9;">
+] >
+<oim xmlns:dk="http://www.kirsanov.com">
+<chapter id="Browsing2">
+<chapopen><title>Meet the Neighbors</title>
+<epigraph dk:padding-top="36">
+<p>She is a caricature of herself.</p>
+<attribution><line>Something my mother used to say</line>
+<line>when she thought her victim</line>
+<line>wasn't listening</line></attribution>
+</epigraph>
+</chapopen>
+
+<p>We started off with a brief overview of the history and
+socio-political structure of the Browse Service.<idx>Browse
+Service</idx> Basic guidebook stuff. Now we will meet some of the
+local citizens, learn about their roles in society, and find out how
+they interact with one another on a personal level. We will introduce
+them to you one at a time so you can get to know them before you see
+them in action.  Hopefully, that will help you feel more comfortable
+as you explore the backstreets of the Network
+Neighborhood.<idx>Network Neighborhood</idx></p>
+
+<p>A quick note before we go visiting... The Browse Service is built
+on top of other CIFS services and protocols. Layered protocols have a
+habit of causing terminology confusion, particularly when the talk
+turns to "clients" and "servers." The thing to keep in mind is that
+everything is relative. In this case, everything is relative to the
+service being offered and the client making use of it. An SMB
+filesharing client may also be a Browse Service server, and a Browse
+Service server may also be a Browse Service client, and a Browse
+Service client... the permutations and combinations are practically
+(though not actually) endless.</p>
+
+<p>Don't let yourself get confused.</p>
+
+<p>To help abate the ensuing chaos a few new, context-specific terms
+will need to be defined as we go along. You may want to take
+notes. </p>
+
+<h1 id="Browsing3.2.1">Browse Service Clientele</h1><h1s>
+
+<p>The Browse Service<idx>Browse Service</idx> has two types of clients:</p>
+
+<ul>
+<li><p>systems that wish to announce services, and</p></li>
+<li><p>systems that wish to find services on the network.</p></li>
+</ul>
+
+<p>Think of it in terms of the classified advertising section in your
+local newspaper. Classifieds are available to people who have
+something to sell as well as to people who are looking to buy. Both of
+these are clients of <dk:nobr>the newspaper.</dk:nobr></p>
+
+<p>In some of the available documentation, systems that wish to
+announce services via the Browse List<idx start="c20-bl">Browse
+List</idx> are referred to as "Non-Browser Servers." That's really
+icky terminology, since those systems <em>could</em> be
+[Potential&nbsp;<code>|</code> Backup&nbsp;<code>|</code> Local
+Master]<idx start="c20-lmb">LMB</idx> Browsers as well. We will refer
+to nodes that announce services as "Providers," without trying to
+straighten out what kind of Browser nodes or SMB servers they may or
+may not be. To add a sense of symmetry, we will use the term
+"Consumers" to identify the other kind of Browse Service clients -
+those that want to <em>find</em> services on the network.</p>
+
+<p>So, for our purposes:</p>
+
+<ul>
+<li><p>A <em>Provider</em><idx>Browse
+Service<sidx>Provider</sidx></idx> is any node that wishes to announce
+(via the Browse List) that it has services available.</p></li>
+
+<li><p>A <em>Consumer</em><idx>Browse
+Service<sidx>Consumer</sidx></idx> is any node that wishes to get hold
+of a copy of the Browse List so that it can find services.</p></li>
+</ul>
+
+<p>We promised to introduce the neighbors one at a time. Let's start
+with the Providers. </p>
+
+<h2 id="Browsing3.2.1.1">Providers</h2><h2s>
+
+<p>Providers<idx>Browse Service<sidx>Provider</sidx></idx> announce
+themselves to the Local Master Browser by periodically broadcasting a
+message called a <code>HostAnnouncement Browser
+Frame</code>.<idx>HostAnnouncement</idx> The message is sent as an IP
+broadcast so any NBT node could listen in, but the NBT destination
+given in the message header is the
+<em>workgroup</em><code>&lt;1D&gt;</code><idx
+type="1D">workgroup</idx> name, so the LMB is obviously the intended
+recipient.</p>
+
+<p>When a node first starts up, it generally announces itself once per
+minute. After it has been running for a while it will slow down,
+typically sending an announcement once every 12 minutes.  Different
+implementations behave <dk:nobr>differently,</dk:nobr> of course, but
+the suggestion is that the Provider start with a delay of one minute
+and double the delay until it exceeds 12 minutes, at which point it
+should settle on 12 minute intervals.</p>
+
+<p>If a Provider stops announcing itself, its entry in the Browse List
+will (eventually) time out. The time out formula generally given in
+the documentation is three times the last known announcement
+period. In testing, however, some systems reported the
+<code>Periodicity</code> value incorrectly so it is probably safer to
+assume an announcement period of 12 minutes and use a fixed timeout
+value of 3&nbsp;&#215;&nbsp;12&nbsp;=&nbsp;36 minutes.</p>
+
+<p>Providers can also remove themselves from the Browse List by
+sending a <code>HostAnnouncement</code> message with an empty list of
+services. This indicates to the LMB that the host is no longer
+providing any services. If possible, a Provider should send an empty
+<code>HostAnnouncement Browser Frame</code> when it shuts down.
+</p>
+
+<alert type="Some Technologies Shouldn't Mix">
+
+<p>When cable television companies first decided to get into the
+<b>I</b>nternet <b>S</b>ervice <b>P</b>rovider (ISP) business they ran
+into an unexpected problem. A lot of PC vendors were installing
+Windows preconfigured with SMB filesharing turned on and no passwords
+by default. When these PCs were connected to the cable Internet
+service, they would start announcing themselves to one another. People
+up and down the block found that they could both see and access each
+other's systems, view files, copy software...</p>
+
+<p>Now <em>that's</em> a Network Neighborhood.<idx>Network Neighborhood</idx>
+</p>
+</alert>
+
+</h2s><h2 id="Browsing3.2.1.2">Consumers</h2><h2s>
+
+<p><idx>NBT<sidx>name</sidx></idx><idx start="c20-dmb">DMB</idx>It is
+important to be polite when dealing with your local government. The
+LMB is your neighbor, after all, and the time it spends handling the
+Browse List is volunteer time (unless it is also the appointed
+DMB). It may have other responsibilities as well - spouse, kids, day
+job as a word processor or fileserver... If everyone in the
+neighborhood is constantly asking for help, the LMB may wish that it
+had never been elected.</p>
+
+<p>The <em>polite</em> thing for a Browse Service Consumer<idx>Browse
+Service<sidx>Consumer</sidx></idx> to do is to ask the LMB for a list
+of Backup Browsers<idx>Backup Browser</idx>. We will call this the "BB
+List" (short for <b>B</b>ackup <b>B</b>rowser <b>L</b>ist) to
+distinguish it from the Browse List. The Consumer should keep track of
+the BB List so that any time it needs an updated copy of the Browse
+List it can query one of the Browsers on that list. That's how the
+workload is distributed in the Network Neighborhood.<idx>Network Neighborhood</idx></p>
+
+<p>Keeping in mind that Browse Service duties are cumulative, the LMB
+will probably include itself in the BB List. On small LANs there may
+not be any Backup Browsers hanging around, so the LMB may be the
+<em>only</em> Browser<idx>browser</idx> listed in the BB List.</p>
+
+<fig id="Figure3.4">
+<img dk:width="200" loc="BRO04"/>
+<caption>Requesting the Backup Browser list</caption>
+<subcaption><p>Node <code>ZOKI</code> is a Backup Browser, and node
+<code>ROWENA</code> is the LMB.
+
+A Browse Service client broadcasts a request for the Backup
+Browser List (BB List), and the LMB responds (unicast) with a list of
+active browsers.</p></subcaption>
+</fig>
+
+<p><idx start="c20-election">election</idx>The request for the BB List
+is sent as a broadcast NBT datagram.  The request message, as
+indicated in <ref refid="Figure3.4"/>, is known as a
+<code>GetBackup<dk:hyphen/>ListRequest Browser
+Frame</code><idx>GetBackupListRequest</idx>. If the Consumer does not
+receive a response to the initial request, it should try again a
+couple of times. If no reply is received at all, the client
+<em>may</em> call for a new election - once only - and then try again
+to get a BB list. It may be the case that there are no Potential
+Browsers<idx>Potential Browser</idx> on the LAN at all, resulting in
+no LMB and no local Browse List. Continually calling for new elections
+in this situation would be futile <dk:nobr>(and rude).</dk:nobr></p>
+
+<p>Let's hope, however, that there is an LMB and that it does respond.
+The reply from an LMB is known as a <code>GetBackupList<u>Response</u>
+Browser Frame</code><idx>GetBackupListResponse</idx>. It is
+<em>not</em> sent as a broadcast. Instead, the response is sent back
+to the requester in a unicast datagram (in NBT terminology, a
+<code>DIRECT UNIQUE DATAGRAM</code>).</p>
+
+<p>...and that's what it takes to find out where copies of the
+Browse List <dk:nobr>are kept.</dk:nobr></p>
+
+<p>At this point in the proceedings the Consumer has obtained the NBT
+name of a Browser<idx>browser</idx> (either a Backup Browser or the
+LMB) and is ready to send a query to obtain the Browse List (see <ref
+refid="Figure3.5"/>).</p>
+
+<fig id="Figure3.5">
+<img dk:width="246" loc="BRO05"/>
+<caption>Requesting the Browse List</caption>
+
+<subcaption><p>Earlier, the Consumer node learned that
+<code>ZOKI</code> had a copy of the Browse List. The Consumer uses the
+<b>R</b>emote <b>A</b>dministration <b>P</b>rotocol to request a copy of the Browse
+List.</p>
+
+<p>In this example, nodes <code>ZOKI</code> and <code>DOPS</code> are
+Providers, advertising services via the Browse List.</p></subcaption>
+</fig>
+
+<p>This step is a little more complex than the previous ones. The
+Browse List might be very large, in which case (recalling the
+limitations of the NBT Datagram Service<idx>NBT<sidx>Datagram
+Service</sidx></idx>) an NBT datagram might not be big enough to hold
+it all. So instead of using the Datagram Service the Browse List query
+is sent using the <b>R</b>emote <b>A</b>dministration <b>P</b>rotocol
+(RAP<idx>RAP</idx>) which rides on top of the
+<code>SMB_COM_TRANSACTION</code> message (aka
+SMBtrans<idx>SMBtrans</idx>). SMBtrans, in turn, allows for data
+transfers of up to 64K.</p>
+
+</h2s></h1s><h1 id="Browsing3.2.2">The Local Master Browser</h1><h1s>
+
+<p>It's time to meet your elected officials.</p>
+
+<p>All Browser nodes register the
+<em>workgroup</em><code>&lt;1E&gt;</code><idx
+type="1E">workgroup</idx> NetBIOS name. The Local Master Browser, as
+you already know, identifies itself by registering two additional
+NetBIOS names<idx>NetBIOS<sidx>name</sidx></idx>:
+<em>workgroup</em><code>&lt;1D&gt;</code><idx
+type="1D">workgroup</idx> and
+<dk:nobr><code>MSBROWSE&lt;01&gt;</code><idx>MSBROWSE&lt;01&gt;</idx>.</dk:nobr>
+NetBIOS names represent communications end-points - services or
+applications that are using the NetBIOS
+API<idx>NetBIOS<sidx>API</sidx></idx> to listen for connections or
+messages. On the other side of these particular names there is
+software waiting to hear the chatter of the Browse Service.</p>
+
+<p>The LMB has the following duties.</p>
+
+<dl>
+<dt>Maintaining the master copy of the workgroup<idx>Workgroup</idx>
+Browse List for the local <dk:nobr>IP subnet</dk:nobr></dt>
+
+<dd><p>The LMB listens on the
+<em>workgroup</em><code>&lt;1D&gt;</code> name for
+<code>HostAnnouncement</code><idx>HostAnnouncement</idx> messages from
+members of its own workgroup. It also listens on the
+<dk:nobr><code>MSBROWSE&lt;01&gt;</code></dk:nobr> name so that it can
+hear <code>DomainAnnouncement Browser
+Frame</code><idx>DomainAnnouncement</idx> messages from other LMBs
+serving other workgroups on the same LAN (see <ref
+refid="Figure3.6"/>). The information collected from these
+announcements is used to build the Browse List.</p>
+
+<fig id="Figure3.6">
+<img dk:width="190" loc="BRO06"/>
+<caption>Multiple workgroups on the same LAN</caption>
+
+<subcaption><p>Two workgroups, each with their own Local Master
+Browser, share the same IP subnet.</p>
+
+<p>Node ABE will collect the local Browse List for the
+<code>LINCOLN</code> workgroup, and will also listen for
+<code>DomainAnnouncement</code> messages from node
+<code>JOHNQ</code>.</p></subcaption>
+</fig>
+</dd>
+
+<dt>Announcing its workgroup to other LMBs representing other
+workgroups</dt>
+
+<dd><p>The LMB broadcasts <code>DomainAnnouncement</code> messages to the
+<dk:nobr><code>MSBROWSE&lt;01&gt;</code></dk:nobr> name to announce itself (and its
+workgroup) to the LMBs of other workgroups.</p></dd>
+
+<dt>Announcing itself to its own workgroup</dt>
+
+<dd><p dk:break="after">The LMB periodically sends a
+<code>LocalMasterAnnouncement Browser
+Frame</code><idx>LocalMasterAnnouncement</idx> to the
+<em>workgroup</em><code>&lt;1E&gt;</code><idx
+type="1E">workgroup</idx> name.  The Backup Browsers<idx>Backup
+Browser</idx> use this announcement to keep track of the LMB so that
+they can update their copies of the Browse List.</p></dd>
+
+<dt>Delegating responsibility to Backup Browsers</dt>
+
+<dd><p>The LMB is expected to promote Potential Browsers<idx>Potential
+Browser</idx> to Backup Browsers as the need arises. This is done by
+sending a <code>BecomeBackup Browser
+Frame</code><idx>BecomeBackupRequest</idx> to the selected Browser
+node.  The LMB should also provide the BB List in response to a
+<code>GetBackupListRequest</code>.<idx>GetBackupListRequest</idx></p></dd>
+
+<dt>Coordinating with the Domain Master Browser</dt>
+
+<dd><p>The LMB should query the NBNS<idx>NBNS</idx> for the
+<em>workgroup</em><code>&lt;1B&gt;</code><idx
+type="1B">workgroup</idx> name (which is registered by the DMB). There
+are two exceptions to this rule: </p>
+
+<ul>
+<li><p>B-mode<idx>B</idx> nodes will not query the NBNS because
+remote LANs are outside of their scope<idx>NBT<sidx>scope</sidx></idx>
+and B nodes shouldn't talk to strangers.</p></li>
+
+<li><p>If the LMB is also the workgroup DMB then it doesn't need to
+query the NBNS to find itself.</p></li>
+</ul>
+
+<p>Otherwise, the LMB will periodically announce its existence to the
+DMB by sending a <code>MasterAnnouncement Browser
+Frame</code><idx>MasterAnnouncement</idx>.  Once the LMB and the DMB
+know about one another, they will periodically request a copy of each
+other's Browse Lists. That's how the lists get merged across
+subnets.</p>
+
+<p>The LMB should also remember which Browse List entries were
+received from nodes on the local LAN, and which came from the DMB.
+The LMB is <em>authoritative</em> with regard to local nodes, but it
+must rely upon the DMB for everything else. If there are ever any
+conflicts, the LMB will favor its own local constituents.</p></dd>
+
+<dt>Responding to requests for a copy of the Browse List</dt>
+
+<dd><p>The LMB may receive queries for a copy of the Browse List from
+local Backup Browsers, the Domain Master Browser, or from everyday
+Consumers who simply want to display the Network
+Neighborhood.<idx>Network Neighborhood</idx></p></dd>
+
+<dt>Participating in Local Elections</dt>
+
+<dd><p>Like all Browser nodes, the LMB listens on the
+<em>workgroup</em><code>&lt;1E&gt;</code><idx
+type="1E">workgroup</idx> name so that it can participate in local
+Browser Elections.<idx end="c20-dmb">DMB</idx></p></dd>
+</dl>
+
+<p dk:break="after">Quite the busy civil servant. </p>
+
+</h1s><h1 id="Browsing3.2.3">Becoming a Backup Browser</h1><h1s>
+
+<p>A Potential Browser<idx>Potential Browser</idx> becomes a Backup
+Browser<idx>Backup Browser</idx> in one of three ways.</p>
+
+<ol>
+<li><p>If the number of Providers on the local LAN exceeds a
+predefined limit, the Local Master Browser will select an available
+Potential Browser and promote it to Backup Browser.</p>
+
+<p>In theory, the LMB will appoint new Backup Browsers as needed to
+prevent itself from getting overloaded. Some documentation says that
+there should be one Backup Browser for every 32 Providers on the local
+LAN. Other documentation says other things. In any case, the LMB
+<dk:nobr>can promote a Potential Browser</dk:nobr> by sending a
+<code>BecomeBackup <dk:nobr>Browser
+Frame</dk:nobr></code>.<idx>BecomeBackupRequest</idx></p>
+
+<p>The <code>BecomeBackup Browser Frame</code> is another NBT
+broadcast datagram. In this case, it is sent to the group name
+<em>workgroup</em><code>&lt;1E&gt;</code>, which means that all of the
+Potential Browsers will receive the message. The NetBIOS machine
+name<idx>NetBIOS<sidx>name</sidx></idx><idx>machine name</idx> of the
+node to be promoted is carried within the message.</p></li>
+
+<li><p>A Potential Browser may decide on its own to become a Backup
+Browser. It simply announces its new status to the LMB by sending out
+a <code>HostAnnouncement Browser
+Frame</code><idx>HostAnnouncement</idx> with a specific flag
+set. <dk:nobr>(The flags will</dk:nobr> be described when we go into
+detail about the <dk:nobr><code>NetServerEnum2</code></dk:nobr>
+RAP<idx>RAP</idx> call.)</p>
+
+<p>Note that the Backup Browser uses a <code>HostAnnouncement</code>
+to make itself known. That's the same thing a Provider<idx>Browse
+Service<sidx>Provider</sidx></idx> does to announce services. In fact,
+the Backup Browser <em>is</em> announcing itself as a Provider: it
+provides access to the Browse List. This stuff gets mighty recursive
+<dk:nobr>at times.</dk:nobr></p>
+
+<p>According to the Leach/Naik Browser Internet Draft, an LMB that
+loses a new election should demote itself to Backup Browser status
+instead of dropping all the way down to a Potential Browser. The
+theory is that it is the most likely to be promoted should something
+bad happen to the new LMB, so it should maintain a fairly up-to-date
+copy of the Browse List to ensure a smooth transition.</p></li>
+
+<li><p>Browser roles are cumulative so, to be pedantic, the LMB is
+also a <dk:nobr>Backup Browser.</dk:nobr></p></li>
+</ol>
+
+<p>At the time that the Browse Service was created it may have been
+reasonable to be concerned about one computer bearing the brunt of all
+of the client requests, particularly on a LAN with a very large number
+of nodes. Today's computers are capable of handling the load
+<em>and</em> their own work without breaking a sweat. It would take an
+effort (a purposeful Denial of Service<idx>DoS</idx> attack, for
+instance) to cause the LMB any real trouble. </p>
+
+</h1s><h1 id="Browsing3.2.4">Crossing the Street with the DMB</h1><h1s>
+
+<p><idx start="c20-dmb2">DMB</idx>Browser roles are cumulative, as we
+keep saying, so the Domain Master Browser is also the Local Master
+Browser for its subnet and it must handle all of the duties of an
+LMB. One such duty is participation in local Browser Elections. Of
+course, since the DMB is the <em>appointed</em>
+workgroup<idx>Workgroup</idx> president it is expected to win the
+election - which it will do because the election is rigged. More on
+that when we go into detail regarding the election process.</p>
+
+<p>The DMB listens on the
+<em>workgroup</em><code>&lt;1B&gt;</code><idx
+type="1B">workgroup</idx> name for (unicast)
+<code>Master<dk:hyphen/>Announcement</code><idx>MasterAnnouncement</idx>
+messages from Local Master Browsers on remote subnets. It keeps track
+of these announcements and, periodically, contacts the LMBs and asks
+for a new copy of their local Browse List. The DMB merges the local
+Browse Lists collected from the various LMBs (including its own) into
+a master Browse List for the entire workgroup. The LMBs, in turn, will
+periodically query the DMB and add the remote entries collected in the
+workgroup master list to their own local Browse Lists. That's how
+local LANs get a complete copy of the combined workgroup Browse
+List.<idx end="c20-bl">Browse List</idx></p>
+
+<p>The key to making this all work is the NBT Name
+Service,<idx>NBT<sidx>Name Service</sidx></idx> the
+<b>N</b>et<b>B</b>IOS <b>N</b>ame <b>S</b>erver (NBNS<idx>NBNS</idx>)
+in particular. The scattered LMBs use the NBNS (aka
+WINS<idx>WINS</idx> server) to find the
+<em>workgroup</em><code>&lt;1B&gt;</code> name, which is registered by
+the DMB. Without that, cross-subnet browsing would not work because
+the LMBs would be unable to announce themselves to the DMB, and would
+also be unable to request copies of the DMB's master list.
+</p>
+
+<p>Note that B mode<idx>B</idx> NBT nodes do not talk to the NBNS
+and, therefore, cannot find a remote Domain Master Browser. That's
+okay, though, because the scope<idx>NBT<sidx>scope</sidx></idx> of a B
+mode NBT LAN<idx>NBT<sidx>vLAN</sidx></idx> is limited to the local IP
+subnet anyway. Even if a B node could do cross-subnet browsing, it
+wouldn't (shouldn't) be able to connect to a server on a remote
+subnet.</p>
+
+<p>In contrast, P nodes<idx>P</idx> <em>must</em> transact
+<em>all</em> of their Browse Service business directly with the Domain
+Master Browser.  The NBT Scope available to a P node is the set of
+names it can resolve via the NBNS. It doesn't do broadcasts, so the
+only Browser node that it can find is the DMB because the DMB is the
+only Browser node with a name that can be properly resolved via the
+NBNS. M and H nodes<idx>M</idx><idx>H</idx> have the best of
+both worlds. They can send broadcasts <em>and</em> use the NBNS to
+resolve names.</p>
+
+<p>Now that you have a basic idea of how this stuff works, think about
+what might have happened if Microsoft<idx>Microsoft</idx> had
+correctly implemented group name<idx>group name</idx> handling in
+their WINS implementation and had also provided a working
+<b>N</b>et<b>B</b>IOS <b>D</b>atagram <b>D</b>istribution Server
+(NBDD<idx>NBDD</idx>). If they had done that, the broadcast datagrams
+used by the Browse<idx>Browse Service</idx> Service - the
+announcements and election requests and such - would have reached the
+entire extent of the virtual NetBIOS LAN even if it spanned multiple
+subnets, even across WAN links and such. For better or worse, that
+would have changed the design and workings of the Browse Service
+entirely. </p>
+
+</h1s><h1 id="Browsing3.2.5">Elections</h1><h1s>
+
+<p>Browser elections are fun to watch. They have more in common with
+the noise and chaos of a party convention than with an actual
+election. The process is something of a shouting match, and the winner
+is the last one left shouting at the end.</p>
+
+<p>Starting an election is a lot like picking a fight. Some punk
+computer somewhere on the LAN sends out a challenge, called a
+<code>RequestElection Browser Frame</code>.<idx>RequestElection</idx>
+The message lets all of the Potential Browsers<idx>Potential
+Browser</idx> on the LAN know how tough the sender thinks it is (see
+<ref refid="Figure3.7"/>). The Potential Browsers respond by
+broadcasting their own <code>RequestElection</code> messages, also
+declaring how tough they think they are. The Potential Browsers don't
+really want to fight about it, though, so when they hear a
+<code>RequestElection</code> message from a node that is tougher than
+they are, they shut up. The specifics of the election criteria will be
+covered when the we study the browser frames in detail.</p>
+
+<fig dk:pos="top" id="Figure3.7">
+<img dk:width="200" loc="BRO07"/>
+<caption>Browser elections</caption>
+
+<subcaption><p>The Potential Browsers announce their strengths by
+sending a <code>RequestElection</code> message. The strongest
+candidate must repeat its announcement several times (typically four)
+to ensure that all challengers have acquiesced.</p></subcaption>
+</fig>
+
+<p>Just to complete the fighting analogy, each transmission of a
+<code>RequestElection</code> message during a browser election is
+called a "round." There are typically four rounds because the eventual
+winner of the election will repeat its <code>RequestElection</code>
+message four times to ensure that all of its challengers have given
+up. Once the winner is confident in its victory it sends a
+<code><dk:nobr>LocalMasterAnnouncement</dk:nobr> Browser
+Frame</code>,<idx>LocalMasterAnnouncement</idx> which has two
+purposes. First, it lets all of the Backup Browsers<idx>Backup
+Browser</idx> know where to find the LMB. Second, the
+<code>LocalMasterAnnouncement</code> message announces the end of the
+<dk:nobr>election.</dk:nobr> Any further <code>RequestElection</code>
+messages heard on the wire will signal a new Browser Election.</p>
+
+<p>Elections can be forced by sending an empty <code>RequestElection
+Browser Frame</code> &mdash; that is, one that announces the sender as
+being a complete wimp. All of the Potential Browsers on the LAN will
+have better credentials, so they will try to respond. Elections may be
+called when a Consumer<idx>Browse Service<sidx>Consumer</sidx></idx>
+can no longer find the LMB, or when a new node joins the
+workgroup<idx>Workgroup</idx> and thinks that it has what it takes to
+be the LMB. When a Domain Master Browser starts up, for instance, it
+will always call for elections (since it <em>must</em> take over the
+role of LMB).</p>
+
+<p>The <code>RequestElection</code> message is another NBT broadcast
+datagram. It is meant to be sent to the
+<em>workgroup</em><code>&lt;1E&gt;</code><idx
+type="1E">workgroup</idx> name but it turns out that many clients will
+accept this message if it is sent to the
+<code>MSBROWSE&lt;01&gt;</code><idx>MSBROWSE&lt;01&gt;</idx> name as
+well, so you can actually cause all of the workgroups on a single
+subnet to hold elections at the same time.<idx
+end="c20-lmb">LMB</idx><idx end="c20-dmb2">DMB</idx><idx
+end="c20-election">election</idx></p>
+
+</h1s>
+</chapter>
+</oim>

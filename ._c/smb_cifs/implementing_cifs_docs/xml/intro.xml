@@ -1,0 +1,420 @@
+<?xml version="1.0" encoding="US-ASCII"?>
+<!DOCTYPE oim SYSTEM "oimxml.dtd" [
+  <!ENTITY nbsp "&#160;">
+] >
+<oim xmlns:dk="http://www.kirsanov.com">
+<intro>
+<title><dk:line>Introduction:</dk:line> <dk:line>CIFS</dk:line> <dk:line>from Eight Miles High</dk:line></title>
+
+<epigraph dk:padding-top="12">
+<p><line>Fillet of a fenny snake,</line>
+<line>In the cauldron boil and bake;</line>
+<line>Eye of newt, and toe of frog,</line>
+<line>Wool of bat, and tongue of dog.</line></p>
+<attribution><line><cite>Macbeth</cite>, Act IV, Scene i,</line>
+<line>William Shakespeare<idx>Shakespeare, William</idx></line></attribution>
+</epigraph>
+
+<h1>First Impressions</h1><h1s>
+
+<p>First impressions are important. The handshake, the smile,
+here's our brochure, would you like a cup of tea<idx>tea</idx>?</p>
+
+<p>Microsoft's<idx start="i-microsoft">Microsoft</idx> Windows family
+of operating systems makes good first impressions. There's a pleasant
+sound at start-up, all of the basics are represented by simple icons,
+and everything else is available through a neatly categorized
+menu.</p>
+
+<p>As the relationship progresses, however, it becomes clear that
+there is a lot going on beneath the candy-coated surface. This is
+particularly true of the CIFS protocol suite. The Network
+Neighborhood<idx>Network Neighborhood</idx> icon that appears on the
+Windows desktop hides a great deal of gear-churning and
+behind-the-<dk:br/><dk:nobr>scenes fussing.</dk:nobr></p>
+
+<p>The large installed base of Microsoft's Windows products has
+granted <em>de facto</em> standard status to CIFS. Unfortunately,
+implementation documentation and detailed protocol specifications
+are scarce, incomplete, and inconsistent. This is a problem for
+network administrators, third-party CIFS implementors, and anyone
+else who wants to know more about the ingredients than you can read
+on the bottom of the box.</p>
+
+<p>Despite the dearth of good under-the-hood documentation, there
+are several non-Windows CIFS products. Some of these are based on
+older versions of Microsoft's own software, but the majority were
+created by studying the few available references and
+reverse-engineering to fill in the gaps. </p>
+
+</h1s><h1>What is CIFS?</h1><h1s>
+
+<p>CIFS<idx>CIFS</idx> is a network filesystem plus a set of auxiliary
+services supported by a bunch of underlying protocols. Any and all of
+these various bits have been called CIFS, which leaves us with a
+somewhat muddy definition. To make things easier, we'll start by
+saying that CIFS is "Microsoft's way of doing network file sharing,"
+and work out the details as we go on.</p>
+
+<p>The name "CIFS," of course, is an acronym. It stands for
+<b>C</b>ommon <b>I</b>nternet <b>F</b>ile <b>S</b>ystem, a title
+which deserves a bit of dissection.</p>
+
+<dl>
+<dt>Common</dt>
+<dd>
+<p>The term has a variety of connotations, but we will assume that
+Microsoft was thinking of <em>common</em> in the sense of
+<em>commonly available</em> or <em>commonly used</em>. All Microsoft
+operating systems have had some form of CIFS networking available or
+built in, and there are implementations of CIFS for most major
+non-MS operating systems as well.</p>
+
+<p>Unfortunately, there is not yet a specification for CIFS that is
+complete, correct, authoritative, and freely available. Microsoft
+defines CIFS by their implementations and, as we shall see, their
+attempts at documenting the complete suite have been somewhat
+random. This has an adverse impact on the <em>commonality</em> of
+the system.</p>
+</dd>
+
+<dt>Internet</dt>
+<dd>
+<p>At the time that the "CIFS" name was coined many people felt that
+Microsoft was late to the table regarding the exploitation of the
+Internet. As will be described further on, the naming scheme they
+used back then (based on a piece of older LAN technology known as
+NetBIOS<idx>NetBIOS</idx>) doesn't scale to large networks - certainly not the
+Internet. The idea that CIFS would become an Internet standard
+probably came out of the work that was being done to redesign
+Microsoft's networking products for Windows NT5 (now known as
+Windows 2000 or W2K). Under W2K, CIFS can use the Domain Name
+System (DNS<idx>DNS</idx>) for name resolution.</p>
+</dd>
+
+<dt>File System</dt>
+<dd>
+<p>CIFS allows you to share directories, files, printers, and other
+cool computer stuff across a network. That's the filesystem part. To
+make use of these shared resources you need to be able to find and
+identify them, and you also need to control access so that
+unauthorized folk won't fiddle where they shouldn't. This means that
+there is a hefty amount of administrivia to be managed, so CIFS file
+sharing comes surrounded by an entourage. There are separate, but
+intertwined protocols for service announcement, naming,
+authentication<idx>authentication</idx>, and
+authorization.<idx>authorization</idx> Some are based on published
+standards, others are not, and most have changed over the years.</p>
+</dd>
+</dl>
+
+<h2>A Recipe for Protocol Soup</h2><h2s>
+
+<p>The filesharing protocol at the heart of CIFS is an updated version
+of the venerable <b>S</b>erver <b>M</b>essage <b>B</b>lock (SMB)
+protocol, which dates back to the mid-1980s. The new name first
+appeared around 1996/97 when Microsoft submitted draft CIFS
+specifications to the <b>I</b>nternet <b>E</b>ngineering <b>T</b>ask
+<b>F</b>orce (IETF<idx>IETF</idx>). Those drafts have since expired,
+and more recent documentation made available <dk:nobr>by Microsoft comes</dk:nobr>
+encumbered with confusing (and pointless) licensing <dk:nobr>restrictions.</dk:nobr></p>
+
+<p>The SMB protocol was originally developed to run over
+NetBIOS<idx>NetBIOS</idx> (<b>Net</b>work <b>B</b>asic <b>I</b>nput
+<b>O</b>utput <b>S</b>ystem) LANs. This is a nasty little skeleton in
+the CIFS closet. Until W2K, NetBIOS support was required for SMB
+transport. The machine and service names visible in the Windows
+"Network Neighborhood<idx>Network Neighborhood</idx>" are, basically,
+NetBIOS addresses.</p>
+
+<p>With Windows 3.11 (Windows for Workgroups<idx>Workgroup</idx>),
+Microsoft introduced a service announcement and location system called
+the Browse Service.<idx>Browse Service</idx> This service maintains
+the list of available file and print services that is presented via
+the Network Neighborhood (named "My Network Places" in newer Windows
+products). Also with Windows 3.11 Microsoft introduced the "workgroup"
+concept. Workgroups simplified network management by organizing
+servers and services into administrative groups. Microsoft expanded
+upon the workgroup concept under Windows NT to create NT
+Domains.<fn>The terms "NT Domain"<idx>NT Domain</idx> and "W2K
+Domain<idx>W2K Domain</idx>" will be used to distinguish Microsoft's
+<dk:nobr>authentication<idx>authentication</idx>/authorization<idx>authorization</idx></dk:nobr>
+domains from Domain Name System (DNS<idx>DNS</idx>) domains.</fn></p>
+
+<p>As if that were not enough, there are also several SMB
+"dialects."<idx>dialect</idx> These roughly correspond to major OS
+product releases or updates from Microsoft, and each adds extensions
+to the core SMB protocol. In their IETF CIFS draft, Microsoft
+presented an SMB dialect that was independent of NetBIOS, and W2K does
+include such a beast. As part of the split with NetBIOS, W2K also
+offers new name resolution, service announcement, authentication, and
+authorization mechanisms - all based, more or less, upon Internet
+standards.</p>
+
+<p>Don't worry. Like most complex problems, this can all be
+understood by breaking it down into little pieces and studying each
+one in turn. The whole is not so terrible once you understand the
+parts.</p>
+
+</h2s></h1s><h1>The CIFS Community</h1><h1s>
+
+<p>Microsoft's implementations are the <em>de facto</em> CIFS
+standards. This is no surprise, as the SMB protocol was originally
+developed by IBM,<idx>IBM</idx> Microsoft, Intel, and 3Com
+specifically for MS-DOS and PC-DOS.<idx>DOS</idx> It is Microsoft's
+current massive dominance in the desktop world, however, that makes
+the CIFS marketplace worthwhile. Several companies earn their money by
+selling CIFS client and server software, or fileserver hardware with
+CIFS support. Without complete documentation, these third-party
+vendors might be forced to rely only on their own reverse-engineering
+or on licensed derivations of Microsoft's own implementations. This
+would reduce the "commonality" of CIFS and, given Microsoft's dominant
+market share, could have a negative impact on competitors' ability to
+compete.</p>
+
+<p>Fortunately, there is a lot of communication within the CIFS
+community.<idx>CIFS<sidx>community</sidx></idx> There is also a
+renegade band of coders known as the Samba
+Team.<idx>Samba<sidx>Team</sidx></idx> Since 1991, they have been
+gathering information and implementing their own CIFS server, called
+Samba.<idx>Samba</idx> (Note how the letters "s," "m," and "b" appear
+in sequence in the Samba name. Cool, eh?) Samba is published as Open
+Source under the terms of the GNU General Public License. Samba Team
+members typically share what they learn, and have even been known to
+write a little documentation now and again. Samba is included with
+most distributions of Linux and several commercial Unix flavors as
+well.</p>
+
+<p>Samba has generated a few related projects, including SMB client
+filesystems for Linux, AmigaOS, and other platforms. There is also
+Richard Sharpe's<idx>Sharpe<sidx>Richard</sidx></idx>
+<code>libsmbclient</code><idx>libsmbclient</idx>, the
+Samba-TNG<idx>Samba-TNG</idx> project, the jCIFS<idx>jCIFS</idx>
+project, and this book.</p>
+
+<h2>Visiting the Network Neighborhood</h2><h2s>
+
+<p><idx>Network Neighborhood</idx>On most days, members of the CIFS
+community can be found hanging out on Microsoft's<idx
+end="i-microsoft">Microsoft</idx> CIFS mailing
+list,<idx>CIFS<sidx>mailing list</sidx></idx> the Samba-Technical
+mailing list,<idx>Samba<sidx>technical mailing list</sidx></idx> or
+the jCIFS mailing list. In addition to these virtual geek caf&#233;s
+there is the mostly-annual CIFS
+conference.<idx>CIFS<sidx>conference</sidx></idx> In the past it has
+been sponsored by such luminary organizations as EMC, Microsoft,
+Network Appliance, SCO, and the Storage Networking Industry
+Association. The conference provides an opportunity for CIFS
+developers to meet each other face-to-face, swap stories, whine, and
+(best of all) test their products with &amp; against everyone
+else's. If you are serious about implementing CIFS, we'll see you
+there.</p>
+
+<p>Service Network GmbH is the primary sponsor of yet another
+conference of interest. The first Samba
+eXPerience<idx>Samba<sidx>eXPerience conference</sidx></idx> (aka
+sambaXP) was held in G&#246;ttingen, Germany, in April of 2002. It was
+very successful, and has become an annual event. While it is specific
+to Samba and related Open Source implementations
+(Samba-TNG,<idx>Samba-TNG</idx> jCIFS<idx>jCIFS</idx>, etc.), the
+information exchanged is valuable to anyone interested in CIFS
+networking.</p>
+
+</h2s><h2>Community Collaborations</h2><h2s>
+
+<p>It should also be noted that an effort, organized at one of the
+CIFS conferences<idx>CIFS<sidx>conference</sidx></idx> and lead by the
+<b>S</b>torage <b>N</b>etwork <b>I</b>ndustry <b>A</b>ssociation
+(SNIA<idx>SNIA</idx>), has been underway within the CIFS community to
+draft an "open" CIFS reference with input from many interested
+parties. Version 1.0 of the SNIA CIFS Technical
+Reference<idx>SNIA<sidx>CIFS Technical Reference</sidx></idx> has been
+released and is available on the SNIA web site. For more information,
+poke around the SNIA CIFS Working Group web pages.</p>
+
+</h2s></h1s><h1>Audience</h1><h1s>
+
+<p>This book is aimed at developers who want to add CIFS
+compatibility to their products. It will also be very helpful to
+network and system administrators who need to understand the
+curious things that CIFS does on the wire, in the server, and at the
+desktop. In addition, there is empirical evidence which suggests
+that the Internet security community (both the light and the dark
+sides) is keenly interested in the (mis)behavior of the CIFS
+suite. This is a technical book, and knowledge of programming and
+TCP/IP networking is assumed. The protocol descriptions, however,
+start with the basics and build up, so very little previous
+knowledge of CIFS is expected.</p>
+
+<p>For the programmer, there are several code examples. They have all
+been tested under Debian GNU/Linux<idx>Debian GNU/Linux</idx>, but you
+may need to do a little work to get them to run elsewhere. The code is
+intended to be illustrative rather than functional. It works, but it
+is not production-quality. That's okay, since part of the purpose of
+this book is to help you write your own code - if that's where your
+interests lie. If you don't care about source code you can safely skip
+much of it. Those who do like source can find additional examples at
+<url>http://ubiqx.org/libcifs/</url><idx>ubiqx.org</idx><idx>libcifs</idx>.</p>
+
+<p>A certain amount of SMB/CIFS protocol information has been
+available since the early days, but finding the important bits
+typically involves digging through detailed technical references,
+protocol specifications, packet dumps, web pages, whitepapers,
+source code, and mailing list archives. That's a lot of work, and a
+nuisance, and annoying. As a result, CIFS development has become an
+arcane art practiced by an elite few... and that's a darned shame.</p>
+
+<p>This book attempts to solve this problem by selectively digging
+through the muck and presenting the uncovered gems in a coherent
+form, thus making the CIFS suite more accessible to more
+people.</p>
+
+</h1s><h1>Scope</h1><h1s>
+
+<p>Our focus is on the inner workings of CIFS filesharing,
+particularly the client side. Through necessity (and a macabre sense
+of fascination) we will also cover NetBIOS<idx>NetBIOS</idx> LAN
+emulation over TCP/IP, basic SMB authentication, and browsing. We will
+delicately dance around the NT Domain<idx>NT Domain</idx> system and
+CIFS for W2K. These are much bigger and hairier, and deserve their own
+books.<fn>...and if we find any such books, we will list them in the
+References section.</fn></p>
+
+<p>The book is separated into three main parts:</p>
+
+<dl>
+<dt>I. NBT: NetBIOS over TCP/IP</dt> 
+
+<dd><p>This part covers the NBT protocol, which is an implementation
+of the NetBIOS API<idx>NetBIOS<sidx>API</sidx></idx> on top of
+TCP/IP.<idx>TCP</idx> NBT is necessary for communicating with older CIFS servers and
+clients.</p></dd>
+
+<dt>II. SMB: The Server Message Block Protocol</dt> 
+<dd><p>Part II covers SMB, the filesharing protocol at the core of
+CIFS.  This part also covers authentication.</p></dd>
+
+<dt>III. Browsing: Advertising Services</dt> 
+
+<dd><p>The Browser Service<idx>Browse Service</idx> is built on top of
+NBT and SMB and is used to distribute information about the SMB
+fileservers available on the network.</p></dd>
+</dl>
+
+<p>Following these three parts are appendices, a glossary,
+bibliography for further reading, and an index - all the good stuff you
+would expect in such a book.</p>
+
+</h1s><h1>Acknowledgements and Thanks</h1><h1s>
+
+<p>The investigation of CIFS is a forensic art. This book is an
+attempt to coalesce the knowledge gathered by the CIFS community and
+present it in a useful form. My thanks go to the Samba
+Team,<idx>Samba<sidx>Team</sidx></idx> particularly Andrew
+Tridgell<idx>Tridge</idx> who started the
+Samba<idx>Samba</idx> project and suggested that I start the
+jCIFS<idx>jCIFS</idx> project. Thanks are also due to the jCIFS Team
+for raising - and often answering - so many good questions, and
+particularly to Michael B. Allen<idx>Allen, Michael B.</idx> for
+churning out so much working code.</p>
+
+<p>Acknowledgements also go to the folks on the Samba-Technical
+mailing list, the Samba-TNG<idx>Samba-TNG</idx> mailing
+list,<idx>Samba<sidx>technical mailing list</sidx></idx>
+Microsoft's<idx>Microsoft</idx> CIFS mailing list, and the folks at
+Microsoft who were able to provide insights into the workings of
+CIFS.</p>
+
+<p>Writing documentation of this sort is a lengthy and annoying
+process. Special thanks go to the believers: Rachel<idx>Rachel</idx>,
+Aled<idx>Aled</idx>, and Amalia<idx>Amalia</idx>; and also to the
+four-legs: Neko<idx>Neko</idx>, Marika<idx>Marika</idx>,
+Bran<idx>Bran</idx>, and Maddie<idx>Maddie</idx>.</p>
+
+<p>Additional notes of praise and recognition (in no particular order)
+to David Hirsch<idx>Hirsch, David</idx>, Jeanne Dzurenko<idx>Dzurenko,
+Jeanne</idx>, Judy Diebel<idx>Diebel, Judy</idx>, Paul
+Nelis<idx>Nelis, Paul</idx>, Virginia Norton<idx>Norton,
+Virginia</idx>, Dave Farmer<idx>Farmer, David</idx>, John
+Ladwig<idx>Ladwig, John</idx>, Susan Levy Haskell<idx>Levy Haskell,
+Susan</idx>, Tim Howling<idx>Howling, Tim</idx>, Olaf
+Barthel<idx>Barthel, Olaf</idx>, Amy Gavel<idx>Gavel, Amy</idx>,
+Stephanie Cohen<idx>Cohen, Stephanie</idx>, Andrew
+Bartlett<idx>Bartlett, Andrew</idx>, Prairie Barnes<idx>Barnes,
+Prairie</idx>, Chris Yerkes<idx>Yerkes, Chris</idx>, James
+Carey<idx>Carey, James</idx>, and Tom Barron<idx>Barron,
+Tom</idx>.</p>
+
+<p>The majority of the diagrams in this book were produced using the
+Dia<idx>Dia</idx> diagram editor. The document was originally created
+as 100% hand-crafted and W3C-validated HTML using a simple text
+editor. CVS<idx>CVS</idx> was used for document source
+management. </p>
+
+<h2>The Book</h2><h2s>
+
+<p> Thanks to Mark Taub<idx>Taub, Mark</idx> for believing that I
+could turn my online ramblings into an honest-to-goodness book, and to
+Jill Harry<idx>Harry, Jill</idx> for being "the boss" and gently but
+firmly guiding me through the process.  Thanks also to Bruce
+Perens<idx>Perens, Bruce</idx> for including my book as part of his
+series, and to all the folks at Prentice Hall who helped to make this
+dream a reality.
+</p>
+
+<p> The book was raked over the coals for technical correctness by
+Andrew Bartlett and Jerry Carter<idx>Carter, Gerald (Jerry)</idx>, both of the
+Samba Team<idx>Samba<sidx>Team</sidx></idx> and both nearly as
+pedantic as I am.  They deserve a lot of credit for the good stuff that
+is contained herein (the bugs are my fault).
+</p>
+
+<p> The original HTML source was skillfully converted to
+publisher-ready form by Alina Kirsanova,<idx>Kirsanova, Alina</idx>
+and then carefully copy-edited by Dmitry Kirsanov<idx>Kirsanov,
+  Dmitry</idx>.  They did excellent work.  Any errors in grammar or
+formatting which remain are probably the result of my being a prima
+donna and insisting on having my own way.
+</p>
+</h2s>
+
+</h1s><h1>About the Author</h1><h1s>
+
+<p><construction dk:last="justify">
+<construction-side>Christopher R. Hertel is one of those guys in the
+bright orange vests who lean up against a shovel in the
+construction zones along the Information Superhighway. By day, he is
+a Network Design Engineer</construction-side>
+<construction-bottom>at the University of Minnesota. He is also
+a member of the Samba Team, a founding member of the jCIFS<idx>jCIFS</idx> Team, and
+an inconsistently average foil fencer. Most important of all, he is
+a full-time dad and husband.
+</construction-bottom>
+</construction>
+</p>
+
+<h2>Quick Story</h2><h2s>
+
+<p>A few years back I was interviewing for a job that I really thought
+I wanted. During the technical interview, I was asked "Is
+NetBEUI<idx>NetBEUI</idx> routable?" My head was full of protocol
+specs and packet headers, and I got a little flustered. I confused
+NetBEUI with the general idea of encapsulated
+NetBIOS.<idx>NetBIOS</idx> Of course I gave the wrong answer, and I
+did not get the job.</p>
+
+<p>They say success is the sweetest and most honest form of
+revenge.<smile/></p>
+
+</h2s></h1s><h1>License</h1><h1s>
+
+<p>Code examples are licensed under the terms of the GNU Lesser
+General Public License<idx>GNU Lesser General Public
+License (LGPL)</idx>. This allows you to build libraries from the licensed
+code and use those libraries with your own code, even if your code is
+proprietary. The library source code, however, must be made available
+if you distribute your product. See the LGPL for
+details.</p>
+</h1s>
+</intro>
+</oim>

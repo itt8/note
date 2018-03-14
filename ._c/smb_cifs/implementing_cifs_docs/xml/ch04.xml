@@ -1,0 +1,3932 @@
+<?xml version="1.0" encoding="US-ASCII"?>
+
+<!DOCTYPE oim SYSTEM "oimxml.dtd" [
+  <!ENTITY nbsp "&#160;">
+  <!ENTITY lsquo "&#8216;">
+  <!ENTITY rsquo "&#8217;">
+  <!ENTITY times "&#xd7;">
+  <!ENTITY mdash "&#8212;">
+] >
+
+<oim xmlns:dk="http://www.kirsanov.com">
+<chapter id="NBT1.4">
+<chapopen><title>The Name Service in&nbsp;Detail</title>
+
+<epigraph dk:padding-top="48">
+<p><line>This is gonna hurt me</line>
+<line>more than it does you.</line></p>
+<attribution>Common lie</attribution>
+</epigraph>
+</chapopen>
+
+<p>Think of the Name Service<idx>NBT<sidx>Name Service</sidx></idx> as
+a database system. The data may be stored in an NBNS server (P
+mode<idx>P</idx>), distributed across all of the participating
+nodes in an IP subnet (B mode<idx>B</idx>), or a combination of
+the two (M or H mode<idx>M</idx><idx>H</idx>).</p>
+
+<p>Name Service messages are the transactions that maintain and
+utilize the NBT name-to-IP-address mapping database. These
+transactions fall into three basic categories:</p>
+
+<dl>
+<dt>Name Registration/Refresh<idx>name registration</idx></dt>
+<dd><p>The process by which an application adds and maintains a
+NetBIOS name<idx start="c4-nbt-name">NBT<sidx>name</sidx></idx> to IP
+address mapping within an NBT
+scope.<idx>NBT<sidx>scope</sidx></idx></p></dd>
+
+<dt>Name Query</dt>
+<dd><p>The process of resolving a NetBIOS name to an IP address.<idx>name query</idx></p></dd>
+
+<dt>Name Release<idx>name release</idx></dt>
+<dd><p>The process by which a NetBIOS name<idx start="c4-NetBIOS-name">NetBIOS<sidx>name</sidx></idx> to IP address mapping is
+removed from within an NBT scope.</p></dd>
+</dl>
+
+<p>These three represent the lifecycle of an NBT name.</p>
+
+<p>The RFCs also specify support for the NetBIOS
+API<idx>NetBIOS<sidx>API</sidx></idx> <b>Adapter Status
+Query</b><idx>adapter status</idx> function. Implementation of the
+Adapter Status Query is quite similar to that of the Name Query, so it
+gets lumped in with the Name Service. This is fairly reasonable, since
+the query packets are almost identical and the most important result
+of the status query is a list of names owned by the target node.</p>
+
+<h1 id="NBT1.4.1">NBT Names: Once More with Feeling</h1><h1s>
+
+<p>Let's review what we've learned so far:</p>
+
+<ul>
+<li><p>Though the RFCs do not say so, NetBIOS names should be
+converted to upper case <em>before</em> they are encoded. The practice
+probably goes back to early IBM<idx>IBM</idx> implementations.
+Converting NetBIOS names to upper case allows for comparison of the
+encoded string, rather than requiring that NBT names be decoded and
+compared using a case-insensitive function. Some existing
+implementations use this shortcut, and will not recognize names with
+encoded lower-case characters.</p></li>
+
+<li><p>The RFCs list NetBIOS names as being 16 bytes in length. It is
+common practice, however, to implement NetBIOS names as two subfields:
+a <dk:nobr>15-byte</dk:nobr> name and a one-byte suffix<idx>suffix
+byte</idx>. (That's what Microsoft<idx>Microsoft</idx> does so
+everyone else has to do it too.)  The suffix byte actually winds up
+being quite useful. The suffix byte is read as an integer in the range
+0..255, so it is <em>not</em> converted to upper-case.</p></li>
+
+<li><p>If the NetBIOS name is less than 15 bytes, it must be padded.
+The space character (<code>0x20</code>) is the designated padding character
+(though there are some rare, special-case exceptions).</p></li>
+
+<li><p>Other than length and padding, the only restriction the RFCs
+place on the syntax of a NetBIOS name is that it may not begin with an
+<dk:nobr>asterisk (&lsquo;<code>*</code>&rsquo;).</dk:nobr><idx
+end="c4-nbt-name">NBT<sidx>name</sidx></idx></p></li>
+</ul>
+
+<h2 id="NBT1.4.1.1">Valid NetBIOS Name Characters</h2><h2s>
+
+<p><idx start="c4-dns">DNS</idx><em>Any</em> octet value can be
+encoded using the first-level mechanism. In theory, then, any
+eight-bit value can be part of a NetBIOS name. Keep this in mind and
+be prepared. There are some very strange names in use in the wild.</p>
+
+<p>In practice, implementations do place some restrictions on the
+characters that may be used in NetBIOS names. These restrictions are
+implemented at the application layer, and should be considered
+artificial. Under Windows 9x, for example, the "Network Identity"
+control panel allows only the following characters in a machine
+name:</p>
+
+<table colwidths="12* 14* 30* 15* 14* 15*">
+<caption>Valid Windows 9x machine name characters</caption>
+<tbody>
+<tr>
+<td dk:align="right"><p><code><dk:squote/> <dk:squote/></code></p></td><td dk:align="center"><p>==</p></td><td><p><code>0x20</code></p></td>
+<td dk:align="right"><p><code><dk:squote/>-<dk:squote/></code></p></td><td dk:align="center"><p>==</p></td><td><p><code>0x2D</code></p></td>
+</tr>
+<tr>
+<td dk:align="right"><p><code><dk:squote/>!<dk:squote/></code></p></td><td dk:align="center"><p>==</p></td><td><p><code>0x21</code></p></td>
+<td dk:align="right"><p><code><dk:squote/>.<dk:squote/></code></p></td><td dk:align="center"><p>==</p></td><td><p><code>0x2E</code></p></td>
+</tr>
+<tr>
+<td dk:align="right"><p><code><dk:squote/>#<dk:squote/></code></p></td><td dk:align="center"><p>==</p></td><td><p><code>0x23</code></p></td>
+<td dk:align="right"><p><code><dk:squote/>@<dk:squote/></code></p></td><td dk:align="center"><p>==</p></td><td><p><code>0x40</code></p></td>
+</tr>
+<tr>
+<td dk:align="right"><p><code><dk:squote/>$<dk:squote/></code></p></td><td dk:align="center"><p>==</p></td><td><p><code>0x24</code></p></td>
+<td dk:align="right"><p><code><dk:squote/>^<dk:squote/></code></p></td><td dk:align="center"><p>==</p></td><td><p><code>0x5E</code></p></td>
+</tr>
+<tr>
+<td dk:align="right"><p><code><dk:squote/>%<dk:squote/></code></p></td><td dk:align="center"><p>==</p></td><td><p><code>0x25</code></p></td>
+<td dk:align="right"><p><code><dk:squote/>_<dk:squote/></code></p></td><td dk:align="center"><p>==</p></td><td><p><code>0x5F</code></p></td>
+</tr>
+<tr>
+<td dk:align="right"><p><code><dk:squote/>&amp;<dk:squote/></code></p></td><td dk:align="center"><p>==</p></td><td><p><code>0x26</code></p></td>
+<td dk:align="right"><p><code><dk:squote/>{<dk:squote/></code></p></td><td dk:align="center"><p>==</p></td><td><p><code>0x7B</code></p></td>
+</tr>
+<tr>
+<td dk:align="right"><p><code><dk:squote/>\<dk:squote/><dk:squote/></code></p></td><td dk:align="center"><p>==</p></td><td><p><code>0x27</code> (single quote)</p></td>
+<td dk:align="right"><p><code><dk:squote/>}<dk:squote/></code></p></td><td dk:align="center"><p>==</p></td><td><p><code>0x7D</code></p></td>
+</tr>
+<tr>
+<td dk:align="right"><p><code><dk:squote/>(<dk:squote/></code></p></td><td dk:align="center"><p>==</p></td><td><p><code>0x28</code></p></td>
+<td dk:align="right"><p><code><dk:squote/>~<dk:squote/></code></p></td><td dk:align="center"><p>==</p></td><td><p><code>0x7E</code></p></td>
+</tr>
+<tr>
+<td dk:align="right"><p><code><dk:squote/>)<dk:squote/></code></p></td><td dk:align="center"><p>==</p></td><td><p><code>0x29</code></p></td>
+<td dk:align="center" colspan="3"><p>alphanumeric characters</p></td>
+</tr>
+</tbody>
+</table>
+
+<p>Yet the same Windows 9x system may also register the
+special-purpose name
+"<code>\x01\x02__MSBROWSE__\x02\x01</code><idx>MSBROWSE&lt;01&gt;</idx>",
+which contains control characters as shown.</p>
+
+<p>Note that the set of alphanumeric characters may include
+extended characters, such as &lsquo;<code>&#197;</code>&rsquo; or
+&lsquo;<code>&#220;</code>&rsquo;. Unfortunately, these are often represented by
+different octet values under different operating systems, or even
+under different configurations of the same operating system.</p>
+
+<p>Some examples:</p>
+
+<table colwidths="30* 30* 40*" dk:type="centered">
+<thead>
+<tr dk:border="after">
+<th><p>Character</p></th>
+<th><p>ISO Latin-1</p></th>
+<th><p>DOS Code Page 437<idx>DOS<sidx>Code Page 437</sidx></idx></p></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><p><code><dk:squote/>&#196;<dk:squote/></code></p></td>
+<td><p><code>0xC4</code></p></td>
+<td><p><code>0x8E</code></p></td>
+</tr>
+
+<tr>
+<td><p><code><dk:squote/>&#199;<dk:squote/></code></p></td>
+<td><p><code>0xC7</code></p></td>
+<td><p><code>0x80</code></p></td>
+</tr>
+
+<tr>
+<td><p><code><dk:squote/>&#201;<dk:squote/></code></p></td>
+<td><p><code>0xC9</code></p></td>
+<td><p><code>0x90</code></p></td>
+</tr>
+
+<tr>
+<td><p><code><dk:squote/>&#206;<dk:squote/></code></p></td>
+<td><p><code>0xCE</code></p></td>
+<td><p><emdash/></p></td>
+</tr>
+
+<tr>
+<td><p><code><dk:squote/>&#214;<dk:squote/></code></p></td>
+<td><p><code>0xD6</code></p></td>
+<td><p><code>0x99</code></p></td>
+</tr>
+
+<tr>
+<td><p><code><dk:squote/>&#209;<dk:squote/></code></p></td>
+<td><p><code>0xD1</code></p></td>
+<td><p><code>0xA5</code></p></td>
+</tr>
+
+<tr>
+<td><p><code><dk:squote/>&#217;<dk:squote/></code></p></td>
+<td><p><code>0xD9</code></p></td>
+<td><p><emdash/></p></td>
+</tr>
+</tbody>
+</table>
+
+<p>As you can see, the mapping between character sets can be a bit of
+a challenge - particularly since there is no standard character set
+for use in NBT and no mechanism for negotiating a common character
+set.<fn>To further complicate matters Microsoft has registered its own
+character sets, such as the Windows-1252 character
+set<idx>Windows-1252 character set</idx>. Windows-1252 is a superset
+of ISO Latin-1. It uses octets in the range <code>0x80..0x9F</code>
+(normally reserved for control characters) to represent some
+additional display characters, such as the trademark symbol
+(&#8482;). This is why non-Microsoft web browsers<idx>web
+browser</idx> on non-Microsoft platforms often display question marks
+all over the screen when they load web pages generated by Microsoft
+products.</fn></p>
+
+<p>One more thing to consider when dealing with NetBIOS name
+characters: Windows NT will generate a warning - and W2K an
+error - if the Machine Name is not also a valid DNS name. You may
+need to do some testing to determine which characters Windows
+considers valid DNS label characters.</p>
+
+</h2s><h2 id="NBT1.4.1.2">NetBIOS Names within Scope</h2><h2s>
+
+<p>Under NBT, NetBIOS names exist within a
+<gt>scope</gt><idx>NBT<sidx>scope</sidx></idx>. The scope is the set
+of all machines which can "see" the name. For B nodes,<idx>B</idx> the
+scope is limited to the IP broadcast domain. For P nodes,<idx>P</idx>
+the scope is limited to the set of nodes that share the same NBNS. For
+M<idx>M</idx> and H nodes,<idx>H</idx> the scope is the union of the
+broadcast domain and the shared NBNS.</p>
+
+<p>Scope can be further refined using a <gt>Scope
+ID</gt>.<idx>NBT<sidx>Scope ID</sidx></idx> The Scope ID effectively
+sub-divides a virtual NetBIOS LAN<idx>NBT<sidx>vLAN</sidx></idx> into
+separate, named vLANs. Unfortunately, few (if any) implementations
+actually support multiple Scope IDs so this feature is of limited
+practical use.</p>
+
+<p>The syntax of the Scope ID matches the best-practices
+recommendations for DNS domain names. (Some Windows flavors allow
+almost any character value in a Scope ID string. Sigh.) Scope IDs
+should be converted to upper case before use on the wire.</p>
+
+<alert type="Annoyance">
+<p>In versions of Windows 95 and '98 that we tested, the Scope ID
+field in the network setup control panel is greyed out if no
+WINS<idx>WINS</idx> server IP address is specified. That is, you
+cannot enter a Scope ID if your machine is running in B mode.</p>
+
+<p>You can work around this by entering the Scope ID in the right
+place in the registry, or by entering a (bogus) WINS server IP,
+entering the Scope ID, saving your changes, rebooting, reopening
+the network control panel, removing the WINS IP entry, saving your
+changes, and rebooting again.</p>
+
+<p>The system does not seem to clear the Scope ID once it has been
+entered. To clear the Scope ID you must either edit the registry,
+or enter a (bogus) WINS server IP, clear out the Scope ID in the
+control panel, save your changes, reboot, reopen the network
+control panel, remove the WINS IP entry, save your changes, and
+reboot.</p>
+
+<p>Windows NT behaves correctly, and does allow the entry of a
+Scope ID <dk:nobr>in B mode.</dk:nobr></p>
+</alert>
+
+</h2s><h2 id="NBT1.4.1.3">Encoding and Decoding NBT Names</h2><h2s>
+
+<p><idx>NBT<sidx>Name
+Service</sidx></idx><idx>NBT<sidx>name</sidx></idx>First Level
+Encoding converts a 16-byte NetBIOS name into a 32-byte encoded name,
+and then combines it with the Scope ID.<idx>NBT<sidx>Scope
+ID</sidx></idx> For example:</p>
+
+<pre>"EOGFGLGPCACACACACACACACACACACAAA.CAT.ORG"</pre>
+
+<p>We have chosen to call this format the <gt>NBT Name</gt>. Second
+Level Encoding is applied to the NBT name to create the on-the-wire
+format, which we will refer to as the <gt>Encoded NBT Name</gt>:</p>
+
+<pre>"\x20EOGFGLGPCACACACACACACACACACACAAA\x03CAT\x03ORG\0"</pre>
+
+<p>As previously described, the maximum length of a label in an NBT
+name is 63 bytes. This is because the label length field is divided
+into two sub-fields, the first of which is a two-bit flag field with
+four possible values:</p>
+
+<p dk:displayed="yes"><line><code>00</code> == 0: Label Length</line>
+<line><code>01</code> == 1: Reserved (unused)</line>
+<line><code>10</code> == 2: Reserved (unused)</line>
+<line><code>11</code> == 3: Label String Pointer</line></p>
+
+<p>With both bits clear (zero), the next 6 bits are the label
+<code>LENGTH</code>. The <code>LENGTH</code> field is an unsigned
+integer with a value in the range 0..63.</p>
+
+<table colwidths="12.5* 12.5* 12.5* 12.5* 12.5* 12.5* 12.5* 12.5*" dk:type="centered" dk:borders="all">
+<tbody>
+<tr dk:border="after">
+<td dk:border="right"><p><code>0</code></p></td>
+<td dk:border="right"><p><code>1</code></p></td>
+<td dk:border="right"><p><code>2</code></p></td>
+<td dk:border="right"><p><code>3</code></p></td>
+<td dk:border="right"><p><code>4</code></p></td>
+<td dk:border="right"><p><code>5</code></p></td>
+<td dk:border="right"><p><code>6</code></p></td>
+<td><p><code>7</code></p></td>
+</tr>
+<tr>
+<td><p><code>0</code></p></td>
+<td dk:border="right"><p><code>0</code></p></td>
+<td colspan="6"><p><code>LENGTH</code></p></td>
+</tr>
+</tbody></table>
+
+<p>If both flag bits are set, however, then the next
+<em>fourteen</em> bits are a "Label String Pointer"; the offset at
+which the real label can be found.</p>
+
+<table colwidths="6.25* 6.25* 6.25* 6.25* 6.25* 6.25* 6.25* 6.25* 6.25* 6.25* 6.25* 6.25* 6.25* 6.25* 6.25* 6.25*" dk:type="centered" dk:borders="all">
+<tbody>
+<tr dk:border="after">
+<td dk:border="right"><p><code>0</code></p></td>
+<td dk:border="right"><p><code>1</code></p></td>
+<td dk:border="right"><p><code>2</code></p></td>
+<td dk:border="right"><p><code>3</code></p></td>
+<td dk:border="right"><p><code>4</code></p></td>
+<td dk:border="right"><p><code>5</code></p></td>
+<td dk:border="right"><p><code>6</code></p></td>
+<td dk:border="right"><p><code>7</code></p></td>
+<td dk:border="right"><p><code>8</code></p></td>
+<td dk:border="right"><p><code>9</code></p></td>
+<td dk:border="right"><p><code>10</code></p></td>
+<td dk:border="right"><p><code>11</code></p></td>
+<td dk:border="right"><p><code>12</code></p></td>
+<td dk:border="right"><p><code>13</code></p></td>
+<td dk:border="right"><p><code>14</code></p></td>
+<td><p><code>15</code></p></td>
+</tr>
+<tr>
+<td><p><code>1</code></p></td>
+<td dk:border="right"><p><code>1</code></p></td>
+<td colspan="14"><p><code>LABEL STRING POINTER</code></p></td>
+</tr>
+</tbody></table>
+
+<p>Label String Pointers are used to reduce the size of Name Service
+messages that might otherwise contain two copies of the same NBT
+name. For <dk:nobr>example, a <code>NAME REGISTRATION
+REQUEST</code></dk:nobr><idx>NAME REGISTRATION</idx> message includes
+both a
+<dk:nobr><code>QUESTION_RECORD</code><idx>QUESTION_RECORD</idx></dk:nobr>
+and an <code>ADDITIONAL_RECORD</code><idx>ADDITIONAL_RECORD</idx>,
+each of which would otherwise contain the same NBT name. Instead of
+duplicating the name, however, the
+<code>ADDITIONAL_RECORD.RR_NAME</code><idx>RR_NAME</idx> field
+contains a label string pointer to the
+<code>QUESTION_RECORD.QUESTION_NAME</code> field.</p>
+
+<p>Label String Pointers are a prime example of the NBT
+theory/practice dichotomy, and another throwback to the DNS
+system. As it turns out, the only Label String Pointer value ever
+used in NBT is <code>0xC00C</code>. The reason for this is quite
+simple. The NBT header is a fixed size (12 bytes), and is always
+followed by a block that starts with an encoded NBT Name. Thus, the
+offset of the first name in the packet is always 12
+(<code>0x0C</code>). Any further name field in the packet will point
+back to the first.</p>
+
+<p>So, the rule of thumb is that the encoded NBT name will always
+be found at byte offset <code>0x000C</code>. As a shortcut, some
+implementations work directly with the encoded name and only bother
+to decode the name when interacting with a user. Decoding, however,
+is fairly straightforward:</p>
+
+<example id="Listing1.4">
+<caption>Level 2 and Level 1 decoding</caption>
+<pre dk:break="after"><![CDATA[int L2_Decode( uchar *dst,     /* Decoded name target buffer.   */
+               uchar *src,     /* Encoded name source buffer.   */
+               int    srcpos,  /* Start position of name.       */
+               int    srcmax ) /* Size of source buffer.        */
+  {
+  int len;
+  int pos;
+  int next;
+
+  /* Be safe. */
+  dst[0] = '\0';
+  
+  /* Get encoded string length (doesn't include root label). */
+  len = strlen( (char *)&(src[srcpos]) );
+
+  /* If length is zero, return the empty string. */
+  if( 0 == len )
+    return( 0 );]]></pre>
+
+<pre dk:break="after"><idx>L1_Decode()</idx><![CDATA[  /* Make sure name does not exceed source buffer length. */
+  if( len >= (srcmax - srcpos) )
+    return( -1 );
+
+  /* Copy source to destination skipping the first label length byte
+   * (but including the terminating nul label length).
+   */
+  (void)memcpy( dst, &(src[srcpos+1]), len );
+
+  /* Now find remaining label length bytes 
+   * and convert them to dots. 
+   */
+  for( pos = src[srcpos];         /* Read the first label length. */
+       '\0' != (next = dst[pos]); /* While label length is > 0... */
+       pos += next + 1 )          /* Move one byte beyond label.  */
+    {
+    dst[pos] = '.';
+    }
+
+  return( --len );  /* Return string length. */
+  } /* L2_Decode */
+
+int L1_Decode( uchar *name,    /* Target.  Minimum 16 bytes. */
+               uchar *src,     /* Message buffer.            */
+               int    srcpos,  /* Start position of name.    */
+               int    srcmax ) /* Size of source buffer.     */
+  {
+  int    i;
+  int    suffix;
+  uchar *p = &src[srcpos];
+
+  /* Make sure we have 32 bytes worth of message to read.    */
+  if( (srcmax - srcpos) < 32 )
+    {
+    name[0] = '\0';
+    return( -1 );
+    }
+
+  /* Convert each source pair to their original octet value. */
+  for( i = 0; i < 32; i++ )
+    name[i/2] = ( (( (int)(p[i]) - 'A' ) << 4)
+                +  ( (int)(p[++i]) - 'A' ) );]]></pre>
+
+<pre><![CDATA[  /* Copy out suffix byte and replace with nul terminator.   */
+  suffix = name[15];
+  name[15] = '\0';
+
+  /* Trim off trailing spaces, if any. */
+  for( i = 14; (i >= 0) && (' ' == name[i]); i-- )
+    name[i] = '\0';
+
+  return( suffix );   /* Return the suffix value as an int.  */
+  } /* L1_Decode */]]></pre>
+</example>
+
+<p>The <code>L2_Decode()</code><idx>L2_Decode()</idx> function copies
+the encoded NBT name to the destination buffer, skipping the first
+label length byte and replacing internal label length bytes with the
+dot character. That is, given the input string:</p>
+
+<pre>"\x20EOGFGLGPCACACACACACACACACACACAAA\x03CAT\x03ORG\0"</pre>
+
+<p dk:indent="no">it will produce the string:</p>
+
+<pre>"EOGFGLGPCACACACACACACACACACACAAA.CAT.ORG"</pre>
+
+<p>The <code>L1_Decode()</code> function decodes the First Level
+Encoded NetBIOS name, and hands back the suffix byte<idx>suffix
+byte</idx> as its return value.<idx
+end="c4-NetBIOS-name">NetBIOS<sidx>name</sidx></idx></p>
+
+</h2s></h1s>
+
+<h1 id="NBT1.4.2">NBT Name Service Packets</h1><h1s>
+
+<p><idx start="c4-nservice">NBT<sidx>Name Service</sidx></idx>RFC 1002
+lists 17 different Name Service packet types, constructed from three
+basic building blocks:</p>
+
+<ul>
+<li><p>header,</p></li>
+<li><p>query records, and</p></li>
+<li><p>resource records.</p></li>
+</ul>
+
+<p>These pieces are described in more detail below.</p>
+
+<h2 id="NBT1.4.2.1">Name Service Headers</h2><h2s>
+
+<p>The header is an array of six 16-bit values, as follows:</p>
+
+<table colwidths="6.25* 6.25* 6.25* 6.25* 6.25* 6.25* 6.25* 6.25* 6.25* 6.25* 6.25* 6.25* 6.25* 6.25* 6.25* 6.25*" dk:type="centered" dk:borders="all">
+<tbody>
+<tr dk:border="after">
+<td dk:border="right"><p><code>0</code></p></td>
+<td dk:border="right"><p><code>1</code></p></td>
+<td dk:border="right"><p><code>2</code></p></td>
+<td dk:border="right"><p><code>3</code></p></td>
+<td dk:border="right"><p><code>4</code></p></td>
+<td dk:border="right"><p><code>5</code></p></td>
+<td dk:border="right"><p><code>6</code></p></td>
+<td dk:border="right"><p><code>7</code></p></td>
+<td dk:border="right"><p><code>8</code></p></td>
+<td dk:border="right"><p><code>9</code></p></td>
+<td dk:border="right"><p><code>10</code></p></td>
+<td dk:border="right"><p><code>11</code></p></td>
+<td dk:border="right"><p><code>12</code></p></td>
+<td dk:border="right"><p><code>13</code></p></td>
+<td dk:border="right"><p><code>14</code></p></td>
+<td><p><code>15</code></p></td>
+</tr>
+<tr dk:border="after">
+<td colspan="16"><p><code>NAME_TRN_ID</code></p></td>
+</tr>
+<tr dk:border="after">
+<td colspan="16"><p><code>FLAGS</code></p></td>
+</tr>
+<tr dk:border="after">
+<td colspan="16"><p><code>QDCOUNT</code></p></td>
+</tr>
+<tr dk:border="after">
+<td colspan="16"><p><code>ANCOUNT</code></p></td>
+</tr>
+<tr dk:border="after">
+<td colspan="16"><p><code>NSCOUNT</code></p></td>
+</tr>
+<tr>
+<td colspan="16"><p><code>ARCOUNT</code></p></td>
+</tr>
+</tbody></table>
+
+<p>Managing Name Service headers is fairly straightforward. With
+the exception of the <code>FLAGS</code> field, all of the fields are
+simple unsigned integers. The entire thing can be represented in
+memory as an array of <code>unsigned short int</code>, or whatever
+is appropriate in your programming language of choice.</p>
+
+<p>The <code>FLAGS</code> field is further broken down thus:</p>
+
+<table colwidths="6.25* 6.25* 6.25* 6.25* 6.25* 6.25* 6.25* 6.25* 6.25* 6.25* 6.25* 6.25* 6.25* 6.25* 6.25* 6.25*" dk:type="centered" dk:borders="all">
+<tbody>
+<tr dk:border="after">
+<td dk:border="right"><p><code>0</code></p></td>
+<td dk:border="right"><p><code>1</code></p></td>
+<td dk:border="right"><p><code>2</code></p></td>
+<td dk:border="right"><p><code>3</code></p></td>
+<td dk:border="right"><p><code>4</code></p></td>
+<td dk:border="right"><p><code>5</code></p></td>
+<td dk:border="right"><p><code>6</code></p></td>
+<td dk:border="right"><p><code>7</code></p></td>
+<td dk:border="right"><p><code>8</code></p></td>
+<td dk:border="right"><p><code>9</code></p></td>
+<td dk:border="right"><p><code>10</code></p></td>
+<td dk:border="right"><p><code>11</code></p></td>
+<td dk:border="right"><p><code>12</code></p></td>
+<td dk:border="right"><p><code>13</code></p></td>
+<td dk:border="right"><p><code>14</code></p></td>
+<td><p><code>15</code></p></td>
+</tr>
+<tr>
+<td dk:border="right"><p><code>R</code></p></td>
+<td colspan="4" dk:border="right"><p><code>OPCODE</code></p></td>
+<td colspan="7" dk:border="right"><p><code>NM_FLAGS</code></p></td>
+<td colspan="4"><p><code>RCODE</code><idx>RCODE</idx></p></td>
+</tr>
+</tbody></table>
+
+<p>Handling the bits in the <code>FLAGS</code> field is fairly trivial
+for any seasoned programmer. One simple solution is to shift the
+values given in RFC 1002, Section 4.2.1.1 into their absolute
+positions. For example, an OPCODE value of <code>0x7</code>
+(<code>WACK</code><idx>WACK</idx>) would be left-shifted 11 bits to
+align it properly in the <code>OPCODE</code> subfield:</p>
+
+<p dk:displayed="yes"><code><![CDATA[(0x0007 << 11) = 0x3800 = 0]]><u>0111</u>00000000000(bin)</code></p>
+
+<p dk:indent="no">...which puts it where it's supposed to be:</p>
+
+<table colwidths="6.25* 6.25* 6.25* 6.25* 6.25* 6.25* 6.25* 6.25* 6.25* 6.25* 6.25* 6.25* 6.25* 6.25* 6.25* 6.25*" dk:type="centered" dk:borders="all">
+<tbody>
+<tr dk:border="after">
+<td dk:border="right"><p><code>0</code></p></td>
+<td dk:border="right"><p><code>1</code></p></td>
+<td dk:border="right"><p><code>2</code></p></td>
+<td dk:border="right"><p><code>3</code></p></td>
+<td dk:border="right"><p><code>4</code></p></td>
+<td dk:border="right"><p><code>5</code></p></td>
+<td dk:border="right"><p><code>6</code></p></td>
+<td dk:border="right"><p><code>7</code></p></td>
+<td dk:border="right"><p><code>8</code></p></td>
+<td dk:border="right"><p><code>9</code></p></td>
+<td dk:border="right"><p><code>10</code></p></td>
+<td dk:border="right"><p><code>11</code></p></td>
+<td dk:border="right"><p><code>12</code></p></td>
+<td dk:border="right"><p><code>13</code></p></td>
+<td dk:border="right"><p><code>14</code></p></td>
+<td><p><code>15</code></p></td>
+</tr>
+<tr dk:border="after">
+<td dk:border="right"><p><code>R</code></p></td>
+<td colspan="4" dk:border="right"><p><code>OPCODE</code></p></td>
+<td colspan="7" dk:border="right"><p><code>NM_FLAGS</code></p></td>
+<td colspan="4"><p><code>RCODE</code></p></td>
+</tr>
+<tr>
+<td dk:border="right"><p><code>0</code></p></td>
+<td><p><code><u>0</u></code></p></td>
+<td><p><code><u>1</u></code></p></td>
+<td><p><code><u>1</u></code></p></td>
+<td dk:border="right"><p><code><u>1</u></code></p></td>
+<td><p><code>0</code></p></td>
+<td><p><code>0</code></p></td>
+<td><p><code>0</code></p></td>
+<td><p><code>0</code></p></td>
+<td><p><code>0</code></p></td>
+<td><p><code>0</code></p></td>
+<td dk:border="right"><p><code>0</code></p></td>
+<td><p><code>0</code></p></td>
+<td><p><code>0</code></p></td>
+<td><p><code>0</code></p></td>
+<td><p><code>0</code></p></td>
+</tr>
+</tbody></table>
+
+<p><ref refid="Listing1.5"/> presents <code>NS_Header.h</code>, a
+header file that will be referenced as we move forward. It provides
+a set of re-aligned <code>FLAGS</code> subfield values plus a few
+extra constants. These values will be covered below, when we explain
+how to use each of the Name Service message types.</p>
+
+<example id="Listing1.5">
+<caption>Name Service packet header <code>FLAGS</code> subfield values: <code>NS_Header.h</code><idx>ACT_ERR</idx><idx>CFT_ERR</idx><idx>FMT_ERR</idx><idx>SRV_ERR</idx><idx>NAM_ERR</idx><idx>IMP_ERR</idx><idx>RFS_ERR</idx><idx>multi-homed host</idx><idx>WACK</idx></caption>
+<pre><![CDATA[#define NBTNS_R_BIT       0x8000  /* The 'R'esponse bit   */
+
+/* OPCODE values */
+#define OPCODE_QUERY      0x0000  /* Query        (0<<11) */     
+#define OPCODE_REGISTER   0x2800  /* Registration (5<<11) */     
+#define OPCODE_RELEASE    0x3000  /* Release      (6<<11) */    
+#define OPCODE_WACK       0x3800  /* WACK         (7<<11) */
+#define OPCODE_REFRESH    0x4000  /* Refresh      (8<<11) */
+#define OPCODE_ALTREFRESH 0x4800  /* Alt Refresh  (9<<11) */
+#define OPCODE_MULTIHOMED 0x7800  /* Multi-homed  (f<<11) */
+#define OPCODE_MASK       0x7800  /* Mask                 */ 
+
+/* NM_FLAGS subfield bits */ 
+#define NM_AA_BIT         0x0400  /* Authoritative Answer */
+#define NM_TR_BIT         0x0200  /* TRuncation flag      */
+#define NM_RD_BIT         0x0100  /* Recursion Desired    */
+#define NM_RA_BIT         0x0080  /* Recursion Available  */
+#define NM_B_BIT          0x0010  /* Broadcast flag       */
+
+/* Return Codes */
+#define RCODE_POS_RSP     0x0000  /* Positive Response    */
+#define RCODE_FMT_ERR     0x0001  /* Format Error         */
+#define RCODE_SRV_ERR     0x0002  /* Server failure       */ 
+#define RCODE_NAM_ERR     0x0003  /* Name Not Found       */ 
+#define RCODE_IMP_ERR     0x0004  /* Unsupported request  */
+#define RCODE_RFS_ERR     0x0005  /* Refused              */
+#define RCODE_ACT_ERR     0x0006  /* Active error         */
+#define RCODE_CFT_ERR     0x0007  /* Name in conflict     */
+#define RCODE_MASK        0x0007  /* Mask                 */
+
+/* Used to set the record count fields. */
+#define QUERYREC          0x1000  /* Query Record         */
+#define ANSREC            0x0100  /* Answer Record        */
+#define NSREC             0x0010  /* NS Rec (never used)  */
+#define ADDREC            0x0001  /* Additional Record    */]]></pre>
+</example>
+
+<p>The <code>NAME_TRN_ID</code><idx>NAME_TRN_ID</idx> field is the
+transaction ID, which should probably be handled by the bit of code
+that sends and receives the NBT messages. Many implementations use a
+simple counter to generate new transaction IDs (Samba<idx>Samba</idx>
+uses a random number generator), but these should always be checked to
+ensure that they are not, by chance, the same as the transaction ID of
+a conversation initiated by some other node. Better yet, the
+originating node's IP address should be used as an additional key for
+segregating transactions.</p>
+
+<p>The four
+<code>COUNT</code><idx>ANCOUNT</idx><idx>ARCOUNT</idx><idx>QDCOUNT</idx><idx>NSCOUNT</idx>
+fields indicate the number of Question and Resource Records which
+follow. In theory, each of these fields can contain a value in the
+range 0..65535. In practice, however, the count fields will contain
+either 0 or 1 as shown in the record layouts in RFC 1002, Section
+4.2. It appears as though some implementations either ignore these
+fields or read them as simple booleans.</p>
+
+<p>One final consideration is the byte order<idx>byte order</idx> of
+NBT messages. True to its DNS roots,<idx end="c4-dns">DNS</idx> NBT
+uses network byte order (big-endian). Some microprocessors - including
+Alpha, MIPS, and Intel i386 family - use or can use
+<dk:nobr>little-endian</dk:nobr> byte order.<fn>Big-endian byte order
+is also known as "normal," "intuitive," or "obvious" byte
+order. Little-endian is sometimes referred to as "annoying,"
+"dysfunctional," or "stupid." These designations do not, of course,
+reflect any bias or preference.</fn> If your target system is
+little-endian, or if you want your code to be portable, you will need
+to ensure that your integers are properly converted to and from
+network byte order. Many systems provide the
+<code>htonl()</code>,<idx>htonl()</idx>
+<code>htons()</code>,<idx>htons()</idx>
+<code>ntohl()</code>,<idx>ntohl()</idx> and
+<code>ntohs()</code><idx>ntohs()</idx> functions for exactly
+<dk:nobr>this purpose.</dk:nobr>
+</p>
+
+<alert type="Bizarre Twist">
+<p>The SMB protocol was originally built to run on DOS. DOS was
+originally built to run on Intel chips, so SMB is
+little-endian... the opposite of the NBT transport!</p>
+</alert>
+
+<p>This next bit of code is <code>nbt_nsHeader.c</code>. It shows
+how to create and parse NBT Name Service headers. As with all of the
+code presented in this book, it is designed to be illustrative, not
+efficient. (We know you can do better.)</p>
+
+<example id="Listing1.6">
+<caption>Read and write Name Service headers: <code>NS_Header.c</code></caption>
+<pre dk:break="after"><![CDATA[#include <netinet/in.h>     /* htons(), ntohs(), etc. */
+
+#include "NS_Header.h"      /* From ]]><ref refid="Listing1.5"/><![CDATA[.      */
+
+void Put_NS_TID( ushort hdr[], ushort TrnID )
+  /* ---------------------------------------------------- **
+   * Store the transaction ID in the Name Service header.
+   * ---------------------------------------------------- **
+   */
+  {
+  hdr[0] = htons( TrnID );
+  } /* Put_NS_TID */]]></pre>
+
+<pre dk:break="after"><![CDATA[void Put_NS_Hdr_Flags( ushort hdr[], ushort flags )
+  /* ---------------------------------------------------- **
+   * Store the flags in the NBT Name Service header.
+   * ---------------------------------------------------- **
+   */
+  {
+  hdr[1] = htons( flags );
+  } /* Put_NS_Hdr_Flags */
+
+void Put_NS_Hdr_Rec_Counts( ushort hdr[], int reccount )
+  /* ---------------------------------------------------- **
+   * Place (ushort)1 into each record count field for
+   * which the matching flag bit is set in reccount.
+   * ---------------------------------------------------- **
+   */
+  {
+  ushort one;
+
+  one = htons( 1 );
+
+  hdr[2] = ( QUERYREC & reccount ) ? one : 0;
+  hdr[3] = ( ANSREC   & reccount ) ? one : 0;
+  hdr[4] = ( NSREC    & reccount ) ? one : 0;
+  hdr[5] = ( ADDREC   & reccount ) ? one : 0;
+  } /* Put_NS_Hdr_Rec_Counts */
+
+ushort Get_NS_Hdr_TID( ushort hdr[] )
+  /* ---------------------------------------------------- **
+   * Read and return the transaction ID.
+   * ---------------------------------------------------- **
+   */
+  {
+  return( ntohs( hdr[0] ) );
+  } /* Get_NS_Hdr_TID */
+
+ushort Get_NS_Hdr_Flags( ushort hdr[] )
+  /* ---------------------------------------------------- **
+   * Read and return the flags field.
+   * ---------------------------------------------------- **
+   */
+  {
+  return( ntohs( hdr[1] ) );
+  } /* Get_NS_Hdr_Flags */]]></pre>
+
+<pre><![CDATA[int Get_NS_Hdr_Rec_Counts( ushort hdr[] )
+  /* ---------------------------------------------------- **
+   * Convert the four record count fields into a single
+   * flagset.
+   * ---------------------------------------------------- **
+   */
+  {
+  int tmp = 0;
+
+  if( hdr[2] )
+    tmp |= QUERYREC;
+
+  if( hdr[3] )
+    tmp |= ANSREC;
+  if( hdr[4] )
+    tmp |= NSREC;
+  if( hdr[5] )
+    tmp |= ADDREC;
+
+  return( tmp );
+  } /* Get_NS_Hdr_Rec_Counts */]]></pre>
+</example>
+
+</h2s>
+
+<h2 id="NBT1.4.2.2">Name Service Question Records</h2><h2s>
+
+<p><idx start="c4-nbt-name-2">NBT<sidx>name</sidx></idx>The question
+record is also simple. It consists of an encoded NBT name (in the
+<code>QUESTION_NAME</code><idx>QUESTION_NAME</idx> field) followed by two unsigned 16-bit
+integer fields: the <code>QUESTION_TYPE</code><idx>QUESTION_TYPE</idx> and
+<code>QUESTION_CLASS</code><idx>QUESTION_CLASS</idx>.</p>
+
+<p>The length of an encoded NBT name is at least 34 bytes, but it will
+be longer if a Scope ID<idx>NBT<sidx>Scope ID</sidx></idx> is used, so
+the <code>QUESTION_NAME</code> field has no fixed length. There is
+also no padding done to align the integer fields. The
+<code>QUESTION_TYPE</code> and <code>QUESTION_CLASS</code> follow
+immediately after the <code>QUESTION_NAME</code>.</p>
+
+<table colwidths="33* 34* 33*" dk:type="centered" dk:borders="all">
+<tbody>
+<tr dk:border="after">
+<td dk:border="right"><p><code>&gt;= 34 bytes</code></p></td>
+<td dk:border="right"><p><code>2 bytes</code></p></td>
+<td><p><code>2 bytes</code></p></td>
+</tr>
+<tr>
+<td dk:border="right"><p><code>QUESTION_NAME ...</code></p></td>
+<td dk:border="right"><p><code>QUESTION_TYPE</code></p></td>
+<td><p><code>QUESTION_CLASS</code></p></td>
+</tr>
+</tbody></table>
+
+<p>There are only two valid values for the <code>QUESTION_TYPE</code>
+field. These are:</p>
+
+<p dk:displayed="yes"><line><code><dk:space size="4"/>NB</code> ==
+<code>0x0020</code><idx>NB</idx> indicates a standard Name
+Query,<idx>name query</idx></line> <line><code>NBSTAT</code> ==
+<code>0x0021</code><idx>NBSTAT</idx> indicates a Node Status<idx>node status</idx>
+Query.</line></p>
+
+<p dk:break="before">The <code>QUESTION_CLASS</code> field always has a value of:</p>
+
+<p dk:displayed="yes"><code>IN</code> == <code>0x0001</code> indicates the "Internet Class."</p>
+
+<p>Go back and take a look at the broadcast name query example
+presented earlier. In that example, we hard-coded both the
+NBT Name Service header and the tail-end of the question record.
+Now that you have a clearer understanding of the fields involved,
+you should be able to design much more flexible code. Here's a
+start:</p>
+
+<example id="Listing1.7" part="a">
+<caption>Reading/writing question records: <code>NS_Qrec.h</code></caption>
+<pre><![CDATA[/* Query Type */
+#define QTYPE_NB      0x0020  /* Name Query     */
+#define QTYPE_NBSTAT  0x0021  /* Adapter Status */
+
+/* Query Class */
+#define QCLASS_IN     0x0001  /* Internet Class */]]></pre>
+</example>
+
+<example refid="Listing1.7" part="b">
+<caption>Reading/writing question records: <code>NS_Qrec.c</code></caption>
+<pre dk:break="after"><![CDATA[#include <string.h>     /* For memcpy() */
+#include <netinet/in.h> /* htons(), ntohs(), etc. */
+
+#include "NS_Qrec.h"
+
+int Put_Qrec( uchar       *dst,
+              const uchar *name,
+              const uchar  pad,
+              const uchar  sfx,
+              const uchar *scope,
+              const ushort qtype )
+  /* ---------------------------------------------------- **
+   * Store the fully encoded NBT name in the destination
+   * buffer.  Also write the QUERY_TYPE and QUERY_CLASS
+   * values.
+   * ---------------------------------------------------- **
+   */
+  {
+  int    len;
+  ushort tmp;
+  ushort qclass_in;
+
+  qclass_in = htons( QCLASS_IN );]]></pre>
+
+<pre><![CDATA[  /* Validate the qtype. */
+  if( (QTYPE_NB != qtype)
+   && (QTYPE_NBSTAT != qtype ) )
+    return( -1 );
+
+  len = L2_Encode( dst, name, pad, sfx, scope );
+  if( len < 0 )
+    return( len );
+
+  tmp = htons( qtype );
+  (void)memcpy( &(dst[len]), &tmp, 2 );
+  len += 2;
+
+  (void)memcpy( &(dst[len]), &qclass_in, 2 );
+  return( len + 2 );
+  } /* Put_Qrec */
+
+ushort Get_Qtype( const uchar *qrec, int offset )
+  /* ---------------------------------------------------- **
+   * Read the QUERY_TYPE field from a query record.
+   * Note that the offset parameter can be derived using
+   * L2_Decode() function in ]]><ref refid="Listing1.4"/><![CDATA[.  Either that,
+   * or use 1+strlen( qrec ).
+   * ---------------------------------------------------- **
+   */
+  {
+  ushort tmp;
+
+  /* Read the two bytes from the packet.
+   */
+  tmp  = (ushort)(qrec[offset]) * 256;
+  tmp |= qrec[1+offset];
+
+  /* Convert to host byte order and return. */
+  return( ntohs( tmp ) );
+  } /* Get_Qtype */]]></pre>
+</example>
+
+</h2s>
+
+<h2 id="NBT1.4.2.3">Name Service Resource Records</h2><h2s>
+
+<p>For convenience, we will break the Resource Record into three
+sub-parts:</p>
+
+<ul>
+<li><p>the Name section,</p></li>
+<li><p>the <code>TTL</code><idx>TTL</idx> field, and</p></li>
+<li><p>the Resource Data section.</p></li>
+</ul>
+
+<p>The Name section has the same structure as a Query Entry record,
+except that the <code>RR_NAME</code><idx>RR_NAME</idx> field may
+contain a 16-bit Label String Pointer instead of a complete NBT
+name.</p>
+
+<table colwidths="50* 25* 25*" dk:type="centered" dk:borders="all">
+<tbody>
+<tr dk:border="after">
+<td dk:border="right"><p><code>2 bytes</code> or <code>&gt;= 34 bytes</code></p></td>
+<td dk:border="right"><p><code>2 bytes</code></p></td>
+<td><p><code>2 bytes</code></p></td>
+</tr>
+<tr>
+<td dk:border="right"><p><code>RR_NAME ...</code><idx>RR_NAME</idx></p></td>
+<td dk:border="right"><p><code>RR_TYPE</code><idx>RR_TYPE</idx></p></td>
+<td><p><code>RR_CLASS</code><idx>RR_CLASS</idx></p></td>
+</tr>
+</tbody></table>
+
+<p>The <code>RR_TYPE</code> field is used to indicate the type of
+the resource record, which has an effect on the structure of the
+resource data section. The available values for this field are:</p>
+
+<p dk:displayed="yes"><line><code><dk:space size="5"/>A</code> == <code>0x0001</code> (not used in practice)</line>
+<line><code><dk:space size="4"/>NS</code> == <code>0x0002</code> (not used in practice)</line>
+<line><code><dk:space size="2"/>NULL</code> == <code>0x000A</code> (not used in practice)</line>
+<line><code><dk:space size="4"/>NB</code> == <code>0x0020</code><idx>NB</idx></line> 
+<line><code>NBSTAT</code> == <code>0x0021</code><idx>NBSTAT</idx></line></p>
+
+<p>The values marked as "not used in practice" are described in the
+RFCs, and indicated as valid values, but are never really used in
+modern implementations. The value of <code>RR_TYPE</code> will be
+<code>NB</code> except in a <code>NODE STATUS REPLY</code>,<idx>NODE
+STATUS</idx> in which case <code>NBSTAT</code> is used.</p>
+
+<p>As with the question record, the <code>RR_CLASS</code> field always
+has a value of:</p>
+
+<p dk:displayed="yes"><code>IN</code> == <code>0x0001</code></p>
+
+<p>The <code>TTL</code> field follows the name section. It indicates
+the "Time To Live" value associated with a resource record. Each NBT
+name-to-IP-address mapping in the NBNS<idx>NBNS</idx> database has a
+<code>TTL</code> value. This allows records to "fade out" if they are
+not renewed or properly released. The <code>TTL</code> field is an
+unsigned long integer, measured in seconds. A value of zero indicates
+infinite <code>TTL</code>.<idx end="c4-nbt-name-2">NBT<sidx>name</sidx></idx></p>
+
+<table colwidths="3.125* 3.125* 3.125* 3.125* 3.125* 3.125* 3.125* 3.125* 3.125* 3.125* 3.125* 3.125* 3.125* 3.125* 3.125* 3.125* 3.125* 3.125* 3.125* 3.125* 3.125* 3.125* 3.125* 3.125* 3.125* 3.125* 3.125* 3.125* 3.125* 3.125* 3.125* 3.125*" dk:type="centered" dk:borders="all">
+<tbody>
+<tr dk:border="after" dk:display-align="after">
+<td dk:border="right"><p><code>0</code></p></td>
+<td dk:border="right"><p><code>1</code></p></td>
+<td dk:border="right"><p><code>2</code></p></td>
+<td dk:border="right"><p><code>3</code></p></td>
+<td dk:border="right"><p><code>4</code></p></td>
+<td dk:border="right"><p><code>5</code></p></td>
+<td dk:border="right"><p><code>6</code></p></td>
+<td dk:border="right"><p><code>7</code></p></td>
+<td dk:border="right"><p><code>8</code></p></td>
+<td dk:border="right"><p><code>9</code></p></td>
+<td dk:border="right"><p><line><code>1</code></line>
+<line><code>0</code></line></p></td>
+<td dk:border="right"><p><line><code>1</code></line>
+<line><code>1</code></line></p></td>
+<td dk:border="right"><p><line><code>1</code></line>
+<line><code>2</code></line></p></td>
+<td dk:border="right"><p><line><code>1</code></line>
+<line><code>3</code></line></p></td>
+<td dk:border="right"><p><line><code>1</code></line>
+<line><code>4</code></line></p></td>
+<td dk:border="right"><p><line><code>1</code></line>
+<line><code>5</code></line></p></td>
+<td dk:border="right"><p><line><code>1</code></line>
+<line><code>6</code></line></p></td>
+<td dk:border="right"><p><line><code>1</code></line>
+<line><code>7</code></line></p></td>
+<td dk:border="right"><p><line><code>1</code></line>
+<line><code>8</code></line></p></td>
+<td dk:border="right"><p><line><code>1</code></line>
+<line><code>9</code></line></p></td>
+<td dk:border="right"><p><line><code>2</code></line>
+<line><code>0</code></line></p></td>
+<td dk:border="right"><p><line><code>2</code></line>
+<line><code>1</code></line></p></td>
+<td dk:border="right"><p><line><code>2</code></line>
+<line><code>2</code></line></p></td>
+<td dk:border="right"><p><line><code>2</code></line>
+<line><code>3</code></line></p></td>
+<td dk:border="right"><p><line><code>2</code></line>
+<line><code>4</code></line></p></td>
+<td dk:border="right"><p><line><code>2</code></line>
+<line><code>5</code></line></p></td>
+<td dk:border="right"><p><line><code>2</code></line>
+<line><code>6</code></line></p></td>
+<td dk:border="right"><p><line><code>2</code></line>
+<line><code>7</code></line></p></td>
+<td dk:border="right"><p><line><code>2</code></line>
+<line><code>8</code></line></p></td>
+<td dk:border="right"><p><line><code>2</code></line>
+<line><code>9</code></line></p></td>
+<td dk:border="right"><p><line><code>3</code></line>
+<line><code>0</code></line></p></td>
+<td><p><line><code>3</code></line>
+<line><code>1</code></line></p></td>
+</tr>
+<tr>
+<td colspan="33"><p><code>TTL</code></p></td>
+</tr>
+</tbody></table>
+
+<p>The last sub-part of the resource record is the resource data
+section, which is made up of two fields:</p>
+
+<table colwidths="50* 50*" dk:type="centered" dk:borders="all">
+<tbody>
+<tr dk:border="after">
+<td dk:border="right"><p><code>2 bytes</code></p></td>
+<td><p><code>RDLENGTH bytes</code></p></td>
+</tr>
+<tr>
+<td dk:border="right"><p><code>RDLENGTH</code></p></td>
+<td><p><code>RDATA ...</code></p></td>
+</tr>
+</tbody></table>
+
+<p>The <code>RDLENGTH</code> field is an unsigned 16-bit integer value
+indicating the length, in bytes, of the
+<code>RDATA</code><idx>RDATA</idx> field. The structure of the
+contents of the <code>RDATA</code> field will vary from one message
+type to another.</p>
+
+<p>The Resource Record structure, as described in Section 4.2.1.3 of
+RFC&nbsp;1002, looks just like this:</p>
+
+<table colwidths="3.125* 3.125* 3.125* 3.125* 3.125* 3.125* 3.125* 3.125* 3.125* 3.125* 3.125* 3.125* 3.125* 3.125* 3.125* 3.125* 3.125* 3.125* 3.125* 3.125* 3.125* 3.125* 3.125* 3.125* 3.125* 3.125* 3.125* 3.125* 3.125* 3.125* 3.125* 3.125*" dk:type="centered" dk:borders="all">
+<tbody>
+<tr dk:border="after" dk:display-align="after">
+<td dk:border="right"><p><code>0</code></p></td>
+<td dk:border="right"><p><code>1</code></p></td>
+<td dk:border="right"><p><code>2</code></p></td>
+<td dk:border="right"><p><code>3</code></p></td>
+<td dk:border="right"><p><code>4</code></p></td>
+<td dk:border="right"><p><code>5</code></p></td>
+<td dk:border="right"><p><code>6</code></p></td>
+<td dk:border="right"><p><code>7</code></p></td>
+<td dk:border="right"><p><code>8</code></p></td>
+<td dk:border="right"><p><code>9</code></p></td>
+<td dk:border="right"><p><line><code>1</code></line>
+<line><code>0</code></line></p></td>
+<td dk:border="right"><p><line><code>1</code></line>
+<line><code>1</code></line></p></td>
+<td dk:border="right"><p><line><code>1</code></line>
+<line><code>2</code></line></p></td>
+<td dk:border="right"><p><line><code>1</code></line>
+<line><code>3</code></line></p></td>
+<td dk:border="right"><p><line><code>1</code></line>
+<line><code>4</code></line></p></td>
+<td dk:border="right"><p><line><code>1</code></line>
+<line><code>5</code></line></p></td>
+<td dk:border="right"><p><line><code>1</code></line>
+<line><code>6</code></line></p></td>
+<td dk:border="right"><p><line><code>1</code></line>
+<line><code>7</code></line></p></td>
+<td dk:border="right"><p><line><code>1</code></line>
+<line><code>8</code></line></p></td>
+<td dk:border="right"><p><line><code>1</code></line>
+<line><code>9</code></line></p></td>
+<td dk:border="right"><p><line><code>2</code></line>
+<line><code>0</code></line></p></td>
+<td dk:border="right"><p><line><code>2</code></line>
+<line><code>1</code></line></p></td>
+<td dk:border="right"><p><line><code>2</code></line>
+<line><code>2</code></line></p></td>
+<td dk:border="right"><p><line><code>2</code></line>
+<line><code>3</code></line></p></td>
+<td dk:border="right"><p><line><code>2</code></line>
+<line><code>4</code></line></p></td>
+<td dk:border="right"><p><line><code>2</code></line>
+<line><code>5</code></line></p></td>
+<td dk:border="right"><p><line><code>2</code></line>
+<line><code>6</code></line></p></td>
+<td dk:border="right"><p><line><code>2</code></line>
+<line><code>7</code></line></p></td>
+<td dk:border="right"><p><line><code>2</code></line>
+<line><code>8</code></line></p></td>
+<td dk:border="right"><p><line><code>2</code></line>
+<line><code>9</code></line></p></td>
+<td dk:border="right"><p><line><code>3</code></line>
+<line><code>0</code></line></p></td>
+<td><p><line><code>3</code></line>
+<line><code>1</code></line></p></td>
+</tr>
+<tr dk:border="after">
+<td colspan="33"><p><code>RR_NAME</code></p></td>
+</tr>
+<tr dk:border="after">
+<td colspan="16" dk:border="right"><p><code>RR_TYPE</code></p></td>
+<td colspan="17"><p><code>RR_CLASS</code></p></td>
+</tr>
+<tr dk:border="after">
+<td colspan="33"><p><code>TTL</code></p></td>
+</tr>
+<tr dk:border="after">
+<td colspan="16" dk:border="right"><p><code>RDLENGTH</code></p></td>
+</tr>
+<tr>
+<td colspan="33"><p><code>RDATA</code></p></td>
+</tr>
+</tbody>
+</table>
+
+<p>It is always good to have some code to play with. This next set
+of functions can be used to manipulate Resource Records.</p>
+
+<example id="Listing1.8" part="a">
+<caption>Name Service Resource Records: <code>NS_Rrec.h</code></caption>
+<pre><![CDATA[/* Label String Pointer. */
+#define LSP           0xC00C  /* Pointer to offset 12 */
+
+/* Resource Record Type. */
+#define RRTYPE_A      0x0001  /* IP Addr RR (unused)  */
+#define RRTYPE_NS     0x0002  /* Name Server (unused) */
+#define RRTYPE_NULL   0x000A  /* NULL RR (unused)     */
+#define RRTYPE_NB     0x0020  /* NetBIOS              */
+#define RRTYPE_NBSTAT 0x0021  /* NB Status Response   */
+
+/* Resource Record Class. */
+#define RRCLASS_IN    0x0001  /* Internet Class       */]]></pre>
+</example>
+
+<example dk:break="before" refid="Listing1.8" part="b">
+<caption>Name Service Resource Records: <code>NS_Rrec.c</code></caption>
+<pre dk:break="after"><![CDATA[#include <string.h>     /* For memcpy() */
+#include <netinet/in.h> /* htons(), ntohs(), etc. */
+
+#include "NS_Rrec.h"
+
+int Put_RRec_Name( uchar       *rrec,
+                   const uchar *name,
+                   const uchar  pad,
+                   const uchar  sfx,
+                   const uchar *scope,
+                   const ushort rrtype )
+
+  /* ---------------------------------------------------- **
+   * Create and store the fully qualified NBT name in the
+   * destination buffer.  Also store the RR_TYPE and
+   * RR_CLASS values.
+   * Return the number of bytes written.
+   * ---------------------------------------------------- **
+   */
+  {
+  int    len;
+  ushort tmp;
+  ushort rrclass_in;
+
+  /* Validate the rrtype.
+   * Note that we exclude the A, NS, and NULL RRTYPEs
+   * as these are never used.
+   */
+  if( (RRTYPE_NB != rrtype)
+   && (RRTYPE_NBSTAT != rrtype ) )
+    return( -1 );
+
+  len = L2_Encode( rrec, name, pad, sfx, scope );
+  if( len < 0 )
+    return( len );
+
+  tmp = htons( rrtype );
+  (void)memcpy( &(rrec[len]), &tmp, 2 );
+  len += 2;
+
+  rrclass_in = htons( RRCLASS_IN );
+  (void)memcpy( &(rrec[len]), &rrclass_in, 2 );
+  return( len + 2 );
+  } /* Put_RRec_Name */]]></pre>
+
+<pre><![CDATA[int Put_RRec_LSP( uchar *rrec, const ushort rrtype )
+  /* ---------------------------------------------------- **
+   * Write a Label String Pointer (LSP) instead of an NBT
+   * name.  RR_TYPE and RR_CLASS are also written.
+   * Return the number of bytes written (always 6).
+   * ---------------------------------------------------- **
+   */
+  {
+  ushort tmp;
+  ushort lsp;
+  ushort rrclass_in;
+
+  lsp = htons( 0xC00C );
+  (void)memcpy( rrec, &lsp, 2 );
+
+  tmp = htons( rrtype );
+  (void)memcpy( &(rrec[2]), &tmp, 2 );
+
+  rrclass_in = htons( RRCLASS_IN );
+  (void)memcpy( &(rrec[4]), &rrclass_in, 2 );
+  return( 6 );
+  } /* Put_RRec_LSP */
+
+int Put_RRec_TTL( uchar *rrec, int offset, ulong ttl )
+  /* ---------------------------------------------------- **
+   * Write the TTL value at rrec[offset].
+   * By this point it should be obvious that functions or
+   * macros for transferring long and short integers to
+   * and from packet buffers would be a good idea.
+   * ---------------------------------------------------- **
+   */
+  {
+  ttl = htonl( ttl );
+
+  (void)memcpy( &(rrec[offset]), &ttl, 4 );
+  return( 4 );
+  } /* Put_RRec_TTL */
+
+int Is_RRec_LSP( const uchar *rrec )
+  /* ---------------------------------------------------- **
+   * Check the Resource Record to see if the name field
+   * is actually a Label String Pointer.
+   *
+   * If the name is not an LSP, the function returns 0.
+   * If the name is a valid LSP, the function returns 12
+   * (which is the offset into the received packet at
+   * which the QUERY_NAME can be found).
+   * If the name contains an invalid label length, or
+   * an invalid LSP, the function will return -1.
+   * ---------------------------------------------------- **
+   */
+  {
+  if( 0 == (0xC0 & rrec[0]) )
+    return( 0 );  /* Not an LSP */
+
+  if( (0xC0 == rrec[0]) && (0x0C == rrec[1]) )
+    return( 12 ); /* Valid LSP */
+
+  return( -1 );   /* Bogon */
+  } /* Is_RRec_LSP */
+
+ushort Get_RR_type( const uchar *rrec, int offset )
+  /* ---------------------------------------------------- **
+   * Read the RR_TYPE value.  The offset can be
+   * determined by decoding the NBT name using the
+   * L2_Decode() function from ]]><ref refid="Listing1.4"/><![CDATA[.
+   * ---------------------------------------------------- **
+   */
+  {
+  ushort tmp;
+
+  /* Read the two bytes from the packet.
+   */
+  (void)memcpy( &tmp, &(rrec[offset]), 2 );
+
+  /* Convert to host byte order and return. */
+  return( ntohs( tmp ) );
+  } /* Get_RR_type */
+
+ulong Get_RRec_TTL( const uchar *rrec, int offset )
+  /* ---------------------------------------------------- **
+   * Read the TTL value.
+   * ---------------------------------------------------- **
+   */
+  {
+  ulong tmp;
+
+  (void)memcpy( &tmp, &(rrec[offset]), 4 );
+  return( ntohl( tmp ) );
+  } /* Get_RRec_TTL */]]></pre>
+</example>
+
+</h2s>
+</h1s>
+
+<h1 id="NBT1.4.3">Conversations with the Name Service</h1><h1s>
+
+<p>We will now introduce a simple syntax for describing how to fill
+network packets. This syntax is neither standard nor rigorous, just
+something the author whipped up to help explain what goes into a
+message. If it looks like someone else's syntax (one which perhaps
+took long hours of study, concentration, and thought to develop)
+then apologies are probably in order.</p>
+
+<alert type="Disclaimer">
+<p>Any resemblance to an actual syntax, living or dead, real or
+imaginary, is entirely <dk:nobr>coincidental.</dk:nobr></p>
+</alert>
+
+<p>A broadcast name query<idx>name query</idx>, described using our
+little syntax, would look like this:</p>
+
+<pre><![CDATA[NAME QUERY REQUEST (Broadcast)
+  {
+  HEADER
+    {
+    NAME_TRN_ID = <Set when packet is transmitted>
+    FLAGS
+      {
+      OPCODE = 0x0
+      RD     = TRUE
+      B      = TRUE
+      }
+    QDCOUNT = 1
+    }
+  QUESTION_RECORD
+    {
+    QUESTION_NAME  = <Encoded NBT Name>
+    QUESTION_TYPE  = NB (0x0020)
+    QUESTION_CLASS = IN (0x0001)
+    }
+  }
+]]></pre>
+
+<p>Basically, the rules are these:</p>
+
+<ul>
+<li><p>If a record (a header, question record, or resource record) is
+not specified, it is not included in the packet. In the example
+above there are no resource records specified. We know from the
+example code that there are no resource records in a <code>NAME QUERY
+REQUEST</code>.</p></li>
+
+<li><p>If a field is not specified, it is zeroed. In the example above
+the <code>RCODE</code><idx>RCODE</idx> field of the <code>FLAGS</code>
+sub-record has a value of <code>0x0</code>, and the
+<code>NSCOUNT</code> field (among others) also has a value of
+0.</p></li>
+
+<li><p>Comments in angle brackets are short explanations, describing
+what should go into the field. More complete explanations, if
+needed, will be found in the accompanying text.</p></li>
+
+<li><p>Comments in parentheses provide additional information, such as
+the value of a specified constant.</p></li>
+
+<li><p>...and yes, each squirrelly bracket gets its own line.</p></li>
+</ul>
+
+<p>It's not a particularly formal syntax, but it will serve the
+purpose.<idx end="c4-nservice">NBT<sidx>Name Service</sidx></idx></p>
+
+<h2 id="NBT1.4.3.1">Name Registration</h2><h2s>
+
+<p><idx start="c4-registration">name registration</idx>Nodes send
+<code>NAME REGISTRATION REQUEST</code><idx
+start="c4-REGISTRATION">NAME REGISTRATION</idx> messages when they
+wish to claim ownership of a name. The messages may be broadcast on
+the local LAN (B mode<idx>B</idx>), or sent directly to an
+NBNS<idx>NBNS</idx> (P mode<idx>P</idx>). (M<idx>M</idx> and
+H mode<idx>H</idx> are combinations of B and P modes with their
+own special quirks. We will get to those further on.)</p>
+
+<p>A <code>NAME REGISTRATION REQUEST</code> message looks like
+this:</p>
+
+<pre dk:break="after"><![CDATA[NAME REGISTRATION REQUEST
+  {
+  HEADER
+    {
+    NAME_TRN_ID = <Set when packet is transmitted>
+    FLAGS
+      {
+      OPCODE = 0x5 (Registration)
+      RD     = TRUE (1)
+      B      = <TRUE for broadcast registration, else FALSE>
+      }
+    QDCOUNT = 1
+    ARCOUNT = 1
+    }
+  QUESTION_RECORD
+    {
+    QUESTION_NAME  = <Encoded NBT name to be registered>
+    QUESTION_TYPE  = NB (0x0020)
+    QUESTION_CLASS = IN (0x0001)
+    }]]></pre>
+<pre><![CDATA[  ADDITIONAL_RECORD
+    {
+    RR_NAME  = 0xC00C (Label String Pointer to QUESTION_NAME)
+    RR_TYPE  = NB (0x0020)
+    RR_CLASS = IN (0x0001)
+    TTL      = <Zero for broadcast, about three days for unicast>
+    RDLENGTH = 6
+    RDATA
+      {
+      NB_FLAGS
+        {
+        G   = <TRUE for a group name, FALSE for a unique name>
+        ONT = <Owner type>
+        }
+      NB_ADDRESS = <Requesting node's IP address>
+      }
+    }
+  }
+]]></pre>
+
+<p>The <code>NAME REGISTRATION REQUEST</code> includes both a
+<code>QUESTION_RECORD</code><idx>QUESTION_RECORD</idx> and an
+<code>ADDITIONAL_RECORD</code><idx>ADDITIONAL_RECORD</idx>. In a
+sense, it is two messages in one. It says "Does anyone own this name?"
+and "I want to own this name!", both in the same packet.</p>
+
+<p>The <code>NAME REGISTRATION REQUEST</code> gives us our first look
+at a Label String Pointer in its native habitat. In the packet above
+the
+<dk:nobr><code>QUESTION_NAME</code><idx>QUESTION_NAME</idx></dk:nobr>
+and the <code>RR_NAME</code><idx>RR_NAME</idx> are the same name, so
+the latter field contains a pointer back to the former. The size of
+the header is constant; if there is a
+<dk:nobr><code>QUESTION_NAME</code></dk:nobr> in a packet it will
+always be found at offset <code>0x000C</code> (12). The field value is
+<code>0x<u>C</u>00C</code> because (as is always the case with Label
+String Pointers) the first two bits are set in order to indicate that
+the remainder is a pointer rather than a 6-bit label length. So, Label
+String Pointers in NBT messages always have the value
+<code>0xC00C</code>.</p>
+
+<p>The <code>TTL</code><idx>TTL</idx> field in the
+<code>ADDITIONAL_RECORD</code> provides a
+Time-To-Live value, in seconds, for the name. In B mode, the
+<code>TTL</code> value is not significant and is generally set to
+zero. In P mode, the <code>TTL</code> is used by the NBNS to determine
+when to purge old entries from the database, and is typically set to
+something on the order of three days in the <code>NAME REGISTRATION
+<dk:nobr>REQUEST</dk:nobr></code>. The NBNS may override the client's
+request and reply with a different <code>TTL</code> value, which the
+client must accept.</p>
+
+<p>The <code>ADDITIONAL_RECORD.RDATA</code><idx>RDATA</idx> field is 6
+bytes long (as shown in <code>ADDITIONAL_RECORD.RDLENGTH</code>) and
+contains two subfields. The first is the <code>NB_FLAGS</code> field,
+which provides information about the name and its owner. It looks
+something like this:</p>
+
+<table colwidths="6* 6* 6* 6* 6* 6* 6* 6* 6* 6* 6* 6* 7* 7* 7* 7*" dk:type="centered" dk:borders="all">
+<tbody>
+<tr dk:border="after">
+<td dk:border="right"><p><code>0</code></p></td>
+<td dk:border="right"><p><code>1</code></p></td>
+<td dk:border="right"><p><code>2</code></p></td>
+<td dk:border="right"><p><code>3</code></p></td>
+<td dk:border="right"><p><code>4</code></p></td>
+<td dk:border="right"><p><code>5</code></p></td>
+<td dk:border="right"><p><code>6</code></p></td>
+<td dk:border="right"><p><code>7</code></p></td>
+<td dk:border="right"><p><code>8</code></p></td>
+<td dk:border="right"><p><code>9</code></p></td>
+<td dk:border="right"><p><code>10</code></p></td>
+<td dk:border="right"><p><code>11</code></p></td>
+<td dk:border="right"><p><code>12</code></p></td>
+<td dk:border="right"><p><code>13</code></p></td>
+<td dk:border="right"><p><code>14</code></p></td>
+<td><p><code>15</code></p></td>
+</tr>
+<tr>
+<td dk:border="right"><p><code>G</code></p></td>
+<td colspan="2" dk:border="right"><p><code>ONT</code></p></td>
+<td colspan="13"><p><code>UNUSED</code></p></td>
+</tr>
+</tbody></table>
+
+<p>The <code>NB_FLAGS.G</code> bit indicates whether the name is a
+group name<idx>group name</idx> or a unique name<idx>unique name</idx>, and
+<code>NB_FLAGS.ONT</code> identifies the owner node
+type. <code>ONT</code> is a two-bit field with the following possible
+values:</p>
+
+<p dk:displayed="yes"><line><code>00</code> == B node</line>
+<line><code>01</code> == P node</line>
+<line><code>10</code> == M node</line>
+<line><code>11</code> == H node (added by Microsoft<idx>Microsoft</idx>)</line></p>
+
+<p>The <code>ADDITIONAL_RECORD.RDATA.NB_ADDRESS</code> holds the
+4-byte IPV4 address that will be mapped to the name. This should, of
+course, match the address of the node registering the name.</p>
+
+<p>Take a good look at the structure of the
+<code>RDATA</code><idx>RDATA</idx> subrecord in the <code>NAME
+REGISTRATION REQUEST</code>. This is the most common
+<code>RDATA</code> format, which gives us an excuse for writing a
+little more code...</p>
+
+<example id="Listing1.9" part="a">
+<caption>RDATA Address Records: <code>NS_RDaddr.h</code></caption>
+<pre><![CDATA[/* RDATA NB_FLAGS. */
+#define GROUP_BIT     0x8000  /* Group indicator      */
+#define ONT_B         0x0000  /* Broadcast node       */
+#define ONT_P         0x2000  /* Point-to-point node  */
+#define ONT_M         0x4000  /* Mixed mode node      */
+#define ONT_H         0x6000  /* MS Hybrid mode node  */
+#define ONT_MASK      0x6000  /* Mask                 */
+
+/* RDATA NAME_FLAGS. */
+#define DRG           0x0100  /* Deregister.          */
+#define CNF           0x0800  /* Conflict.            */
+#define ACT           0x0400  /* Active.              */
+#define PRM           0x0200  /* Permanent.           */]]></pre>
+</example>
+
+<example refid="Listing1.9" part="b">
+<caption>RDATA Address Records: <code>NS_RDaddr.c</code></caption>
+<pre dk:break="after"><![CDATA[#include <string.h>     /* For memcpy() */
+#include <netinet/in.h> /* htons(), ntohs(), etc. */
+
+#include "NS_RDaddr.h"
+
+int Put_RDLength( uchar *rrec,
+                  int    offset,
+                  ushort rdlen )
+  /* ---------------------------------------------------- **
+   * Set the value of the RDLENGTH field.
+   * ---------------------------------------------------- **
+   */
+  {
+  rdlen = htons( rdlen );
+
+  (void)memcpy( &(rrec[offset]), &rdlen, 2 );
+  return( 2 );
+  } /* Put_RDLength */
+
+int Put_RD_Addr( uchar         *rrec,
+                 int            offset,
+                 ushort         nb_flags,
+                 struct in_addr nb_addr )
+  /* ---------------------------------------------------- **
+   * Write IP NB_FLAGS and NB_ADDRESS fields to the
+   * packet buffer.
+   *
+   * See inet(3) on any Linux/Unix/BSD system for more
+   * information on 'struct in_addr'.
+   * ---------------------------------------------------- **
+   */
+  {
+  nb_flags = htons( nb_flags );
+  (void)memcpy( &(rrec[offset]), &nb_flags, 2 );
+  (void)memcpy( &(rrec[offset+2]), &nb_addr.s_addr, 4 );
+  return( 6 );
+  } /* Put_RD_Addr */
+
+ushort Get_RDLength( const uchar *rrec, int offset )
+  /* ---------------------------------------------------- **
+   * Read the RDLENGTH field to find out how big the
+   * RDATA field is.
+   * ---------------------------------------------------- **
+   */]]></pre>
+<pre><![CDATA[  {
+  ushort tmp;
+
+  (void)memcpy( &tmp, &(rrec[offset]), 2 );
+  return( ntohs( tmp ) );
+  } /* Get_RDLength */
+
+ushort Get_RD_NB_Flags( const uchar *rrec, int offset )
+  /* ---------------------------------------------------- **
+   * Read the NB_FLAGS field from an RDATA record.
+   * ---------------------------------------------------- **
+   */
+  {
+  ushort tmp;
+
+  (void)memcpy( &tmp, &(rrec[offset]), 2 );
+  return( ntohs( tmp ) );
+  } /* Get_RD_NB_Flags */
+
+struct in_addr Get_RD_NB_Addr( const uchar *rrec, int offset )
+  /* ---------------------------------------------------- **
+   * Read the NB_ADDRESS field from an RDATA record.
+   * ---------------------------------------------------- **
+   */
+  {
+  ulong          tmp;
+  struct in_addr tmp_addr;
+
+  (void)memcpy( &tmp, &(rrec[offset]), 4 );
+  tmp_addr.s_addr = ntohl( tmp );
+  return( tmp_addr );
+  } /* Get_RD_NB_Addr */]]>
+</pre>
+</example>
+
+<h3 id="NBT1.4.3.1.1">Broadcast Name Registration</h3><h3s>
+
+<p>You've seen the basic form of <code>NAME REGISTRATION
+REQUEST</code> packet. When sending a broadcast registration, the
+following rules apply.</p>
+
+<ul>
+<li><p>The <code>B</code> bit is set.</p></li> 
+
+<li><p>The <code>TTL</code><idx>TTL</idx> is zero.</p></li> 
+
+<li><p>The <code>RDATA.NB_FLAGS.ONT</code> should never be
+<code>ONT_P</code>, since P nodes<idx>P</idx> never register
+their names via broadcast.</p></li>
+</ul>
+
+<p>A node sending a broadcast <code>NAME REGISTRATION REQUEST</code>
+(the <em>requester</em>) may receive a unicast <code>NEGATIVE NAME
+REGISTRATION <dk:nobr>RESPONSE</dk:nobr></code> from another node that
+already claims ownership of the name (the <em>owner</em>). That is the
+only valid message in response to a broadcast registration.</p>
+
+<pre><idx>ANSWER_RECORD</idx><![CDATA[NAME REGISTRATION RESPONSE (Negative)
+  {
+  HEADER
+    {
+    NAME_TRN_ID = <Must match REQUEST transaction ID>
+    FLAGS
+      {
+      R      = TRUE (1; This is a response packet)
+      OPCODE = 0x5 (Registration)
+      AA     = TRUE (1)
+      RD     = TRUE (1)
+      RA     = TRUE (1)      
+      RCODE  = ACT_ERR (0x6)
+      B      = FALSE (0; Message is unicast back to requester)
+      }
+    ANCOUNT = 1
+    }
+  ANSWER_RECORD
+    {
+    RR_NAME  = <The Encoded NBT Name>
+    RR_TYPE  = NB (0x0020)
+    RR_CLASS = IN (0x0001)
+    TTL      = 0 (TTL has no meaning in this context)
+    RDLENGTH = 6
+    RDATA
+      {
+      NB_FLAGS
+        {
+        G   = <TRUE for a group name, FALSE for a unique name>
+        ONT = <Owner type>
+        }
+      NB_ADDRESS = <Owner's IP address>
+      }
+    }
+  }
+]]></pre>
+
+<dk:fig refid="NBT06"/>
+
+<p>When a requester receives a <code>NEGATIVE NAME REGISTRATION
+RESPONSE</code>, it is obliged to give up. Registration has failed
+because another node has prior - and conflicting - claim to the
+name<idx>name conflict</idx>.  That is, the name already has an
+owner.</p>
+
+<p>The <code>RCODE</code><idx>RCODE</idx> field of the response will
+be <code>ACT_ERR</code><idx>ACT_ERR</idx> (<code>0x6</code>),
+indicating that the name is in use. The
+<code>RDATA</code><idx>RDATA</idx> field should contain the real
+owner's name <dk:nobr>information:</dk:nobr></p>
+
+<ul>
+<li><p dk:break="after"><code>NB_FLAGS.G</code> indicates whether the name in use is a
+group or unique name<idx>unique name</idx>,</p></li>
+
+<li><p><code>NB_FLAGS.ONT</code> is the owner's node type,</p></li>
+
+<li><p><code>NB_ADDRESS</code> is the owner's IP address.</p></li>
+</ul>
+
+<p>Recall that the <code>NAME REGISTRATION REQUEST</code> contains a
+name query<idx>name query</idx>, so the <code>ANSWER_RECORD</code> in
+the reply should be constructed as it would be in a <code>POSITIVE
+NAME QUERY RESPONSE</code>. It is wrong to simply parrot back the
+information in the request.<fn>It is easy, but wrong, to simply copy
+back the information from the
+<code>ADDITIONAL_RECORD</code><idx>ADDITIONAL_RECORD</idx> of the
+<code>NAME REGISTRATION REQUEST</code>. The <code>NEGATIVE NAME
+REGISTRATION <dk:nobr>RESPONSE</dk:nobr></code> should identify the
+node that currently owns the name. (...And yes, some day I may fix
+this in Samba.)</fn></p>
+
+<p><code>NEGATIVE NAME REGISTRATION RESPONSE</code> messages are only
+sent if a unique name is involved.<fn>Elvis is the name of a popular
+clone of the venerable "vi" text editor.</fn> Owners of a group
+name<idx>group name</idx> will not complain if a requester tries to
+join the group. If, however, a requester tries to register a unique
+name that matches an already registered group name, the members of the
+group will send negative responses. In a broadcast environment, a
+single unique name registration request can generate a large number of
+negative replies.</p>
+
+<fig dk:pos="top" id="NBT06" dk:type="square">
+<fig-part part="a">
+<img loc="NBT06a"/>
+<caption>Broadcast unique/unique name conflict</caption>
+<subcaption><p>A unique name may not be registered if another node
+  already owns that unique name.</p></subcaption>
+</fig-part>
+
+<fig-part part="b">
+<img loc="NBT06b"/>
+<caption>Broadcast unique/group name conflict</caption>
+<subcaption><p>A unique name may not be registered if the same name
+is registered as a group name.</p></subcaption>
+</fig-part>
+
+<fig-part part="c">
+<img loc="NBT06c"/>
+<caption>Broadcast group/unique name conflict</caption>
+<subcaption><p>A group name may not be registered if another node
+already owns the name as a unique name.</p></subcaption>
+</fig-part>
+
+<fig-part part="d">
+<img loc="NBT06d"/>
+<caption>No conflict when joining a group</caption>
+<subcaption><p>Any node may join a group. Existing group members
+will not respond to the registration request.</p></subcaption>
+</fig-part>
+</fig>
+
+<p>If there are no conflicts the requesting node will hear no
+complaints, in which case it must retry the request two more
+times... just to be sure. The RFCs specify a minimum timeout of 250
+milliseconds between broadcast retries (Windows uses 750 ms). After
+the third query has timed out, the requesting node should broadcast
+a <code>NAME OVERWRITE DEMAND</code> declaring itself the victor and
+owner of the name. The <code>NAME OVERWRITE DEMAND</code> message is
+identical to the <code>NAME REGISTRATION REQUEST</code>, except that
+the <code>RD</code> bit is clear (Recursion Desired is 0).</p>
+
+<p dk:break="after">This next program will allow you to play around with broadcast
+name registration. It uses functions and constants from previous
+listings to format a <code>NAME REGISTRATION REQUEST</code> and
+broadcast it on the local IP subnet, then it listens for and
+reports any replies it receives.</p>
+
+<example id="Listing1.10">
+<caption><idx>inet_aton()</idx><idx>recv()</idx>A broadcast name registration</caption>
+<pre dk:break="after"><![CDATA[#include <stdio.h>
+#include <stdlib.h>
+#include <sys/poll.h>
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+
+#include "NS_Header.h"
+#include "NS_Qrec.h"
+#include "NS_Rrec.h"
+#include "NS_RDaddr.h"
+
+#define NBT_BCAST_ADDR "255.255.255.255"
+
+#define uchar  unsigned char
+#define ushort unsigned short
+
+int BuildRegMsg( uchar         *msg,
+                 const uchar   *name,
+                 struct in_addr addr )
+  /* ---------------------------------------------------- **
+   * Create a Bcast Name Registration Message.
+   *
+   * This function hard-codes several values.
+   * Obviously, a "real" implementation would need
+   * to be much more flexible.
+   * ---------------------------------------------------- **
+   */
+  {
+  ushort *hdr = (ushort *)msg;
+  uchar  *rrec;
+  ushort  flags;
+  int     len;
+  int     rr_len;
+
+  flags = OPCODE_REGISTER | NM_RD_BIT | NM_B_BIT;
+
+  Put_NS_TID( hdr, 1964 );
+  Put_NS_Hdr_Flags( hdr, flags );
+  Put_NS_Hdr_Rec_Counts( hdr, (QUERYREC | ADDREC) );
+  len = 12;     /* Fixed size of header. */]]></pre>
+
+<pre dk:break="after"><![CDATA[  len += Put_Qrec( &msg[len],  /* Query Rec Pointer  */
+                   name,       /* NetBIOS name       */
+                   ' ',        /* Padding char       */
+                   '\0',       /* Suffix             */
+                   "",         /* Scope ID           */
+                   QTYPE_NB ); /* Qtype: Name        */
+
+  rrec = &msg[len];
+  rr_len  = Put_RRec_LSP( rrec, RRTYPE_NB );
+  rr_len += Put_RRec_TTL( rrec, rr_len, 0 );
+  rr_len += Put_RDLength( rrec, rr_len, 6 );
+  rr_len += Put_RD_Addr(  rrec, rr_len, ONT_B, addr );
+
+  return( len + rr_len );
+  } /* BuildRegMsg */
+
+void ReadRegReply( int sock )
+  /* ---------------------------------------------------- **
+   * Read a reply packet, and verify that it contains the
+   * expected RCODE value.
+   * ---------------------------------------------------- **
+   */
+  {
+  uchar  bufr[512];
+  int    msglen;
+  ushort flags;
+
+  msglen = recv( sock, bufr, 512, 0 );
+  if( msglen < 0 )
+    {
+    perror( "recv()" );
+    exit( EXIT_FAILURE );
+    }
+
+  if( msglen < 12 )
+    {
+    printf( "Truncated reply received.\n" );
+    exit( EXIT_FAILURE );
+    }
+
+  flags = Get_NS_Hdr_Flags( (ushort *)bufr );]]></pre>
+<pre dk:break="after"><![CDATA[  switch( RCODE_MASK & flags )
+    {
+    case RCODE_ACT_ERR:
+      /* This is the only valid Rcode in response to
+       * a broadcast name registration request.
+       */
+      printf( "RCODE_ACT_ERR: Name is in use.\n" );
+      break;
+    default:
+      printf( "Unexpected return code: 0x%.2x.\n",
+              (RCODE_MASK & flags) );
+      break;
+    }
+  } /* ReadRegReply */
+
+int OpenSocket()
+  /* ---------------------------------------------------- **
+   * Open the UDP socket, enable broadcast, and bind the
+   * socket to a high-numbered UDP port so that we can
+   * listen for replies.
+   * ---------------------------------------------------- **
+   */
+  {
+  int                s;
+  int                test = 1;
+  struct sockaddr_in sox;
+
+  s = socket( PF_INET, SOCK_DGRAM, IPPROTO_UDP );
+  if( s < 0 )
+    {
+    perror( "socket()" );
+    exit( EXIT_FAILURE );
+    }
+
+  if( setsockopt( s, SOL_SOCKET, SO_BROADCAST,
+                  &test, sizeof(int) ) < 0 )
+    {
+    perror( "setsockopt()" );
+    exit( EXIT_FAILURE );
+    }
+
+  sox.sin_addr.s_addr = INADDR_ANY;
+  sox.sin_family      = AF_INET;
+  sox.sin_port        = 0;  /* 0 == any port */
+  test = bind( s, (struct sockaddr *)&sox,
+               sizeof(struct sockaddr_in) );]]></pre>
+
+<pre dk:break="after"><![CDATA[  if( test < 0 )
+    {
+    perror( "bind()" );
+    exit( EXIT_FAILURE );
+    }
+
+  return( s );
+  } /* OpenSocket */
+
+void SendBcastMsg( int sock, uchar *msg, int msglen )
+  /* ---------------------------------------------------- **
+   * Nice front-end to the sendto(2) function.
+   * ---------------------------------------------------- **
+   */
+  {
+  int                result;
+  struct sockaddr_in to;
+
+  if( 0 == inet_aton( NBT_BCAST_ADDR, &(to.sin_addr) ) )
+    {
+    printf( "Invalid destination IP address.\n" );
+    exit( EXIT_FAILURE );
+    }
+  to.sin_family = AF_INET;
+  to.sin_port   = htons( 137 );
+  result = sendto( sock, (void *)msg, msglen, 0,
+                   (struct sockaddr *)&to,
+                   sizeof(struct sockaddr_in) );
+  if( result < 0 )
+    {
+    perror( "sendto()" );
+    exit( EXIT_FAILURE );
+    }
+  } /* SendBcastMsg */
+
+int AwaitResponse( int sock, int milliseconds )
+  /* ---------------------------------------------------- **
+   * Wait for an incoming message.
+   * One ms == 1/1000 second.
+   * ---------------------------------------------------- **
+   */
+  {
+  int           result;
+  struct pollfd pfd[1];]]></pre>
+
+<pre dk:break="after"><![CDATA[  pfd->fd     = sock;
+  pfd->events = POLLIN;
+  result = poll( pfd, 1, milliseconds );
+  if( result < 0 )
+    {
+    perror( "poll()" );
+    exit( EXIT_FAILURE );
+    }
+
+  return( result );
+  } /* AwaitResponse */
+
+int main( int argc, char *argv[] )
+  /* ---------------------------------------------------- **
+   * This program demonstrates a Broadcast NBT Name
+   * Registration.
+   * ---------------------------------------------------- **
+   */
+  {
+  int            i;
+  int            result;
+  int            ns_sock;
+  int            msg_len;
+  uchar          bufr[512];
+  uchar         *name;
+  struct in_addr address;
+
+  if( argc != 3 )
+    {
+    printf( "Usage:  %s <name> <IP>\n", argv[0] );
+    exit( EXIT_FAILURE );
+    }
+
+  name = (uchar *)argv[1];
+  if( 0 == inet_aton( argv[2], &address ) )
+    {
+    printf( "Invalid IP.\n" );
+    printf( "Usage:  %s <name> <IP>\n", argv[0] );
+    exit( EXIT_FAILURE );
+    }
+
+  ns_sock = OpenSocket();
+
+  msg_len = BuildRegMsg( bufr, name, address );]]></pre>
+
+<pre><![CDATA[  for( i = 0; i < 3; i++ )
+    {
+    printf( "Trying...\n" );
+    SendBcastMsg( ns_sock, bufr, msg_len );
+    result = AwaitResponse( ns_sock, 750 );
+    if( result )
+      {
+      ReadRegReply( ns_sock );
+      exit( EXIT_FAILURE );
+      }
+    }
+  printf( "Success: No negative replies received.\n" );
+
+  /* Turn off RD bit for NAME OVERWRITE DEMAND. */
+  Put_NS_Hdr_Flags( (ushort *)bufr,
+                    OPCODE_REGISTER | NM_B_BIT );
+  SendBcastMsg( ns_sock, bufr, msg_len );
+
+  close( ns_sock );
+  return( EXIT_SUCCESS );
+  } /* main */
+]]></pre>
+</example>
+
+<p>The transaction ID in the
+<code>NAME_TRN_ID</code><idx>NAME_TRN_ID</idx> field should be the
+same for all three registration attempts, for the final <code>NAME
+OVERWRITE DEMAND</code>, and for any negative response packets a
+remote node may care to send. All of these are part of the same
+transaction.</p>
+
+<alert type="Blue Screen of Death">
+<p>Some OEM versions of Windows 95 had a bug that would cause the
+system to go into "Blue Screen of Death"<idx>BSOD</idx> mode (that is,
+system crash) if the NetBIOS Machine
+Name<idx>NetBIOS<sidx>name</sidx></idx> was in conflict. The problem
+was made worse by PC vendors who would ship systems with NBT turned
+on, all preconfigured with the same name. Customers who purchased
+several computers for local networks would turn them on for the first
+time and all but one would crash.</p>
+</alert>
+
+</h3s><h3 id="NBT1.4.3.1.2">Unicast (NBNS) Name Registration</h3><h3s>
+
+<p>Unicast name registrations are subtly different from the
+broadcast variety.</p>
+
+<ul>
+<li><p>The <code>B</code> bit is cleared (zero) and the destination IP is
+the unicast address of the NBNS.<idx start="c4-NBNS">NBNS</idx></p>
+
+<p>The message is sent "point-to-point" directly to the NBNS,
+rather than being broadcast on the local LAN. This is the
+fundamental difference between B and P modes.<idx>B</idx></p>
+</li>
+
+<li><p>The <code>TTL</code><idx>TTL</idx> field has real meaning when
+you are talking to an NBNS.</p>
+
+<p>The RFCs do not specify a default <code>TTL</code> value. Windows
+systems use 300,000 seconds, which is three days, eleven hours and
+twenty minutes. Samba<idx>Samba</idx> uses 259,200 seconds, which is
+three days even. Both of these values are ugly in hex.<fn> 
+
+<p><line>3 days 00:00:00 == 259,200 seconds == <code>0x0003F480</code>
+(Samba),</line> 
+
+<line dk:start-indent="10pt">3 days 11:20:00 == 300,000 seconds == <code>0x000493E0</code>
+(Windows),</line> 
+
+<line dk:start-indent="10pt">3 days 19:01:20 == 327,680 seconds ==
+<code>0x00050000</code>.</line></p></fn></p></li>
+
+<li><p>The timeout between retries is longer.</p>
+
+<p>The longer timeout between retries is based on the assumption
+that routed links may have higher latency than the local LAN. RFC
+1002 specifies a timeout value of five seconds, which is excessive
+on today's Internet. A client will try to register a name three
+times, so the total (worst case) timeout would be fifteen
+seconds. Samba uses a two second per-packet timeout instead, for a
+total of six seconds. The timeout under Windows is only 1.5 seconds
+per packet.</p></li>
+</ul>
+
+<p>The NBNS should respond with a <code>NAME REGISTRATION
+RESPONSE</code>, which will include one of the following
+<code>RCODE</code><idx>RCODE</idx> values:</p>
+
+<dl>
+<dt><code>0x0:</code> Success</dt>
+
+<dd><p><code>POSITIVE NAME REGISTRATION RESPONSE</code>: You win! The
+NBNS has accepted the registration. Do not forget to send a
+refresh<idx>Name Refresh</idx> before the <code>TTL</code> expires
+(see <ref refid="NameRefresh_1433"/>).</p></dd>
+
+<dt><code>FMT_ERR (0x1):</code><idx>FMT_ERR</idx> Format Error</dt>
+<dd><p>The NBNS did not like your message. Something was wrong with the
+packet format (perhaps it was mangled on the wire).</p></dd>
+
+<dt><code>SRV_ERR (0x2):</code><idx>SRV_ERR</idx> Server failure</dt>
+<dd><p>The NBNS is sick and cannot handle requests just now.</p></dd>
+
+<dt><code>IMP_ERR (0x4):</code><idx>IMP_ERR</idx> Unsupported request
+error</dt> <dd><p>This one is a bit of a mystery. It basically means
+that the NBNS does not know how to handle a request. The only clue we
+have to its intended usage is a poorly worded note in RFC 1002, which
+says:</p>
+
+<pre>Allowable only for challenging NBNS when gets an Update 
+type registration request.</pre>
+
+<p dk:indent="no">Huh?</p>
+
+<p>This error occurs only under odd circumstances, which will be
+explained in more detail later on in this section. Basically, though,
+an <code>IMP_ERR</code><idx>IMP_ERR</idx> should only be returned by
+an NBNS if it receives an unsolicited <code>NAME UPDATE REQUEST</code>
+from a client. (Be patient, we'll get there.)</p></dd>
+
+<dt><code>RFS_ERR (0x5):</code><idx>RFS_ERR</idx> Refused error</dt>
+<dd><p>This indicates that the NBNS has made a policy decision not to
+register the name.</p></dd>
+
+<dt><code>ACT_ERR (0x6):<idx>ACT_ERR</idx></code> Active error</dt>
+<dd><p>The NBNS has verified that the name is in use by another node. You
+can't have it.</p></dd>
+</dl>
+
+<p>Note that the difference between a positive and negative
+<code>NAME <dk:nobr>REGISTRATION</dk:nobr> RESPONSE</code> is simply the
+<code>RCODE</code> value.</p>
+
+<p>If you get no response then it is correct to assume that the NBNS
+is "down." If the name cannot be registered then your node does not
+own it, and your application should recover as gracefully as
+possible. In P mode,<idx start="c4-p">P</idx> handle a non-responsive
+NBNS as you would a <code>NEGATIVE NAME REGISTRATION
+RESPONSE</code>. (If the client is running in H<idx
+start="c4-h">H</idx> or M mode,<idx start="c4-m">M</idx> then it may -
+with caution - revert to B mode<idx start="c4-b">B</idx> operation
+until the NBNS is available again.)</p>
+
+<p dk:break="after">There are two other packet types that you may receive when
+registering a name with an NBNS. These are
+<code>WACK</code><idx>WACK</idx> and <code>END-NODE CHALLENGE NAME
+REGISTRATION RESPONSE</code>. The <code>WACK</code> message tells the
+client to wait while the NBNS figures things out. This is typically
+done so that the NBNS has time to send queries to another node that
+has claimed ownership of the requested name. A <code>WACK</code> looks
+like this:</p>
+
+<pre><idx>ANSWER_RECORD</idx><![CDATA[WAIT FOR ACKNOWLEDGEMENT (WACK) RESPONSE
+  {
+  HEADER
+    {
+    NAME_TRN_ID = <Must match REQUEST transaction ID>
+    FLAGS
+      {
+      R      = TRUE (1; This is a response packet)
+      OPCODE = 0x7 (WACK)
+      AA     = TRUE (1)
+      }
+    ANCOUNT = 1
+    }
+  ANSWER_RECORD
+    {
+    RR_NAME  = <The Encoded NBT Name from the request>
+    RR_TYPE  = NB (0x0020; note the typo in RFC 1002, 4.2.16)
+    RR_CLASS = IN (0x0001)
+    TTL      = <Number of seconds to wait; 0 == Infinite>
+    RDLENGTH = 2
+    RDATA    = <Copy of the two-byte HEADER.FLAGS field
+               of the original request>
+    }
+  }]]></pre>
+
+<p>The key field in the <code>WACK</code> is the <code>TTL</code>
+field, which tells the client how long to wait for a response. This
+is used to extend the timeout period on the client, and give the
+NBNS a chance to do a reality check.</p>
+
+<p>Samba uses a <code>TTL</code> value of 60 seconds, which provides
+ample time to generate a proper reply. Unless it is shut down after
+sending the <code>WACK</code> message, Samba's NBNS service will
+always send a <code>NAME REGISTRATION
+<dk:nobr>RESPONSE</dk:nobr></code> (positive or negative) well before
+the 60 seconds has elapsed. Microsoft's<idx>Microsoft</idx>
+WINS<idx>WINS</idx> takes a different approach, using a value of only
+2&nbsp;seconds. If the 2&nbsp;seconds expire, however, the requesting
+client will simply send another <code>NAME
+<dk:nobr>REGISTRATION</dk:nobr> REQUEST</code>, and then another for a
+total of three tries. WINS should be able to respond within that total
+timeframe.</p>
+
+<p><code>WACK</code> messages are sent by honest, hard-working
+servers that take good care of their clients. In contrast, a lazy
+and careless NBNS server will send an <code>END-NODE CHALLENGE NAME
+REGISTRATION RESPONSE</code>. This latter response tells the client
+that the requested name has a registered owner, but the NBNS is not
+going to bother to do the work to check that the owner is still up
+and running and using the name.</p>
+
+<p>Once again, the format of this message is so familiar that there
+is no need to list all of the fields. The <code>END-NODE CHALLENGE
+NAME REGISTRATION RESPONSE</code> packet is just a <code>NAME
+REGISTRATION RESPONSE</code> with:</p>
+
+<pre>              RCODE = 0x0
+                 RA = 0 (Recursion Available clear)
+ANSWER_RECORD.RDATA = &lt;Information retrieved from the NBNS database&gt;</pre>
+
+<p>The annoying thing about this packet is that the <code>RCODE</code>
+value indicates success, making it look almost exactly like a
+<code>POSITIVE NAME <dk:nobr>REGISTRATION</dk:nobr> RESPONSE</code>. <em>The</em>
+<code>RA</code> <em>bit must be checked to distinguish between the two
+message types.</em>
+</p>
+
+<p>When a client receives an <code>END-NODE CHALLENGE</code>, its duty
+is to query<idx>name query</idx> the owner (the owner's IP address
+will be in the
+<code>ANSWER_RECORD.<dk:br/><dk:nobr>RDATA.NB_ADDRESS</dk:nobr></code>
+field) to see if the owner still wants the name. If the owner does not
+respond, or if it replies with a <code>NEGATIVE NAME QUERY
+<dk:nobr>RESPONSE</dk:nobr></code><idx>NAME QUERY</idx>, then the name
+is available and the requester may send a <code>NAME
+<dk:nobr>UPDATE</dk:nobr> REQUEST</code> to the NBNS. The NBNS will
+blindly trust the requester, change the entry, and reply with a
+<code>POSITIVE NAME <dk:nobr>REGISTRATION</dk:nobr>
+RESPONSE</code>. The <code>NAME UPDATE REQUEST</code> is the same as
+the unicast <code>NAME REGISTRATION REQUEST</code> except that the
+<code>RD</code> bit is clear (Recursion <dk:nobr>Desired is
+0).</dk:nobr></p>
+
+<p>There is nothing to stop a client from skipping the name query
+and sending the update message to the NBNS, effectively stealing the
+name. This is why the RFCs use the term <i>non-secured</i> when describing
+this mechanism.</p>
+
+<alert type="Terminology Turmoil">
+
+<p>In the RFCs, the terms "<code>NAME UPDATE REQUEST</code>" and
+"<code>NAME OVERWRITE REQUEST &amp; DEMAND</code>" are both used to
+refer to the same packet structure. These terms are interchanged
+somewhat randomly in the text without any explanation regarding
+their relationship to one another (all probably due to an editing
+oversight). This <dk:nobr>is confusing.</dk:nobr></p>
+
+<p>In this book we make a semantic distinction between the two
+message types, and shorten "<code>NAME OVERWRITE REQUEST &amp;
+DEMAND</code>" to simply "<code>NAME OVERWRITE DEMAND</code>."</p>
+
+<p>Here's why:</p>
+
+<p>The RFCs specify that a <code>REQUEST</code> is a message to
+which a <code>RESPONSE</code> is expected. So, for example, once a
+<code>NAME REGISTRATION REQUEST</code> has been sent the requester
+must wait a reasonable period of time for a reply, and retry the
+request twice before giving up. A <code>DEMAND</code>, however,
+never generates a <code>RESPONSE</code>. It is simply sent and
+forgotten so there is no need to wait. Thus, the term "<code>NAME
+OVERWRITE REQUEST &amp; DEMAND</code>" is contradictory. The message
+is either a <code>REQUEST</code> or a <code>DEMAND</code>, but not
+both.</p>
+
+<p>To clear things up, we use <code>NAME UPDATE REQUEST</code> to
+indicate the packet sent to a non-secured NBNS following a name
+challenge. The requester expects to receive a <code>POSITIVE NAME
+REGISTRATION RESPONSE</code> in reply to the <code>NAME UPDATE
+REQUEST</code>. In contrast, the <code>NAME OVERWRITE DEMAND</code>
+is sent as the last step in a successful broadcast registration, and
+no reply is expected.</p>
+
+<p>Again, these packets all share the same structure as the <code>NAME
+<dk:nobr>REGISTRATION</dk:nobr> REQUEST</code>. Only the
+<code>RD</code> and <code>B</code> flag bits distinguish them
+<dk:nobr>syntactically.</dk:nobr></p>
+</alert>
+
+<p>Oh... one more thing. Remember the
+<code>IMP_ERR</code><idx>IMP_ERR</idx> return code?  It is used to
+indicate that an NBNS which did <em>not</em> send an <code>END-NODE
+CHALLENGE</code> is annoyed at having received a <code>NAME UPDATE
+REQUEST</code> from a client. An NBNS server should never receive
+unsolicited <code>NAME UPDATE REQUEST</code>s from clients.</p>
+
+</h3s><h3 id="NBT1.4.3.1.3">M and H Node Name Registration</h3><h3s>
+
+<p><idx>NBT<sidx>Name Service</sidx></idx>Mixed mode (M mode) and
+Hybrid mode (H mode) are both speed hacks, which combine aspects of
+Broadcast (B) and Point-to-Point (P) modes to short-cut Name Service
+operations.</p>
+
+<p>M mode was designed in the days when local
+LAN<idx>NBT<sidx>vLAN</sidx></idx> traffic was likely to be faster
+than internetwork links, which were typically carried over leased
+lines, dial-up connections, tin cans with string, or pigeon (see RFC
+1149).  Since local broadcasts were both faster and more reliable than
+traffic to a remote NBNS, M nodes attempt B mode behavior first and
+try P mode behavior second.</p>
+
+<p>When an M node registers a name, for example, it starts by
+sending a broadcast <code>NAME REGISTRATION REQUEST</code>. If it
+receives a negative response it tries no further (thus saving some
+time). If, however, it receives no complaints after three retries,
+it will attempt to register with the NBNS as a P node would. If and
+only if the P mode registration succeeds, the M mode will broadcast
+a <code>NAME OVERWRITE DEMAND</code>. If the unicast
+registration fails, the <code>NAME OVERWRITE</code> will not be sent
+and the node will not assume ownership of <dk:nobr>the name.</dk:nobr></p>
+
+<p>Hybrid mode (H mode) was introduced (probably by
+Microsoft<idx>Microsoft</idx>) after the RFCs were published. H mode
+assumes that internetwork links are fast and reliable, in which case
+it makes sense to try P mode behavior first and revert to B mode
+behavior only if the NBNS does not respond. Compared with M mode, H
+mode generates less broadcast traffic on local LANs.</p>
+
+<p>H mode is a little trickier than M mode. A node running in H mode
+will attempt a unicast name registration and, if the NBNS accepts the
+registration, the H node will assume ownership without generating any
+broadcast (B mode) traffic at all. If the NetBIOS vLAN is configured
+properly all of the nodes within the scope
+<idx>NBT<sidx>scope</sidx></idx>will also be registering with the
+NBNS, thus preventing accidental name conflicts.<idx
+start="c4-conflict">name conflict</idx></p>
+
+<p>If the NBNS is down or unreachable, however, an H node will revert
+to B mode behavior and hope that no conflicts will arise when the NBNS
+<dk:nobr>comes back.</dk:nobr><idx end="c4-registration">name
+registration</idx></p>
+
+</h3s><h3 id="NBT1.4.3.1.4">Registering Multi-Homed Hosts</h3><h3s>
+
+<p>A multi-homed<idx>multi-homed host</idx> host is a machine that
+has multiple network interfaces (physical or virtual), each with its
+own IP address assigned. RFCs 1001 and 1002 do not discuss handling of
+multi-homed hosts.</p>
+
+<p>The annoying thing about multi-homed hosts in an NBT environment is
+that they try to register<idx>name
+registration<sidx>multi-homed</sidx></idx> their NetBIOS
+names<idx>NetBIOS<sidx>name</sidx></idx> on each interface, which
+means multiple IP addresses per name.<idx>NBT<sidx>name</sidx></idx>
+This is not a problem for group names<idx start="c4-group">group
+name</idx> because group names map to several IP addresses anyway -
+that's what NBT group names are all about. Unique names<idx>unique
+name</idx> <em>are</em> a problem because, from the network's point of
+view, there is no difference between a multi-homed host and multiple
+machines. To an NBNS, or to B nodes on a local LAN, multiple
+registrations for the same name will look like a name conflict.</p>
+
+<p>There are three scenarios to consider when working with
+multi-homed hosts.</p>
+
+<dl>
+<dt>B nodes with interfaces on separate subnets</dt>
+
+<dd>
+<fig id="NBT07">
+<img dk:width="150" loc="NBT07"/>
+<caption>A multi-homed B node</caption>
+
+<subcaption><p>Node <code>PATTY</code> has three interfaces, each
+with an IP address on a differnt subnet.  <code>PATTY</code> replies
+to each broadcast query with the correct IP address for the subnet.</p></subcaption>
+</fig>
+
+<p>If each IP address is on a separate IP subnet <em>and</em> the node
+is running in B mode then springtime returns to the cities, birds
+sing, and little children dance for joy. Each name-to-IP-address
+mapping is unique <em>within its NBT
+scope</em><idx>NBT<sidx>scope</sidx></idx>, which is the broadcast
+space within the subnet, so there are no name conflicts.</p>
+
+<p>The only multi-homed-specific problem that can occur in this
+scenario starts with a regular old-fashioned run-of-the-mill name
+conflict. If there is a name conflict with another node on one or
+more, but not all, subnets then we have a quandary because the name
+is valid on some subnets, but not others. Two solutions are possible
+here: the multi-homed host may decide to disable the name on all
+interfaces (probably the best option), or just on the interfaces on
+which the conflict exists.</p>
+
+<p>Another thing to keep in mind is that replies to name queries
+must return the correct IP address for the subnet, so it is
+important to know on which interface the query was received. This
+can be done by checking both the source and destination IP addresses
+of the original query packet. If the query is a broadcast query,
+then it is best to send only the IP address of the
+interface. Unicast queries, however, should contain a full list of
+the IPs registered to the name. This quirk will be examined further
+when we tackle P mode multi-homed registration.</p>
+
+<dk:fig refid="NBT07"/>
+</dd>
+
+<dt>B nodes with interfaces on the same subnet</dt>
+
+<dd>
+<fig id="NBT08">
+<img dk:width="190" loc="NBT08"/>
+<caption>A multi-homed B node with a shared subnet</caption>
+<subcaption><p>In this case, node <code>PATTY</code> has two
+interfaces, both connected to the same subnet.  <code>PATTY</code>
+sends two correct replies to a broadcast query which looks, on the
+wire, exactly like a name conflict.</p></subcaption>
+</fig>
+
+<p>Problems occur if two or more interfaces have IP addresses on
+the same subnet. This is equivalent to having two or more separate
+nodes on the same subnet, all trying to claim the same unique name.
+There is no standard fix for this situation. Fortunately this
+configuration is rare, though it <em>does</em> occur in the
+wild - typically when someone tries to build a fault-tolerant or
+load-balanced server system. The only known work-around is to write
+additional code to control which of the multi-homed interfaces
+"owns" a name at any given time.</p>
+
+<dk:fig refid="NBT08"/>
+</dd>
+
+<dt>Multi-homed hosts and the NBNS</dt>
+
+<dd>
+<fig id="NBT09">
+<img dk:width="155" loc="NBT09"/>
+<caption>A multi-homed P node</caption>
+<subcaption><p>Node <code>PATTY</code> has two interfaces, each on
+a separate subnet.  <code>PATTY</code> sends separate registrations
+to the NBNS. Under normal circumstances, this would be handled as a
+name conflict.</p></subcaption>
+</fig>
+
+<p>P mode multi-homed name registration is a circus. In P mode, a
+multi-homed host will send multiple registrations - one per
+interface - to the NBNS. Normally the NBNS would reject all but the
+first such registration, viewing the others as name conflicts. To
+get around this problem, we use a new OpCode:</p>
+
+<p dk:displayed="yes"><code>0xF</code> == multi-homed name registration.</p>
+
+<p>Instead of sending normal registration requests, the host
+concurrently sends individual <code>MULTI-HOMED NAME REGISTRATION
+REQUEST</code><idx>NAME REGISTRATION<sidx>MULTI-HOMED</sidx></idx>
+packets from each interface it wishes to register.  Other than the
+OpCode, these are identical to normal <code>NAME REGISTRATION
+REQUEST</code> packets, though each request has its own
+<code>NAME_TRN_ID</code><idx>NAME_TRN_ID</idx> (transaction ID).</p>
+
+<p>The NBNS will respond to the first of these messages by sending a
+<code>POSITIVE NAME REGISTRATION RESPONSE</code>. It then sends
+<dk:nobr>2-second</dk:nobr> <code>WACK</code><idx>WACK</idx> messages
+in reply to all the other <code>MULTI-HOMED NAME
+<dk:nobr>REGISTRATION</dk:nobr> REQUEST</code> packets it receives
+(all that are trying to register the same unique name). The
+<code>WACK</code> gives the NBNS extra time to process the
+registration.</p>
+
+<p>Next, the NBNS will send a unicast <code>NAME QUERY
+REQUEST</code><idx start="c4-query">name query</idx><idx>NAME
+QUERY</idx> to the source address of the first message it received
+(the one that got the <code>POSITIVE NAME REGISTRATION
+RESPONSE</code>). This is a unicast query (the <code>B</code> bit is
+clear), so <i>the query response should contain the complete list of
+IP addresses that are allowed to share the name</i>.</p>
+
+<p>The NBNS will then send <code>POSITIVE NAME REGISTRATION
+RESPONSE</code> messages to all of the <code>WACK</code>ed IPs in the
+list, and a <code>NEGATIVE NAME REGISTRATION RESPONSE</code>, with an
+<code>RCODE</code><idx>RCODE</idx> value of <code>ACT_ERR
+(0x6)</code><idx>ACT_ERR</idx>, to any others. The NBNS finishes with
+a double back-flip in pike position through flaming hoops into a piece
+of unbuttered toast and the crowd cheers wildly.<idx
+end="c4-REGISTRATION">NAME REGISTRATION</idx></p>
+
+<dk:fig refid="NBT09"/>
+
+<p>One problem still remains, however. Consider node <code>LANE</code>
+(operating in P mode), which is trying to talk to node
+<code>PATTY</code>. The first thing <code>LANE</code> will do is send
+a <code>NAME QUERY REQUEST</code> to the NBNS. The NBNS has no way of
+knowing which IP address represents the best route between
+<code>LANE</code> and <code>PATTY</code>, so it must send the complete
+list of <code>PATTY</code>'s IPs. <code>LANE</code> has to guess which
+IP is the best. Typically, the client will choose a destination IP by
+sending some sort of message (e.g., a unicast name query) to all of
+the listed IPs to see which one answers first. Note that in order to
+make this work the NBNS must keep track
+of all IPs associated with the NBT name registered by the multi-homed
+host.<fn>Many thanks to Monyo<idx>Monyo</idx> for providing packet
+captures.</fn></p>
+
+<fig id="NBT10">
+<img dk:width="255" loc="NBT10"/>
+<caption>Locating a multi-homed P node</caption>
+<subcaption><p>Node <code>LANE</code> gets two IPs when it asks for
+<code>PATTY</code>'s address.</p></subcaption>
+</fig>
+</dd>
+</dl>
+
+<p>As you might expect, the handling of M and H mode multi-homed hosts
+is a fairly straightforward combination of B and P mode behavior. M
+and H mode name registration for single-homed hosts has already been
+covered.<idx end="c4-conflict">name conflict</idx></p>
+
+</h3s></h2s><h2 id="NBT1.4.3.2">Name Query</h2><h2s>
+
+<p><idx>node type</idx><idx start="c4-QUERY">NAME QUERY</idx>Each NBT
+node has its own local name table, which holds the list of the NetBIOS
+names<idx>NetBIOS<sidx>name</sidx></idx> that the node thinks it owns.
+NBT nodes may also register their names<idx>name registration</idx>
+with a NetBIOS nameserver.  Both the local name table and the NBNS
+database can be used to answer queries.</p>
+
+<p>Name queries look like this:</p>
+
+<pre><![CDATA[NAME QUERY REQUEST
+  {
+  HEADER
+    {
+    NAME_TRN_ID = <Set when packet is transmitted>
+    FLAGS
+      {
+      OPCODE = 0x0 (Query)
+      RD     = <Typically TRUE (1); see discussion below>
+      B      = <TRUE for broadcast queries, else FALSE (0)>
+      }
+    QDCOUNT = 1
+    }
+  QUESTION_RECORD
+    {
+    QUESTION_NAME  = <Encoded NBT name to be queried>
+    QUESTION_TYPE  = NB (0x0020)
+    QUESTION_CLASS = IN (0x0001)
+    }
+  }]]></pre>
+
+<p>As you can see from the packet description, name queries are
+really very simple (just as the eye of a hurricane is calm). The
+only fiddly bits are the <code>B</code> and <code>RD</code>
+flags.</p>
+
+<ul>
+<li><p>The <code>B</code> bit is used to distinguish between
+broadcast and unicast queries.</p>
+
+<p>Broadcast queries are used for name resolution within the broadcast
+scope<idx>NBT<sidx>scope</sidx></idx>, as shown by the example code
+presented earlier.  Since P nodes are excluded from B mode scope, P
+nodes and the NBNS will both ignore broadcast name queries. Only local
+B, M, and H nodes (with the same Scope ID<idx>NBT<sidx>Scope
+ID</sidx></idx> as the sender) will respond.</p>
+
+<p>The only valid reply to a broadcast name query is a <code>POSITIVE
+NAME QUERY RESPONSE</code> from a node that actually owns the name in
+question. Queries for group names<idx end="c4-group">group
+name</idx> may generate multiple responses, one per group member on
+the local LAN.</p>
+
+<p>In P mode, names are resolved to IP addresses by sending a
+unicast query to the NBNS, which checks the list of registered names
+(the NBNS database). If the name is found, the NBNS will reply with
+a <code>POSITIVE NAME QUERY RESPONSE</code>, otherwise it will send
+a <code>NEGATIVE NAME QUERY RESPONSE</code>. If the requester gets
+no response at all, then the NBNS is assumed to be down or
+unreachable.</p>
+
+<p>Unicast queries can also be used to determine whether an NBT end
+node owns a given NetBIOS name. All NBT node types (B, P, M, and H)
+will respond to unicast queries. As with queries sent to the NBNS, NBT
+end nodes may reply with either a positive or negative <code>NAME
+QUERY RESPONSE</code>.<idx end="c4-b">B</idx><idx
+end="c4-h">H</idx><idx end="c4-m">M</idx><idx end="c4-p">P</idx></p>
+
+<p>A unicast query<idx>wildcard<sidx>query</sidx></idx> for the
+wildcard<idx>wildcard<sidx>NetBIOS name</sidx></idx> name is the NBT
+equivalent of <dk:nobr>a <code>ping</code>.</dk:nobr></p>
+</li>
+
+<li><p>The <code>RD</code> bit is used to distinguish between two
+different types of unicast queries.</p>
+
+<p dk:break="after">In discussing the use of the <code>B</code> bit, above, we made a
+subtle distinction between resolution and verification queries. A
+<em>name resolution query</em> is the most familiar. It is used to
+convert a name to an IP address. Unicast queries sent to the NBNS
+are always resolution queries. A <em>verification query</em> is a
+unicast query sent to an NBT end node to ask whether the node is
+using the name in question. In order to send a verification query,
+the sender must already have the IP of the target NBT end node so
+name resolution is pointless.</p>
+
+<dk:fig refid="NBT11"/>
+
+<p>Note that:</p>
+
+<ul>
+<li><p>Broadcast <i>name resolution queries</i> are always answered
+from data in the receiving node's local name table.</p></li>
+
+<li><p>Unicast <i>name resolution queries</i> are supposed to be
+answered from data in the NBNS database.</p></li>
+
+<li><p>Unicast <i>name verification queries</i> must be answered from
+the node's local name table - <em>not</em> the NBNS database.</p></li>
+</ul>
+
+<fig id="NBT11">
+<fig-part part="a">
+<img dk:width="330" loc="NBT11a"/>
+<caption>Verification query (<code>RD == FALSE</code>)</caption>
+
+<subcaption><p><code>RUBY</code> sends a unicast query to node
+<code>TERU</code> asking about <code>ANDOR</code>. The
+<code>RD</code> bit is <i>clear</i>, so <code>TERU</code> does not check
+the NBNS database. It checks only the local name table and, finding
+no reference to the name <code>ANDOR&lt;20&gt;</code>,
+sends a <code>NEGATIVE NAME QUERY
+RESPONSE</code>.</p></subcaption>
+</fig-part>
+
+<fig-part part="b">
+<img dk:width="330" loc="NBT11b"/>
+<caption>Verification query (<code>RD == TRUE</code>)</caption>
+
+<subcaption><p><code>RUBY</code> sends a unicast query to node
+<code>TERU</code> asking about <code>ANDOR</code>. The
+<code>RD</code> bit is <i>set</i>, so <code>TERU</code> checks the
+NBNS database, where it finds an entry for
+<code>ANDOR&lt;20&gt;</code>. <code>TERU</code> sends a
+<dk:nobr><code>POSITIVE NAME QUERY RESPONSE</code>.</dk:nobr></p></subcaption>
+</fig-part>
+</fig>
+
+<p>So... what happens if you send a unicast query to a node that is
+both an NBT participant <em>and</em> the NBNS? Which kind of query
+is it, and which name list should be consulted?</p>
+
+<p>That's where the <code>RD</code> bit comes in. If <code>RD</code>
+is <code>FALSE</code> then only the local name table is consulted,
+forcing a verification query. If <code>RD</code> is
+<code>TRUE</code> and the NBNS service is running on the receiving
+node, then the NBNS database may also be used to answer the query -
+that makes it a <dk:nobr>resolution query.</dk:nobr></p>
+
+<p>This particular problem, and its solution, are not covered in the
+RFCs. The diagram in RFC 1002, Section 4.2.12 shows the
+<code>RD</code> bit as always set, and this is common practice.<fn>For
+example, when an NBNS is processing a multi-homed<idx>multi-homed
+host</idx> registration it <i>should</i> send name queries with the
+<code>RD</code> bit clear, yet all Windows systems that were tested
+set the <code>RD</code> bit. It may not matter, however, unless the
+multi-homed host is also the node running the NBNS, in which case the
+problem would likely be solved using internal mechanisms (because the
+NBNS would be sending the query to itself). The right thing to do is
+to send verification queries with the <code>RD</code> flag turned
+OFF.</fn> The state of the <code>RD</code> bit in a query message is
+typically ignored, and is only significant in the one case we have
+described: a unicast query sent to a node that is both an NBT
+participant and the NBNS.</p>
+</li>
+</ul>
+
+<p>In summary:</p>
+
+<pre dk:break="after"><![CDATA[/* Pseudocode */
+if( the B bit is TRUE )
+  { /* It's a broadcast query. */
+  if( the receiver is a B, M, or H node )
+    {
+    entry = lookup name in local name table;
+    if( entry was found )
+      send( POSITIVE NAME QUERY RESPONSE );
+    }
+  }]]></pre>
+<pre><![CDATA[  else
+  { /* It's a unicast query. */
+  entry = lookup name in local name table;
+  if( entry was not found & RD is TRUE & receiver is the NBNS )
+    {
+    entry = lookup name in NBNS database;
+    }
+  if( entry was found )
+    send( POSITIVE NAME QUERY RESPONSE );
+  else
+    send( NEGATIVE NAME QUERY RESPONSE );
+  }]]></pre>
+
+<p>Got it? Good. Let's move on...</p>
+
+<p>As with other NBT Name Service requests,<idx>NBT<sidx>Name
+Service</sidx></idx> if there is no response to a name query within a
+reasonable timeout period, the query is sent again. This happens twice
+for a maximum of two retries (that is, three query messages). Timeouts
+vary from system to system and depend upon the type of query being
+sent. Query timeouts should be matched to those used for name
+registration where possible.</p>
+
+<dl>
+<dt>Broadcast queries</dt>
+<dd><p>Between 250 ms and 750 ms is typical. RFC 1002 specifies
+250 ms.</p></dd>
+
+<dt>Unicast Resolution queries</dt>
+<dd><p>A range of 1.5 to 2 seconds is common. These queries go to the
+NBNS, and the expectation is that the NBNS will be able to answer
+quickly. RFC&nbsp;1002 specifies 5 seconds.</p></dd>
+
+<dt>Verification queries</dt>
+<dd><p>Intervals of 1.5 to 5 seconds have been spotted. Once again,
+RFC 1002 specifies 5 seconds.</p></dd>
+</dl>
+
+<p>Timeout values are a balance between reliability and user
+annoyance. Too short, and replies will be missed. Too long, and the
+user goes off to make <dk:nobr>another</dk:nobr> pot of tea.<idx
+end="c4-query">name query</idx></p>
+
+<h3 id="NBT1.4.3.2.1">Negative Query Response</h3><h3s>
+
+<p dk:break="after">A negative response looks like this:</p>
+
+<pre><idx>ANSWER_RECORD</idx><![CDATA[NEGATIVE NAME QUERY RESPONSE
+  {
+  HEADER
+    {
+    NAME_TRN_ID = <Same as QUERY REQUEST>
+    FLAGS
+      {
+      R      = TRUE (1; This is a response packet)
+      OPCODE = 0x0 (Query)
+      AA     = TRUE (1)
+      RD     = <Copy RD bit from QUERY REQUEST>
+      RA     = <TRUE if the reply is from the NBNS>
+      B      = FALSE (0)
+      RCODE  = <Error code>
+      }
+    ANCOUNT = 1
+    }
+  ANSWER_RECORD
+    {
+    RR_NAME  = <The Encoded NBT Name from the request>
+    RR_TYPE  = <NB (0x0020), or possibly NULL (0x000A)>
+    RR_CLASS = IN (0x0001)
+    TTL      = 0
+    RDLENGTH = 0
+    }
+  }]]></pre>
+
+<p>RFC 1002 is inconsistent in its descriptions of the <code>RD</code>
+and <code>RA</code> bits as used in <code>NAME QUERY RESPONSE</code>
+messages. There is also a small issue regarding the
+<code>RR_TYPE</code><idx>RR_TYPE</idx> field. Let's clear things
+up:</p>
+
+<ul>
+<li><p>The diagram in RFC 1002, Section 4.2.14, shows <code>RD</code>
+always set in the reply.  Most implementations do, in fact, set the
+<code>RD</code> bit in all <code>NAME QUERY RESPONSE</code>
+messages. To be painfully correct, however, the right thing to do is
+to copy the <code>RD</code> value from the <code>NAME QUERY
+REQUEST</code> as described in RFC 1002, Section 4.2.1.1. It really
+doesn't matter, though, because the <code>RD</code> bit is probably
+ignored by the node receiving the query response.</p></li>
+
+<li><p>Regarding the <code>RA</code> bit: There is a weird little
+note in RFC 1002, <dk:nobr>Section&nbsp;4.2.15,</dk:nobr> which states:</p>
+
+<pre>An end node responding to a NAME QUERY REQUEST always responds
+with the AA and RA bits set for both the NEGATIVE and POSITIVE
+NAME QUERY RESPONSE packets.</pre>
+
+<p>That's poop. The <code>RA</code> bit should not be set by an
+end-node. Only the NBNS should set the <code>RA</code> bit, as
+explained in 4.2.1.1:</p>
+
+<pre><![CDATA[RA    3   Recursion Available Flag.
+
+          Only valid in responses from a NetBIOS Name
+          Server - must be zero in all other
+          responses.]]></pre>
+
+<p dk:indent="no">In modern usage, the <code>RA</code> bit
+<em>should</em> mean that the responding node is running the NBNS
+service.</p>
+</li>
+
+<li><p>The diagram in RFC 1002, Section 4.2.14, specifies that
+<code>RR_TYPE</code> should have a value of <code>0x000A
+(NULL)</code>. In practice, the value <code>0x0020
+(NB)</code><idx>NB</idx> is used instead (no exceptions were found in
+testing).</p></li>
+</ul>
+
+<p>The <code>NEGATIVE NAME QUERY RESPONSE</code> will include an
+<code>RCODE</code><idx>RCODE</idx> value, indicating the reason for
+the negative reply.  RFC 1002 lists several possible
+<code>RCODE</code> values, but at least two of them -
+<code>IMP_ERR</code><idx>IMP_ERR</idx> and
+<dk:nobr><code>RFS_ERR</code><idx>RFS_ERR</idx> &mdash;</dk:nobr> are
+incorrect as they are never generated in response to a query. The
+valid values or a <code>NEGATIVE NAME QUERY RESPONSE</code> are:</p>
+
+<dl>
+<dt><code>FMT_ERR (0x1):</code><idx>FMT_ERR</idx> Format Error</dt>
+<dd><p>The NBNS did not like your message. Something was wrong with the
+packet format (perhaps it was mangled on the wire).</p></dd>
+
+<dt><code>SRV_ERR (0x2):</code><idx>SRV_ERR</idx> Server failure</dt>
+<dd><p>The NBNS is sick and cannot handle requests just now.</p></dd>
+
+<dt><code>NAM_ERR (0x3):</code><idx>NAM_ERR</idx> Name Error</dt>
+<dd><p>The requested name does not exist in the selected name
+table(s).</p></dd>
+</dl>
+
+</h3s><h3 id="NBT1.4.3.2.2">Positive Query Response</h3><h3s>
+
+<p>The <code>POSITIVE NAME QUERY RESPONSE</code> is similar to the
+negative response, with the following differences:</p>
+
+<ul>
+<li><p>The <code>RCODE</code><idx>RCODE</idx> is <code>0x0</code>
+(success),</p></li>
+
+<li><p>the <code>RR_TYPE</code><idx>RR_TYPE</idx> field always has a
+value of <code>0x0020 (NB)</code>,<idx>NB</idx></p></li>
+
+<li><p>the <code>TTL</code> field is non-zero, and</p></li>
+
+<li><p>the <code>RDATA</code><idx>RDATA</idx> field contains an array
+of IP address information, like so:</p>
+
+<pre><idx>ANSWER_RECORD</idx><![CDATA[POSITIVE NAME QUERY RESPONSE
+  {
+  HEADER
+    {
+    NAME_TRN_ID = <Same as QUERY REQUEST>
+    FLAGS
+      {
+      R      = TRUE (1; This is a response packet)
+      OPCODE = 0x0 (Query)
+      AA     = TRUE (1)
+      RD     = <Copy RD bit from QUERY REQUEST>
+      RA     = <TRUE if the reply is from the NBNS>
+      B      = FALSE (0)
+      RCODE  = 0x0
+      }
+    ANCOUNT = 1
+    }
+  ANSWER_RECORD
+    {
+    RR_NAME  = <The Encoded NBT Name from the request>
+    RR_TYPE  = NB (0x0020)
+    RR_CLASS = IN (0x0001)
+    TTL      = <Time To Live>
+    RDLENGTH = <6 ]]>&#8903;<![CDATA[ number of entries>
+    RDATA
+      {
+      ADDR_ENTRY[]
+        {
+        NB_FLAGS
+          {
+          G   = <TRUE for a group name, FALSE for a unique name>
+          ONT = <Owner type>
+          }
+        NB_ADDRESS = <Owner's IP address>
+        }
+      }
+    }
+  }]]></pre>
+</li>
+</ul>
+
+<p>If the packet is sent by the NBNS, the <code>TTL</code> field
+will contain the number of seconds until the entry's Time-To-Live
+expires (the remaining TTL). End nodes responding to verification
+queries will typically use the default <code>TTL</code> value which,
+as we described earlier, is something around 3 days.</p>
+
+</h3s><h3 id="NBT1.4.3.2.3">The Redirect Name Query Response</h3><h3s>
+
+<p>The RFCs provide a mechanism whereby one NBNS can redirect a
+client to another NBNS. That is, the NBNS can return a message
+saying "I don't know, ask someone else."</p>
+
+<p>No living examples of this mechanism have been seen in the wild.
+It is probably extinct. Fossil remains may be found in RFC 1001,
+Section 15.1.5.3, and RFC 1002, Section 4.2.15.</p>
+
+</h3s><h3 id="NBT1.4.3.2.4">A Simple Name Query Revisited</h3><h3s>
+
+<p><idx>name query</idx>Remember <ref
+refid="Listing1.3"/>? In that example we provided code for generating
+a simple broadcast name query. <ref refid="Listing1.11"/> provides an
+updated version which is a bit more flexible. In particular, the
+<code>BuildQuery()</code> function takes several parameters, allowing
+you to customize the query you want to send.  The program mainline, as
+given, sends only broadcast queries. It can, however, be easily hacked
+to create a more versitile command-line tool. This new version also
+listens for replies.</p>
+
+<example id="Listing1.11">
+<caption><idx>recv()</idx><idx>RCODE</idx>Broadcast name query revisited</caption>
+<pre dk:break="after"><![CDATA[#include <stdio.h>
+#include <stdlib.h>
+#include <sys/poll.h>
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+
+#include "NS_Header.h"
+#include "NS_Qrec.h"
+
+#define uchar  unsigned char
+#define ushort unsigned short
+
+int BuildQuery( uchar         *msg,
+                const int      bcast,
+                const int      rdbit,
+                const uchar   *name,
+                const uchar    pad,
+                const uchar    suffix,
+                const uchar   *scope,
+                const ushort   qtype )]]></pre>
+
+<pre dk:break="after"><![CDATA[  /* ---------------------------------------------------- **
+   * Create a name query.
+   *
+   * This is much more flexible than the registration
+   * example in ]]><ref refid="Listing1.10"/><![CDATA[.  There are also a lot more
+   * parameters.  :-)
+   * ---------------------------------------------------- **
+   */
+  {
+  ushort *hdr = (ushort *)msg;
+  ushort  flags;
+  int     len;
+
+  /* RD always set if B is set. */
+  if( bcast )
+    flags = NM_RD_BIT | NM_B_BIT;
+  else
+    flags = rdbit ? NM_RD_BIT : 0;
+
+  Put_NS_TID( hdr, 1964 );
+  Put_NS_Hdr_Flags( hdr, flags );
+  Put_NS_Hdr_Rec_Counts( hdr, QUERYREC );
+  len = 12;     /* Fixed size of header. */
+
+  len += Put_Qrec( &msg[len], /* Query Rec Pointer */
+                   name,      /* NetBIOS name      */
+                   pad,       /* Padding char      */
+                   suffix,    /* Suffix            */
+                   scope,     /* Scope ID          */
+                   qtype );   /* Query type        */
+
+  return( len );
+  } /* BuildQuery */
+
+void ReadQueryReply( int sock )
+  /* ---------------------------------------------------- **
+   * Read the query reply message(s).
+   * ---------------------------------------------------- **
+   */
+  {
+  uchar  bufr[512];
+  int    msglen;
+  ushort flags;
+
+  msglen = recv( sock, bufr, 512, 0 );]]></pre>
+<pre dk:break="after"><![CDATA[  if( msglen < 0 )
+    {
+    perror( "recv()" );
+    exit( EXIT_FAILURE );
+    }
+
+  if( msglen < 12 )
+    {
+    printf( "Truncated reply received.\n" );
+    exit( EXIT_FAILURE );
+    }
+
+  flags = Get_NS_Hdr_Flags( (ushort *)bufr );
+  switch( RCODE_MASK & flags )
+    {
+    case RCODE_POS_RSP:
+      printf( "Positive Name Query Response.\n" );
+      break;
+    case RCODE_FMT_ERR:
+      printf( "RCODE_FMT_ERR: Format Error.\n" );
+      break;
+    case RCODE_SRV_ERR:
+      printf( "RCODE_SRV_ERR: Server Error.\n" );
+      break;
+    case RCODE_NAM_ERR:
+      printf( "RCODE_NAM_ERR: Name Not Found.\n" );
+      break;
+    default:
+      printf( "Unexpected return code: 0x%.2x.\n",
+              (RCODE_MASK & flags) );
+      break;
+    }
+  
+  } /* ReadQueryReply */
+
+int main( int argc, char *argv[] )
+  /* ---------------------------------------------------- **
+   * This program demonstrates a Broadcast NBT Name Query.
+   * ---------------------------------------------------- **
+   */
+  {
+  int                i;
+  int                result;
+  int                ns_sock;
+  int                msg_len;
+  uchar              bufr[512];
+  uchar             *name;]]></pre>
+
+<pre><![CDATA[  if( argc != 2 )
+    {
+    printf( "Usage:  %s <name>\n", argv[0] );
+    exit( EXIT_FAILURE );
+    }
+
+  name = (uchar *)argv[1];
+
+  ns_sock = OpenSocket();
+
+  msg_len = BuildQuery( bufr,  /* Target buffer.   */
+                        1,     /* Broadcast true.  */
+                        1,     /* RD bit true.     */
+                        name,  /* NetBIOS name.    */
+                        ' ',   /* Padding (space). */
+                        '\0',  /* Suffix (0x00).   */
+                        "",    /* Scope ("").      */
+                        QTYPE_NB ); /* Query type. */
+
+  for( i = 0; i < 3; i++ )
+    {
+    printf( "Trying...\n" );
+    SendBcastMsg( ns_sock, bufr, msg_len );
+    result = AwaitResponse( ns_sock, 750 );
+    if( result )
+      {
+      do
+        {
+        /* We may get multiple replies. */
+        ReadQueryReply( ns_sock );
+        } while( AwaitResponse( ns_sock, 750 ) );
+      exit( EXIT_SUCCESS );
+      }
+    }
+  printf( "No replies received.\n" );
+
+  close( ns_sock );
+  return( EXIT_FAILURE );
+  } /* main */]]></pre>
+</example>
+
+<p>The sweet and chewey center of a <code>POSITIVE NAME QUERY
+<dk:nobr>RESPONSE</dk:nobr></code> is the
+<code>RDATA</code><idx>RDATA</idx> section, which contains an array of
+address entries. In most cases there will be only one entry, but a
+group name<idx>group name</idx> or a multi-homed<idx>multi-homed host</idx>
+host name may have several associated IP addresses. The contents of
+the <dk:nobr><code>ADDR_ENTRY</code></dk:nobr> records should be
+fairly familiar by now, so we won't dwell on them. Here are some quick
+functions which can be used to display the IP
+<dk:nobr>addresses</dk:nobr> and <code>NB_FLAGS</code> of an
+<code>ADDR_ENTRY</code> array:<idx end="c4-QUERY">NAME QUERY</idx></p>
+
+<example id="Listing1.12">
+<caption><idx>node type</idx>Listing <code>ADDR_ENTRY</code> records</caption>
+<pre><![CDATA[#include "NS_RDaddr.h"
+
+int Find_RDLength( uchar *msg )
+  /* ---------------------------------------------------- **
+   * Calculate the offset of the RDLENGTH field within a
+   * POSITIVE NAME QUERY RESPONSE.
+   * ---------------------------------------------------- **
+   */
+  {
+  int len;
+
+  len = 12                        /* Length of the header */
+      + strlen( &msg[12] ) + 1    /* NBT Name length      */
+      + 2 + 2 + 4;                /* Type, Class, & TTL   */
+  return( len );
+  } /* Find_RDLength */
+
+void List_Addr_Entry( uchar *msg )
+  /* ---------------------------------------------------- **
+   * This function nicely prints the contents of an
+   * RDATA.ADDR_ENTRY[] array.
+   * ---------------------------------------------------- **
+   */
+  {
+  ushort numIPs;
+  ushort flags;
+  int    offset;
+  int    i;
+
+  offset = Find_RDLength( msg );
+  numIPs = Get_RDLength( msg, offset ) / 6;
+  offset += 2;  /* Move past the RDLENGTH field. */
+
+  for( i = 0; i < numIPs ; i++, offset += 6 )
+    {
+    /* Read the NB_FLAGS field. */
+    flags = Get_RD_NB_Flags( msg, offset );
+
+    /* If there are more than one, number the entries. */
+    if( numIPs > 1 )
+      printf( "ADDR_ENTRY[%d]: ", i );
+
+    /* Print the IP address. */
+    printf( "%d.%d.%d.%d\t",
+            msg[offset+2], msg[offset+3],
+            msg[offset+4], msg[offset+5] );
+
+    /* Group or Unique. */
+    if( GROUP_BIT & flags )
+      printf( "<Group>\t" );
+    else
+      printf( "<Unique>\t" );
+
+    /* Finally, the owner node type. */
+    switch( ONT_MASK & flags )
+      {
+      case ONT_B: printf( "<B-node>\n" ); break;
+      case ONT_P: printf( "<P-node>\n" ); break;
+      case ONT_M: printf( "<M-node>\n" ); break;
+      case ONT_H: printf( "<H-node>\n" ); break;
+      }
+    }
+  } /* List_Addr_Entry */]]></pre>
+</example>
+
+</h3s></h2s><h2 id="NameRefresh_1433">Name Refresh</h2><h2s>
+
+<p>Name refresh<idx>Name Refresh</idx> has two
+purposes. The first is to remind the NBNS that the client exists, thus
+ensuring that the name entry in the NBNS database does not expire. The
+second is to rebuild the NBNS database in the event of an NBNS
+crash. <code>NAME REFRESH REQUEST</code><idx>NAME REFRESH
+REQUEST</idx> messages are not needed in B mode<idx>B</idx> since each
+node keeps track of its own names.</p>
+
+<pre dk:break="after"><![CDATA[NAME REFRESH REQUEST
+  {
+  HEADER
+    {
+    NAME_TRN_ID = <Set when packet is transmitted>
+    FLAGS
+      {
+      OPCODE = <0x8 or 0x9> (Refresh)
+      RD     = FALSE (0)
+      B      = FALSE (0)
+      }
+    QDCOUNT = 1
+    ARCOUNT = 1
+    }]]></pre>
+<pre><![CDATA[  QUESTION_RECORD
+    {
+    QUESTION_NAME  = <Encoded NBT name to be refreshed>
+    QUESTION_TYPE  = NB (0x0020)
+    QUESTION_CLASS = IN (0x0001)
+    }
+  ADDITIONAL_RECORD
+    {
+    RR_NAME  = 0xC00C (Label String Pointer to QUESTION_NAME)
+    RR_TYPE  = NB (0x0020)
+    RR_CLASS = IN (0x0001)
+    TTL      = <Client's default TTL value (3 days)>
+    RDLENGTH = 6
+    RDATA
+      {
+      NB_FLAGS
+        {
+        G   = <TRUE for a group name, FALSE for a unique name>
+        ONT = <Owner type>
+        }
+      NB_ADDRESS = <Requesting node's IP address>
+      }
+    }
+  }]]></pre>
+
+<p>This message is almost identical to the unicast <code>NAME
+REGISTRATION REQUEST</code><idx>NAME REGISTRATION</idx>, with a few
+small exceptions. Note, in particular, the following:</p>
+
+<dl>
+<dt><code>OPCODE</code></dt>
+<dd><p>The <code>NAME REFRESH REQUEST</code> packet uses the
+Refresh OpCode. Due to a typo in RFC 1002, the <code>OPCODE</code>
+values <code>0x8</code> and <code>0x9</code> are considered equivalent and
+both mean <code>NAME REFRESH REQUEST</code>. <code>0x8</code> is more
+commonly used.</p></dd>
+
+<dt><code>RD</code></dt>
+<dd><p>The <code>RD</code> field is set to <code>FALSE</code>,
+which is a little strange since the <code>NAME REFRESH REQUEST</code>
+deals directly with the NBNS.</p></dd>
+
+<dt><code>TTL</code></dt>
+<dd><p>The <code>TTL</code> field typically contains the
+client's default <code>TTL</code> value - the same value used in the
+<code>NAME REGISTRATION REQUEST</code>. Once again, the NBNS has the
+right to override the client's <code>TTL</code> value in the
+<code>TTL</code> field of the response.</p></dd>
+
+<dt><code>RDATA</code></dt> 
+
+<dd><p>The <code>RDATA</code><idx>RDATA</idx> should match the data
+stored by the NBNS. If not, the NBNS will treat the request as if it
+were a registration request. If the refresh <code>RDATA</code>
+conflicts with the existing data, the NBNS may need to send a query to
+validate the older information in its database.</p></dd>
+</dl>
+
+<p>From watching packets on the wire,<fn>Many thanks to Jean
+Fran&#231;ois<idx>Micouleau, Jean Fran&#231;ois</idx> for all of his work
+on WINS behavior and <code>TTL</code> gymnastics.</fn> it seems that
+Windows systems use the following formula to determine how frequently
+a refresh message should be sent:</p>
+
+<pre>Refresh_Time = minimum( 40 minutes, (TTL/2) )</pre>
+
+<p>Based on the above formula, and considering that the default
+<code>TTL</code> value used by most clients is about three days,
+Windows NBNS clients typically send <code>NAME REFRESH REQUEST</code>
+messages every 40 minutes. This is a fairly high frequency, and it
+suggests a general lack of faith in the stability of the
+NBNS.<fn>Microsoft may be assuming that the NBNS service is being
+provided by their own WINS implementation. Samba's NBNS, which is part
+of the <code>nmbd</code><idx>nmbd</idx> daemon, periodically writes
+the contents of its database to a file called
+<code>wins.dat</code><idx>wins.dat</idx>. The <code>wins.dat</code>
+file is re-read at startup, and any non-expired names are placed back
+into the database. This prevents data loss due to a system
+restart. Samba sends refreshes every <code>TTL/2</code> seconds, and
+there have been reports of Samba server names "disappearing" from WINS
+databases following a Windows system crash. It is likely that newer
+versions of Samba (V3.0 and beyond) will use Microsoft's formula for
+calculating name refresh time.</fn></p>
+
+<p>The NBNS handles a <code>NAME REFRESH REQUEST</code> in exactly the
+same manner as it handles a <code>NAME REGISTRATION REQUEST</code>.
+There is little reason to distinguish between the two message
+types. Indeed, there is no multi-homed<idx>multi-homed host</idx> variant
+of the refresh message so multi-homed hosts perform the refresh
+operation by sending <code>MULTI-HOMED NAME REGISTRATION
+REQUEST</code> messages.</p>
+
+</h2s><h2 id="NBT1.4.3.4">Name Release</h2><h2s>
+
+<p><idx>name release</idx><idx>NAME RELEASE</idx>Both B and P nodes
+(and their hybrid offspring, the M and H nodes) send <code>NAME
+RELEASE</code> messages to announce that they are giving up ownership
+of a name.</p>
+
+<p>A <code>NAME RELEASE</code> sent in B mode is a <code>NAME RELEASE
+DEMAND</code>, as no response is expected. Any node receiving the
+release message will flush the released name from its local cache (if
+it has one<fn>Windows systems typically cache resolved names for about
+seven minutes. Use the <code>nbtstat -c</code><idx>nbtstat</idx>
+command from the DOS prompt<idx>DOS<sidx>prompt</sidx></idx> to see
+the cache contents.</fn>). In P mode, the release message sent by a
+node is a <code>NAME RELEASE REQUEST</code>, and it is always unicast
+to the NBNS. The message structure is the same in both cases:</p>
+
+<pre dk:type="smaller"><![CDATA[NAME RELEASE REQUEST or NAME RELEASE DEMAND
+  {
+  HEADER
+    {
+    NAME_TRN_ID = <Set when packet is transmitted>
+    FLAGS
+      {
+      OPCODE = 0x6 (Release)
+      B      = <FALSE (0) for REQUEST, TRUE (1) for DEMAND>
+      }
+    QDCOUNT = 1
+    ARCOUNT = 1
+    }
+  QUESTION_RECORD
+    {
+    QUESTION_NAME  = <Encoded NBT name to be released>
+    QUESTION_TYPE  = NB (0x0020)
+    QUESTION_CLASS = IN (0x0001)
+    }
+  ADDITIONAL_RECORD
+    {
+    RR_NAME  = 0xC00C (Label String Pointer to QUESTION_NAME)
+    RR_TYPE  = NB (0x0020)
+    RR_CLASS = IN (0x0001)
+    TTL      = 0 (zero)
+    RDLENGTH = 6
+    RDATA
+      {
+      NB_FLAGS
+        {
+        G   = <TRUE for a group name, FALSE for a unique name>
+        ONT = <Owner type>
+        }
+      NB_ADDRESS = <Releasing node's IP address>
+      }
+    }
+  }]]></pre>
+
+<h3 id="NBT1.4.3.4.1">Name Release Response</h3><h3s>
+
+<p>The NBNS will always respond to a <code>NAME RELEASE
+REQUEST</code><idx>NAME RELEASE</idx>.  The response packet looks like this:</p>
+
+<pre><idx>ANSWER_RECORD</idx><![CDATA[NAME RELEASE RESPONSE
+  {
+  HEADER
+    {
+    NAME_TRN_ID = <Must match REQUEST transaction ID>
+    FLAGS
+      {
+      R      = TRUE (1; This is a response packet)
+      OPCODE = 0x6 (Release)
+      AA     = TRUE (1)
+      RCODE  = <See discussion>
+      B      = FALSE (0)
+      }
+    ANCOUNT = 1
+    }
+  ANSWER_RECORD
+    {
+    RR_NAME  = <The Released Name, encoded as usual>
+    RR_TYPE  = NB (0x0020)
+    RR_CLASS = IN (0x0001)
+    TTL      = 0 (TTL has no meaning in this context)
+    RDLENGTH = 6
+    RDATA    = <Same as request packet>
+    }
+  }]]></pre>
+
+<p>Possible values for <code>RCODE</code><idx>RCODE</idx> are:</p>
+
+<dl>
+<dt><code>0x0:</code> Success</dt>
+<dd><p><code>POSITIVE NAME RELEASE RESPONSE</code>.
+The name entry has been removed from the NBNS database.</p></dd>
+
+<dt><code>FMT_ERR (0x1):</code><idx>FMT_ERR</idx> Format error</dt>
+<dd><p>Something got messed up, and the NBNS couldn't understand the
+request.</p></dd>
+
+<dt><code>SRV_ERR (0x2):</code><idx>SRV_ERR</idx> Server failure</dt>
+<dd><p>The NBNS is sick and cannot handle requests just now.</p></dd>
+
+<dt><code>NAM_ERR (0x3):</code><idx>NAM_ERR</idx> Name error</dt>
+<dd><p>The name does not exist in the NBNS database or, if the name
+exists, the <code>NB_FLAGS</code> did not match (so it's not really the
+same name).</p></dd>
+
+<dt><code>RFS_ERR (0x5):</code><idx>RFS_ERR</idx> Refused error</dt>
+<dd><p>The NBNS has made a policy decision not to release the name. For
+some reason, the end node that sent the request does not have
+authority to <dk:nobr>remove it.</dk:nobr></p></dd>
+
+<dt><code>ACT_ERR (0x6):</code><idx>ACT_ERR</idx> Active error</dt>
+<dd><p>The name was found in the database, but the
+<code>NB_ADDRESS</code> field did not match. Another node owns the
+name, so your node may not release it.</p></dd>
+</dl>
+
+</h3s></h2s><h2 id="NBT1.4.3.5">Node Status</h2><h2s>
+
+<p><idx>node status</idx>The Node Status Request operation goes by
+many names: "Node Status Query," "Adapter Status<idx>adapter
+status</idx> Query," "NBSTAT,"<idx>NBSTAT</idx> etc. This NBT message
+is used to implement the old NetBIOS Adapter Status command, which was
+used to retrieve information from LAN Adapter cards
+(LANAs<idx>LANA</idx>, in PC Network terms).</p>
+
+<pre><![CDATA[NODE STATUS REQUEST
+  {
+  HEADER
+    {
+    NAME_TRN_ID = <Set when packet is transmitted>
+    FLAGS
+      {
+      OPCODE = 0x0 (Query)
+      B      = FALSE (0)
+      }
+    QDCOUNT = 1
+    }
+  QUESTION_RECORD
+    {
+    QUESTION_NAME  = <Encoded NBT name to be queried>
+    QUESTION_TYPE  = NBSTAT (0x0021)
+    QUESTION_CLASS = IN (0x0001)
+    }
+  }]]></pre>
+
+<p>Note that these queries are sent from one end node to another.  The
+NBNS is never involved. This is because the NBNS itself is not
+connected to an NBT virtual LAN Adapter. The NBNS is part of the
+infrastructure that <em>creates</em> the NetBIOS virtual
+LAN.<idx>NBT<sidx>vLAN</sidx></idx> Only the end nodes are actually
+<em>members of</em> the LAN.<idx end="c4-NBNS">NBNS</idx></p>
+
+<h3 id="NBT1.4.3.5.1">Node Status Response</h3><h3s>
+
+<p>The response is not as simple as the query. The format of the reply
+depends upon the type of card and/or virtual adapter used to build the
+network. In the old days, different implementations of NetBIOS were
+built on top of different LANAs<idx>LANA</idx>, or emulated on top of
+a variety of underlying transport protocols. Each implementation kept
+track of its own set of status information, so the reply to the
+Adapter Status<idx>adapter status</idx> command was
+vendor-specific.</p>
+
+<p>The RFC authors developed their own reply structure, probably based
+in part on existing samples. The <code>NODE STATUS
+RESPONSE</code><idx>NODE STATUS</idx> looks like this:</p>
+
+<pre dk:type="small"><idx>ANSWER_RECORD</idx><![CDATA[NODE STATUS RESPONSE
+  {
+  HEADER
+    {
+    NAME_TRN_ID = <Same as request ID.>
+    FLAGS
+      {
+      R      = TRUE (1)
+      OPCODE = 0x0 (Query)
+      AA     = TRUE (1)
+      }
+    ANCOUNT = 1
+    }
+  ANSWER_RECORD
+    {
+    RR_NAME  = <The queried name, copied from the request>
+    RR_TYPE  = NBSTAT (0x0021)
+    RR_CLASS = IN (0x0001)
+    TTL      = 0 (TTL has no meaning in this context)
+    RDLENGTH = <Total length of following fields>
+    RDATA
+      {
+      NUM_NAMES = <Number of NODE_NAME[] entries>
+      NODE_NAME[]
+        {
+        NETBIOS_NAME = <16-octet NetBIOS name, unencoded>
+        NAME_FLAGS   = <See discussion below>
+        }
+      STATISTICS = <See discussion below>
+      }
+    }
+  }]]></pre>
+
+<p>This packet will need some tearing apart.</p>
+
+<p>The <code>RDATA.NUM_NAMES</code><idx>RDATA</idx> field is one octet
+in length. The <code>RDATA.NODE_NAME</code> array represents the
+responding node's local name table: the list of names the end node
+believes it owns.  Each entry in the array contains a
+<code>NETBIOS_NAME</code> field and a <code>NAME_FLAGS</code>
+field.</p>
+
+<p>The <code>NETBIOS_NAME</code> field is 16 bytes in length. The
+16-byte name includes the suffix byte<idx>suffix byte</idx> and any
+required padding, and is <em>not</em> encoded. The wildcard
+name<idx>wildcard<sidx>NetBIOS name</sidx></idx> (an asterisk followed
+by 15 nul bytes) is never included in the name list, which contains
+only registered names.</p>
+
+<p>The listed NetBIOS names<idx>NetBIOS<sidx>name</sidx></idx> all
+exist within the same NBT scope.<idx>NBT<sidx>scope</sidx></idx> The
+Scope ID<idx>NBT<sidx>Scope ID</sidx></idx> will have been sent as
+part of the original query, and will be stored as part of the
+<code>RR_NAME</code><idx>RR_NAME</idx> field in the reply.  Recall
+that the empty string, <code>""</code>, is a valid Scope ID.</p>
+
+<p>Along with each <code>NETBIOS_NAME</code> there is a
+<code>NAME_FLAGS</code> field, which provides name status
+information.  It looks like this:</p>
+
+<table colwidths="6* 5* 6* 8* 8* 8* 8* 5* 5* 5* 6* 6* 6* 6* 6* 6*" dk:type="centered" dk:borders="all">
+<tbody>
+<tr dk:border="after">
+<td dk:border="right"><p><code>0</code></p></td>
+<td dk:border="right"><p><code>1</code></p></td>
+<td dk:border="right"><p><code>2</code></p></td>
+<td dk:border="right"><p><code>3</code></p></td>
+<td dk:border="right"><p><code>4</code></p></td>
+<td dk:border="right"><p><code>5</code></p></td>
+<td dk:border="right"><p><code>6</code></p></td>
+<td dk:border="right"><p><code>7</code></p></td>
+<td dk:border="right"><p><code>8</code></p></td>
+<td dk:border="right"><p><code>9</code></p></td>
+<td dk:border="right"><p><code>10</code></p></td>
+<td dk:border="right"><p><code>11</code></p></td>
+<td dk:border="right"><p><code>12</code></p></td>
+<td dk:border="right"><p><code>13</code></p></td>
+<td dk:border="right"><p><code>14</code></p></td>
+<td><p><code>15</code></p></td>
+</tr>
+<tr>
+<td dk:border="right"><p><code>G</code></p></td>
+<td colspan="2" dk:border="right"><p><code>ONT</code></p></td>
+<td dk:border="right"><p><code>DRG</code></p></td>
+<td dk:border="right"><p><code>CNF</code></p></td>
+<td dk:border="right"><p><code>ACT</code></p></td>
+<td dk:border="right"><p><code>PRM</code></p></td>
+<td colspan="9"><p><code>UNUSED</code></p></td>
+</tr>
+</tbody></table>
+
+<p>The above is the same as an <code>NB_FLAGS</code> field with four
+extra bits defined.</p>
+
+<dl>
+<dt><code>DRG:</code> Deregister</dt>
+<dd><p>When an end node starts the process of releasing a name, it sets
+this flag. The name will continue to exist in the node's local name
+table until the name is released.</p></dd>
+
+<dt><code>CNF:</code> Conflict</dt>
+
+<dd><p>We have not fully described the Name Conflict<idx>name
+conflict</idx> condition yet. To put it simply, if two nodes believe
+they both own the same name (and at least one node claims that the
+name is unique<idx>unique name</idx>) then the two nodes are in
+conflict. One of them has to lose. The loser sets the <code>CNF</code>
+bit in its local name table and gives up using the disputed
+name.</p></dd>
+
+<dt><code>ACT:</code> Active</dt>
+
+<dd><p>This bit should always be set in the <code>NODE STATUS
+RESPONSE</code><idx>NODE STATUS</idx> packets. If, for some strange
+reason, the end node stores inactive names in its local name table,
+these are not reported.</p></dd>
+
+<dt><code>PRM:</code> Permanent</dt>
+
+<dd><p>According to the RFCs, every NBT end node should register a
+permanent name. This flag identifies that name. In practice,
+however, most implementations do not bother with a permanent name
+and this flag is <dk:nobr>not used.</dk:nobr></p></dd>
+</dl>
+
+<p>These flag values are displayed by Samba's<idx>Samba</idx>
+<code>nmblookup</code><idx>nmblookup</idx> program. <dk:nobr>For
+example:</dk:nobr></p>
+
+<screenshot type="unix"><![CDATA[$ nmblookup -S zathras#20
+querying zathras on 192.168.101.255
+192.168.101.15 zathras<20>
+Looking up status of 192.168.101.15
+    ZATHRAS         <00> -         B <CONFLICT> <ACTIVE> 
+    UBIQX           <00> - <GROUP> B <ACTIVE>
+    ZATHRAS         <03> -         B <ACTIVE>
+    ZATHRAS         <20> -         B <ACTIVE>
+    UBIQX           <1e> - <GROUP> B <ACTIVE>]]></screenshot>
+
+<p>The above shows that all of the names are <code>ACTIVE</code>, as
+they should be. The name <code>ZATHRAS&lt;00&gt;</code>, however, has
+been disabled due to a name conflict. From the column of
+<code>B</code>'s, it is apparent that Zathras<idx>Zathras</idx> is
+operating in B mode.<idx>B</idx></p>
+
+<p>Now let's take a look at the
+<code>RDATA.STATISTICS</code><idx>RDATA</idx> field.</p>
+
+<p>This is where things really fall
+apart. Microsoft's<idx>Microsoft</idx> <code>STATISTICS</code> blob is
+quite different from what is specified in the RFCs, and most likely
+for good reason. At the time the RFCs were published, Microsoft
+already had at least one NetBIOS implementation. Over time they built
+a few others, and they had software written to use those
+implementations. It probably made more sense to stick with familiar
+layouts than adopt the new one specified in <dk:nobr>the
+RFCs.</dk:nobr></p>
+
+<p dk:break="after">Fortunately, the data in the <code>STATISTICS</code> record is
+not particularly interesting, and current systems often fill most of
+it with zeros anyway. Only the first six bytes are commonly used
+now.  Windows systems will attempt to place an Ethernet MAC address
+into this space. Samba leaves it zero filled.</p>
+
+<alert type="Buglet">
+<p>The NBT Name Service<idx>NBT<sidx>Name Service</sidx></idx> listens
+on port 137<idx>137/UDP</idx>, but queries may originate from any
+UDP<idx>UDP</idx> port number. Such is the nature of UDP. Programs
+like Samba's <code>nmblookup</code> utility will open a high-numbered
+UDP port (something above 1023) in order to send a query. The reply
+should be sent back to that same port.</p>
+
+<p>In early versions of Windows 95, however, the source port in
+<code>NODE STATUS REQUEST</code><idx>NODE STATUS</idx> messages was
+ignored. The <code>NODE STATUS RESPONSE</code> message was sent to UDP
+port 137 - the wrong port. As a result, the node that sent the query
+might never hear the reply.</p>
+</alert>
+
+<p>Time for another chunk of code. <ref refid="Listing1.13"/> sends a
+<code>NODE STATUS REQUEST</code> message and then parses and
+displays the reply. As usual, it uses and builds upon functions
+presented in previous listings.</p>
+
+<example id="Listing1.13">
+<caption><idx>recv()</idx>Node Status Request</caption>
+<pre dk:break="after"><![CDATA[void Hex_Print( uchar *src, int len )
+  /* ---------------------------------------------------- **
+   * Print len bytes of src.  Escape any non-printing
+   * characters.
+   * ---------------------------------------------------- **
+   */
+  {
+  int i;
+
+  for( i = 0; i < len; i++ )
+    {
+    if( isprint( src[i] ) )
+      putchar( src[i] );
+    else
+      printf( "\\x%.2x", src[i] );
+    }
+  } /* Hex_Print */
+
+void SendMsg( int            sock,
+              uchar         *msg,
+              int            msglen,
+              struct in_addr address )
+  /* ---------------------------------------------------- **
+   * Send a message to port UDP/137 at the
+   * specified IP address.
+   * ---------------------------------------------------- **
+   */]]></pre>
+
+<pre dk:break="after"><![CDATA[  {
+  int                result;
+  struct sockaddr_in to;
+
+  to.sin_addr   = address;
+  to.sin_family = AF_INET;
+  to.sin_port   = htons( 137 );
+  result = sendto( sock, (void *)msg, msglen, 0,
+                   (struct sockaddr *)&to,
+                   sizeof(struct sockaddr_in) );
+  if( result < 0 )
+    {
+    perror( "sendto()" );
+    exit( EXIT_FAILURE );
+    }
+  } /* SendMsg */
+
+void ReadStatusReply( int sock )
+  /* ---------------------------------------------------- **
+   * Read the Node Status Response message, parse the
+   * NODE_NAME[] entries, and print everything in a
+   * readable format.
+   * ---------------------------------------------------- **
+   */
+  {
+  uchar  bufr[1024];
+  ushort flags;
+  int    msglen;
+  int    offset;
+  int    num_names;
+  int    i;
+
+  /* Read the message. */
+  msglen = recv( sock, bufr, 1024, 0 );
+  if( msglen < 0 )
+    {
+    perror( "recv()" );
+    exit( EXIT_FAILURE );
+    }
+
+  /* Find start of RDATA (two bytes beyond RDLENGTH). */
+  offset = 2 + Find_RDLength( bufr );
+
+  /* The NUM_NAMES field is one byte long. */
+  num_names = bufr[offset++];
+
+  /* Now go through and print each name entry. */]]></pre>
+<pre dk:break="after"><![CDATA[  for( i = 0; i < num_names; i++, offset += 18 )
+    {
+    flags = (bufr[offset+16] << 8) | bufr[offset+17];
+
+    printf( "NODE_NAME[%d]: ", i );
+    Hex_Print( &bufr[offset], 15 );
+    printf( "<%.2x>\t", bufr[offset+15] );
+
+    /* Group or Unique. */
+    printf( "[%c", ( GROUP_BIT & flags ) ? 'G' : 'U' );
+
+    /* The owner node type. */
+    switch( ONT_MASK & flags )
+      {
+      case ONT_B: printf( ",B" ); break;
+      case ONT_P: printf( ",P" ); break;
+      case ONT_M: printf( ",M" ); break;
+      case ONT_H: printf( ",H" ); break;
+      }
+
+    /* Additional flags */
+    if( DRG & flags )
+      printf( ",DRG" );
+    if( CNF & flags )
+      printf( ",CNF" );
+    if( ACT & flags )
+      printf( ",ACT" );
+    if( PRM & flags )
+      printf( ",PRM" );
+
+    printf( "]\n" );
+    }
+
+  /* Windows systems will also send the MAC address. */
+  printf( "MAC: %.2x:%.2x:%.2x:%.2x:%.2x:%.2x\n",
+          bufr[offset], bufr[offset+1], bufr[offset+2],
+          bufr[offset+3], bufr[offset+4], bufr[offset+5] );
+  } /* ReadStatusReply */
+
+int main( int argc, char *argv[] )
+  /* ---------------------------------------------------- **
+   * NBT Node Status Request.
+   * ---------------------------------------------------- **
+   */]]></pre>
+
+<pre><![CDATA[  {
+  int            i;
+  int            result;
+  int            ns_sock;
+  int            msg_len;
+  uchar          bufr[512];
+  struct in_addr address;
+
+  if( argc != 2 )
+    {
+    printf( "Usage:  %s <IP>\n", argv[0] );
+    exit( EXIT_FAILURE );
+    }
+
+  if( 0 == inet_aton( argv[1], &address ) )
+    {
+    printf( "Invalid IP.\n" );
+    printf( "Usage:  %s <IP>\n", argv[0] );
+    exit( EXIT_FAILURE );
+    }
+
+  ns_sock = OpenSocket();
+
+  msg_len = BuildQuery( bufr,  /* Target buffer.   */
+                        0,     /* Broadcast false. */
+                        0,     /* RD bit false.    */
+                        "*",   /* NetBIOS name.    */
+                        '\0',  /* Padding (space). */
+                        '\0',  /* Suffix (0x00).   */
+                        "",    /* Scope ("").      */
+                        QTYPE_NBSTAT );
+
+  for( i = 0; i < 3; i++ )
+    {
+    printf( "Sending NODE STATUS query to %s...\n", argv[1] );
+    SendMsg( ns_sock, bufr, msg_len, address );
+    result = AwaitResponse( ns_sock, 750 );
+    if( result )
+      {
+      ReadStatusReply( ns_sock );
+      exit( EXIT_SUCCESS );
+      }
+    }
+  printf( "No replies received.\n" );
+  close( ns_sock );
+  return( EXIT_FAILURE );
+  } /* main */]]></pre>
+</example>
+
+</h3s></h2s><h2 id="NBT1.4.3.6">Name Conflict Demand</h2><h2s>
+
+<p><idx start="c4-conflict2">name conflict</idx><idx>NAME
+REGISTRATION</idx>The name conflict demand is a simple message. It
+looks exactly like the <dk:nobr><code>NEGATIVE NAME REGISTRATION
+RESPONSE</code></dk:nobr> that we covered earlier, except that the
+<code>RCODE</code> field contains <code>CFT_ERR
+(0x7)</code><idx>CFT_ERR</idx>.</p>
+
+<p>To review:</p>
+
+<pre><idx>ANSWER_RECORD</idx><idx start="c4-ncdemand">NAME CONFLICT
+DEMAND</idx><![CDATA[NAME CONFLICT DEMAND
+  {
+  HEADER
+    {
+    NAME_TRN_ID = <Whatever you like>
+    FLAGS
+      {
+      R      = TRUE (1)
+      OPCODE = 0x5 (Registration)
+      AA     = TRUE (1)
+      RD     = TRUE (1)
+      RA     = TRUE (1)
+      RCODE  = CFT_ERR (0x7)
+      B      = FALSE (0)
+      }
+    ANCOUNT = 1
+    }
+  ANSWER_RECORD
+    {
+    RR_NAME  = <An NBT name owned by the target node>
+    RR_TYPE  = NB (0x0020)
+    RR_CLASS = IN (0x0001)
+    TTL      = 0
+    RDLENGTH = 6
+    RDATA
+      {
+      NB_FLAGS
+        {
+        G   = <TRUE for a group name, FALSE for a unique name>
+        ONT = <Owner type>
+        }
+      NB_ADDRESS = <Owner's IP address>
+      }
+    }
+  }]]></pre>
+
+<p>Once you've got <code>NAME REGISTRATION RESPONSE</code> packets
+coded up this one will be easy. The question is, what does it
+do?</p>
+
+<p>The <code>NAME CONFLICT DEMAND</code> is sent whenever the
+NBNS<idx>NBNS</idx> or an end node discovers a name conflict somewhere
+on the NBT network.  The goal is to make the offending node aware of
+the fact that it has stolen another node's name. An NBNS might send
+one of these if it finds an inconsistency in its database, possibly as
+a result of synchronizing with another NBNS.<fn>Microsoft's WINS
+servers can be configured to replicate with one another,
+simultaneously distributing the database for greater reliability and
+increasing the risk of conflicts and other corruption. WINS
+replication takes place over TCP port 42, should you care to
+observe. The replication protocol is fairly straightforward and has
+been untangled. There are plans to add WINS replication support to
+Samba<idx>Samba</idx> sometime after version&nbsp;3.0 is
+released.</fn> An end node will send a <code>NAME CONFLICT
+DEMAND</code> if it gets conflicting replies to a <code>NAME QUERY
+REQUEST</code><idx>NAME QUERY</idx>, working under the assumption that
+the first response is the correct one.</p>
+
+<p>When a node receives a <code>NAME CONFLICT DEMAND</code> it is
+supposed to disable the offending name. Any existing connections
+that were made using that name are unaffected, but the node will no
+longer respond to name queries for the disabled name, nor will it
+allow the disabled name to be used for new connections. It's as if
+the name no longer exists.</p>
+
+<p>There is an obvious security problem with this behavior. An
+evildoer can easily disable a name on, say, a file server or other
+important node. That alone could cause a
+Denial of Service<idx>DoS</idx> condition but the evildoer can go
+further by registering the same name itself, thus assuming the
+identity of the disabled node. For this reason, Samba and most (but
+not all) Windows systems ignore <code>NAME CONFLICT DEMAND</code>
+messages.<idx end="c4-conflict2">name conflict</idx></p>
+
+<h3 id="NBT1.4.3.6.1">Name Release Demand Revisited</h3><h3s>
+
+<p dk:break="after">There are actually two messages that can be used
+to force a node to give up a name. In addition to the <code>NAME
+CONFLICT DEMAND</code>, there is the <code>NAME RELEASE
+DEMAND</code><idx>NAME RELEASE</idx>. You may recall that a node
+operating in B (or M or H) mode will broadcast a release announcement
+when it wants to release one of its own names.  The same message can
+be unicast to another node to force the node to give up a name it
+holds.</p>
+
+<pre><![CDATA[NAME RELEASE DEMAND (unicast)
+  {
+  HEADER
+    {
+    NAME_TRN_ID = <Set when packet is transmitted>
+    FLAGS
+      {
+      OPCODE = 0x6 (Release)
+      B      = FALSE (0)
+      }
+    QDCOUNT = 1
+    ARCOUNT = 1
+    }
+  QUESTION_RECORD
+    {
+    QUESTION_NAME  = <Encoded NBT name to be released>
+    QUESTION_TYPE  = NB (0x0020)
+    QUESTION_CLASS = IN (0x0001)
+    }
+  ADDITIONAL_RECORD
+    {
+    RR_NAME  = 0xC00C (Label String Pointer to QUESTION_NAME)
+    RR_TYPE  = NB (0x0020)
+    RR_CLASS = IN (0x0001)
+    TTL      = 0 (zero)
+    RDLENGTH = 6
+    RDATA
+      {
+      NB_FLAGS
+        {
+        G   = <TRUE for a group name, FALSE for a unique name>
+        ONT = <Target node's owner type>
+        }
+      NB_ADDRESS = <Target node's IP address>
+      }
+    }
+  }]]></pre>
+
+<p>As with the <code>NAME CONFLICT DEMAND</code>, most (but not all)
+systems ignore this message. Play around... see what you find.<idx
+end="c4-ncdemand">NAME CONFLICT DEMAND</idx></p>
+
+</h3s></h2s></h1s><h1 id="NBT1.4.4">Enough Already</h1><h1s>
+
+<p>We could dig deeper. We could provide finer detail. We could, for
+instance, discuss the design, implementation, care, and feeding of a
+full-scale NBNS... but not now. It's getting late and we still have a
+lot of NBT ground to cover. Go ahead and take a quick break. Hug the
+spouse, make a fresh pot of <dk:nobr>tea, visit the
+facilities,</dk:nobr> scratch the dog, and then we'll move on to the
+<dk:nobr>Datagram Service.<idx start="c45-datagram">NBT<sidx>Datagram
+Service</sidx></idx></dk:nobr></p>
+
+<p>When you get back, we will start by overstating one of the key
+points of this section: that the purpose of the Name
+Service<idx>NBT<sidx>Name Service</sidx></idx> is to create a virtual
+NetBIOS LAN<idx>NBT<sidx>vLAN</sidx></idx> on top of a TCP/IP
+(inter)network.</p>
+
+</h1s>
+</chapter></oim>

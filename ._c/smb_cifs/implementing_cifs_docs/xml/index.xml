@@ -1,0 +1,3683 @@
+<?xml version="1.0" encoding="US-ASCII"?>
+<oim xmlns:xs="http://www.w3.org/2001/XMLSchema">
+   <index>
+      <item>
+         <term type="code">#DOM</term>
+         <pageno>448</pageno>
+      </item>
+      <item>
+         <term type="code">#SG</term>
+         <pageno>448</pageno>
+      </item>
+      <item>
+         <term type="code">*</term>
+         <see>wildcard</see>
+      </item>
+      <item>
+         <term type="code">*&lt;1B&gt;</term>
+         <see>wildcard Domain Master Browser query</see>
+      </item>
+      <item>
+         <term type="code">*SMBSERVER&lt;20&gt;</term>
+         <pageno>143</pageno>
+         <pageno>166</pageno>
+         <pageno>176</pageno>
+         <pageno>446</pageno>
+         <pageno>622</pageno>
+      </item>
+      <item>
+         <term type="code">\01\02__MSBROWSE__\02&lt;01&gt;</term>
+         <see type="code">MSBROWSE&lt;01&gt;</see>
+      </item>
+      <item>
+         <term type="code">\MAILSLOT</term>
+         <pageno>363</pageno>
+         <subitem>
+            <term type="code">\BROWSE</term>
+            <pageno>363</pageno>
+            <pageno>379</pageno>
+            <pageno>380</pageno>
+            <pageno>382</pageno>
+            <pageno>383</pageno>
+            <pageno>384</pageno>
+            <pageno>385</pageno>
+            <pageno>386</pageno>
+            <pageno>388</pageno>
+            <pageno>389</pageno>
+            <pageno>390</pageno>
+            <pageno>391</pageno>
+            <pageno>392</pageno>
+         </subitem>
+         <subitem>
+            <term type="code">\LANMAN</term>
+            <pageno>363</pageno>
+            <pageno>379</pageno>
+         </subitem>
+      </item>
+      <item>
+         <term type="code">\xffSMB</term>
+         <pageno>182</pageno>
+         <pageno>187</pageno>
+         <pageno>190</pageno>
+         <pageno>220</pageno>
+         <pageno>377</pageno>
+      </item>
+      <item>
+         <term>0x1Dirty</term>
+         <pageno>141</pageno>
+      </item>
+      <item>
+         <term>0x1Election</term>
+         <pageno>341</pageno>
+      </item>
+      <item>
+         <term>137/TCP</term>
+         <pageno>11</pageno>
+         <pageno>142</pageno>
+      </item>
+      <item>
+         <term>137/UDP</term>
+         <pageno>10</pageno>
+         <pageno>29</pageno>
+         <pageno>37</pageno>
+         <pageno>107</pageno>
+      </item>
+      <item>
+         <term>138/TCP</term>
+         <pageno>11</pageno>
+      </item>
+      <item>
+         <term>138/UDP</term>
+         <pageno>10</pageno>
+         <pageno>126</pageno>
+         <pageno>321</pageno>
+         <pageno>365</pageno>
+      </item>
+      <item>
+         <term>139/TCP</term>
+         <pageno>11</pageno>
+         <pageno>150</pageno>
+         <pageno>162</pageno>
+         <pageno>163</pageno>
+         <pageno>180</pageno>
+      </item>
+      <item>
+         <term>255.255.255.255</term>
+         <pageno>33</pageno>
+         <pageno>119</pageno>
+         <pageno>128</pageno>
+         <pageno>341</pageno>
+         <pageno>444</pageno>
+         <pageno>448</pageno>
+      </item>
+      <item>
+         <term>445/TCP</term>
+         <pageno>150</pageno>
+         <pageno>162</pageno>
+         <pageno>163</pageno>
+      </item>
+      <item>
+         <term>ACE</term>
+         <comment type="brackets">Access Control Entry</comment>
+         <pageno>331</pageno>
+      </item>
+      <item>
+         <term type="code">ACK</term>
+         <comment type="brackets">acknowledgement</comment>
+         <pageno>139</pageno>
+         <pageno>180</pageno>
+      </item>
+      <item>
+         <term type="code">ACT_ERR</term>
+         <pageno>5</pageno>
+         <pageno>50</pageno>
+         <pageno>68</pageno>
+         <pageno>77</pageno>
+         <pageno>84</pageno>
+         <pageno>103</pageno>
+      </item>
+      <item>
+         <term>Active Directory</term>
+         <pageno>236</pageno>
+         <pageno>296</pageno>
+         <pageno>297</pageno>
+         <pageno>339</pageno>
+         <pageno>452</pageno>
+         <pageno>453</pageno>
+         <pageno>455</pageno>
+      </item>
+      <item>
+         <term>adapter status</term>
+         <pageno>28</pageno>
+         <pageno>41</pageno>
+         <pageno>103</pageno>
+         <pageno>104</pageno>
+         <see type="also">node status</see>
+      </item>
+      <item>
+         <term type="code">ADDITIONAL_RECORD</term>
+         <pageno>46</pageno>
+         <pageno>63</pageno>
+         <pageno>69</pageno>
+      </item>
+      <item>
+         <term>Aled</term>
+         <pageno>xxix</pageno>
+      </item>
+      <item>
+         <term>Allen, Michael B.</term>
+         <pageno>xxix</pageno>
+         <pageno>233</pageno>
+      </item>
+      <item>
+         <term>Allison, Bridget</term>
+         <pageno>297</pageno>
+      </item>
+      <item>
+         <term>Allison, Jeremy</term>
+         <pageno>149</pageno>
+         <pageno>202</pageno>
+         <pageno>269</pageno>
+         <pageno>274</pageno>
+      </item>
+      <item>
+         <term>Amalia</term>
+         <pageno>xxix</pageno>
+      </item>
+      <item>
+         <term type="code">ANCOUNT</term>
+         <pageno>27</pageno>
+         <pageno>51</pageno>
+      </item>
+      <item>
+         <term type="code">ANDX</term>
+         <pageno>188</pageno>
+         <pageno>193</pageno>
+      </item>
+      <item>
+         <term type="code">AnnouncementRequest</term>
+         <pageno>379</pageno>
+         <pageno>380</pageno>
+         <pageno>412</pageno>
+      </item>
+      <item>
+         <term type="code">AnnounceRequest</term>
+         <pageno>381</pageno>
+      </item>
+      <item>
+         <term type="code">ANSWER_RECORD</term>
+         <pageno>67</pageno>
+         <pageno>78</pageno>
+         <pageno>90</pageno>
+         <pageno>92</pageno>
+         <pageno>102</pageno>
+         <pageno>104</pageno>
+         <pageno>111</pageno>
+      </item>
+      <item>
+         <term type="code">ARCOUNT</term>
+         <pageno>27</pageno>
+         <pageno>51</pageno>
+      </item>
+      <item>
+         <term>ASN.1</term>
+         <pageno>291</pageno>
+         <pageno>613</pageno>
+      </item>
+      <item>
+         <term>Assam</term>
+         <pageno>437</pageno>
+      </item>
+      <item>
+         <term>authentication</term>
+         <pageno>xxv</pageno>
+         <pageno>192</pageno>
+         <pageno>201</pageno>
+         <pageno>210</pageno>
+         <pageno>228</pageno>
+         <pageno>251</pageno>
+         <pageno start="c15-authentication">257</pageno>
+         <pageno end="c15-authentication">308</pageno>
+         <pageno>339</pageno>
+         <pageno>343</pageno>
+         <pageno>409</pageno>
+         <pageno>426</pageno>
+         <pageno>456</pageno>
+         <pageno>615</pageno>
+      </item>
+      <item>
+         <term>authorization</term>
+         <pageno>xxv</pageno>
+         <pageno>256</pageno>
+         <pageno>294</pageno>
+      </item>
+      <item>
+         <term>B</term>
+         <comment>mode</comment>
+         <pageno>8</pageno>
+         <pageno>9</pageno>
+         <pageno>10</pageno>
+         <pageno>13</pageno>
+         <pageno>18</pageno>
+         <pageno>41</pageno>
+         <pageno>44</pageno>
+         <pageno>62</pageno>
+         <pageno>76</pageno>
+         <pageno start="c4-b">77</pageno>
+         <pageno end="c4-b">86</pageno>
+         <pageno>98</pageno>
+         <pageno>106</pageno>
+         <pageno start="c5-b">116</pageno>
+         <pageno end="c5-b">119</pageno>
+         <pageno>122</pageno>
+         <pageno>141</pageno>
+         <pageno>161</pageno>
+         <pageno>301</pageno>
+         <pageno>353</pageno>
+         <pageno>355</pageno>
+         <pageno>428</pageno>
+      </item>
+      <item>
+         <term type="code">B13BWz</term>
+         <pageno>406</pageno>
+         <pageno>409</pageno>
+      </item>
+      <item>
+         <term type="code">B16BBDz</term>
+         <pageno>396</pageno>
+      </item>
+      <item>
+         <term>Backup Browser</term>
+         <pageno>345</pageno>
+         <pageno>349</pageno>
+         <pageno>352</pageno>
+         <pageno>354</pageno>
+         <pageno>357</pageno>
+         <pageno>385</pageno>
+         <pageno>387</pageno>
+         <pageno>389</pageno>
+         <pageno>391</pageno>
+         <pageno>401</pageno>
+         <pageno>402</pageno>
+         <pageno>412</pageno>
+         <pageno>415</pageno>
+         <pageno>416</pageno>
+         <pageno>614</pageno>
+      </item>
+      <item>
+         <term>BAF protocol</term>
+         <pageno>147</pageno>
+         <pageno>614</pageno>
+      </item>
+      <item>
+         <term>ballot</term>
+         <pageno>413</pageno>
+      </item>
+      <item>
+         <term>Barnes, Prairie</term>
+         <pageno>xxix</pageno>
+      </item>
+      <item>
+         <term>Barron, Tom</term>
+         <pageno>xxix</pageno>
+      </item>
+      <item>
+         <term>Barthel, Olaf</term>
+         <pageno>xxix</pageno>
+         <pageno>359</pageno>
+         <pageno>437</pageno>
+      </item>
+      <item>
+         <term>Bartlett, Andrew</term>
+         <pageno>xxii</pageno>
+         <pageno>xxix</pageno>
+         <pageno>199</pageno>
+         <pageno>267</pageno>
+         <pageno>275</pageno>
+         <pageno>284</pageno>
+         <pageno>303</pageno>
+         <pageno>463</pageno>
+      </item>
+      <item>
+         <term>BDC</term>
+         <comment type="brackets">Backup Domain Controller</comment>
+         <pageno>298</pageno>
+         <pageno>344</pageno>
+         <pageno>402</pageno>
+         <pageno>443</pageno>
+         <pageno>614</pageno>
+         <see type="also">DC, PDC</see>
+      </item>
+      <item>
+         <term type="code">BecomeBackup</term>
+         <comment>Browser Frame</comment>
+         <see type="code">BecomeBackupRequest</see>
+      </item>
+      <item>
+         <term type="code">BecomeBackupRequest</term>
+         <pageno>353</pageno>
+         <pageno>354</pageno>
+         <pageno>379</pageno>
+         <pageno>389</pageno>
+      </item>
+      <item>
+         <term>Bran</term>
+         <pageno>xxix</pageno>
+         <pageno>614</pageno>
+      </item>
+      <item>
+         <term>Browse List</term>
+         <pageno>337</pageno>
+         <pageno>341</pageno>
+         <pageno>345</pageno>
+         <pageno start="c20-bl">348</pageno>
+         <pageno end="c20-bl">355</pageno>
+         <pageno>382</pageno>
+         <pageno>388</pageno>
+         <pageno>390</pageno>
+         <pageno>391</pageno>
+         <pageno>416</pageno>
+         <pageno>421</pageno>
+         <pageno>423</pageno>
+         <pageno>445</pageno>
+      </item>
+      <item>
+         <term>Browse Service</term>
+         <pageno>xxv</pageno>
+         <pageno>xxix</pageno>
+         <pageno>256</pageno>
+         <pageno>319</pageno>
+         <pageno start="c19-bs">337</pageno>
+         <pageno end="c19-bs">345</pageno>
+         <pageno>347</pageno>
+         <pageno>348</pageno>
+         <pageno>356</pageno>
+         <pageno>363</pageno>
+         <pageno>416</pageno>
+         <pageno>419</pageno>
+         <pageno>431</pageno>
+         <subitem>
+            <term>Consumer</term>
+            <pageno>348</pageno>
+            <pageno>349</pageno>
+            <pageno>357</pageno>
+            <pageno>385</pageno>
+            <pageno>411</pageno>
+            <pageno>426</pageno>
+            <pageno>428</pageno>
+         </subitem>
+         <subitem>
+            <term>Provider</term>
+            <pageno>348</pageno>
+            <pageno>354</pageno>
+            <pageno>381</pageno>
+            <pageno>397</pageno>
+            <pageno>399</pageno>
+            <pageno>416</pageno>
+            <pageno>428</pageno>
+         </subitem>
+      </item>
+      <item>
+         <term>browser</term>
+         <pageno>350</pageno>
+         <subitem>
+            <term>Backup</term>
+            <see>Backup Browser</see>
+         </subitem>
+         <subitem>
+            <term>Domain Master</term>
+            <see>DMB</see>
+         </subitem>
+         <subitem>
+            <term>election</term>
+            <see>election</see>
+         </subitem>
+         <subitem>
+            <term>Local Master</term>
+            <see>LMB</see>
+         </subitem>
+         <subitem>
+            <term>Potential</term>
+            <see>Potential Browser</see>
+         </subitem>
+         <subitem>
+            <term>Preferred Master</term>
+            <see>Preferred Master Browser</see>
+         </subitem>
+         <subitem>
+            <term>web</term>
+            <see>web browser</see>
+         </subitem>
+      </item>
+      <item>
+         <term>BSD</term>
+         <comment type="brackets">Berkeley Software Distribution</comment>
+         <pageno>33</pageno>
+      </item>
+      <item>
+         <term>BSOD</term>
+         <comment type="brackets">Blue Screen of Death</comment>
+         <pageno>75</pageno>
+         <pageno>317</pageno>
+      </item>
+      <item>
+         <term>Bulwer-Lytton, Edward George</term>
+         <pageno>141</pageno>
+      </item>
+      <item>
+         <term>byte order</term>
+         <pageno>51</pageno>
+         <pageno>193</pageno>
+         <pageno>220</pageno>
+         <pageno>369</pageno>
+      </item>
+      <item>
+         <term type="code">C:</term>
+         <comment type="brackets">C-colon</comment>
+         <pageno>209</pageno>
+      </item>
+      <item>
+         <term type="code">CACA</term>
+         <pageno>20</pageno>
+      </item>
+      <item>
+         <term>caffeine</term>
+         <pageno>437</pageno>
+         <pageno>438</pageno>
+      </item>
+      <item>
+         <term>Caldarale, Charles</term>
+         <pageno>316</pageno>
+      </item>
+      <item>
+         <term type="code">CALLED NAME</term>
+         <pageno>131</pageno>
+         <pageno>143</pageno>
+         <pageno>155</pageno>
+         <pageno start="c10-called">163</pageno>
+         <pageno end="c10-called">176</pageno>
+         <pageno>440</pageno>
+         <pageno>446</pageno>
+      </item>
+      <item>
+         <term type="code">CALLING NAME</term>
+         <pageno>131</pageno>
+         <pageno>176</pageno>
+         <pageno>622</pageno>
+      </item>
+      <item>
+         <term>Camellia sinensis</term>
+         <pageno>437</pageno>
+      </item>
+      <item>
+         <term type="code">Capabilities</term>
+         <comment>bits</comment>
+         <pageno>232</pageno>
+         <pageno>238</pageno>
+         <pageno>241</pageno>
+         <pageno start="c14-capabilities">245</pageno>
+         <pageno end="c14-capabilities">251</pageno>
+      </item>
+      <item>
+         <term>Carey, James</term>
+         <pageno>xxix</pageno>
+      </item>
+      <item>
+         <term>Carter, Benjamin</term>
+         <pageno>425</pageno>
+      </item>
+      <item>
+         <term>Carter, Gerald (Jerry)</term>
+         <pageno>xxx</pageno>
+         <pageno>254</pageno>
+         <pageno>276</pageno>
+      </item>
+      <item>
+         <term type="code">CaseInsensitivePassword</term>
+         <pageno>10</pageno>
+         <pageno>191</pageno>
+         <pageno>241</pageno>
+         <pageno>252</pageno>
+         <pageno>262</pageno>
+         <pageno>263</pageno>
+         <pageno>264</pageno>
+         <pageno>272</pageno>
+         <pageno>273</pageno>
+         <pageno>287</pageno>
+         <pageno>288</pageno>
+         <pageno>311</pageno>
+      </item>
+      <item>
+         <term type="code">CaseSensitivePassword</term>
+         <pageno>191</pageno>
+         <pageno>241</pageno>
+         <pageno>252</pageno>
+         <pageno>263</pageno>
+         <pageno>264</pageno>
+         <pageno>275</pageno>
+         <pageno>282</pageno>
+      </item>
+      <item>
+         <term>Ceylon</term>
+         <pageno>437</pageno>
+      </item>
+      <item>
+         <term type="code">CFT_ERR</term>
+         <pageno>5</pageno>
+         <pageno>50</pageno>
+         <pageno>111</pageno>
+      </item>
+      <item>
+         <term>challenge/response</term>
+         <pageno>228</pageno>
+         <pageno>236</pageno>
+         <pageno>258</pageno>
+         <pageno>262</pageno>
+         <pageno start="c15-ch-r">265</pageno>
+         <pageno end="c15-ch-r">289</pageno>
+      </item>
+      <item>
+         <term>CIFS</term>
+         <comment type="brackets">Common Internet File System</comment>
+         <pageno>xxiv</pageno>
+         <pageno>614</pageno>
+         <subitem>
+            <term>community</term>
+            <pageno>xxvi</pageno>
+         </subitem>
+         <subitem>
+            <term>conference</term>
+            <pageno>xxvii</pageno>
+         </subitem>
+         <subitem>
+            <term>mailing list</term>
+            <pageno>xxvii</pageno>
+            <pageno>151</pageno>
+            <pageno>250</pageno>
+         </subitem>
+         <subitem>
+            <term>URL</term>
+            <pageno>453</pageno>
+         </subitem>
+      </item>
+      <item>
+         <term type="code">cifslog.txt</term>
+         <pageno>297</pageno>
+      </item>
+      <item>
+         <term type="code">cifsrap2.txt</term>
+         <pageno>250</pageno>
+         <pageno>394</pageno>
+      </item>
+      <item>
+         <term type="code">CKAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA</term>
+         <pageno>31</pageno>
+      </item>
+      <item>
+         <term>COBOL</term>
+         <pageno>5</pageno>
+      </item>
+      <item>
+         <term>Cohen, Stephanie</term>
+         <pageno>xxix</pageno>
+      </item>
+      <item>
+         <term>Consumer</term>
+         <see>Browse Service Consumer</see>
+      </item>
+      <item>
+         <term type="code">COREP.TXT</term>
+         <pageno>183</pageno>
+         <pageno>185</pageno>
+         <pageno>210</pageno>
+         <pageno>222</pageno>
+      </item>
+      <item>
+         <term>Cox, Philip</term>
+         <pageno>297</pageno>
+      </item>
+      <item>
+         <term>CVS</term>
+         <comment type="brackets">Concurrent Versions System</comment>
+         <pageno>xxix</pageno>
+      </item>
+      <item>
+         <term>DAP</term>
+         <comment type="brackets">Directory Access Protocol</comment>
+         <pageno>292</pageno>
+         <see type="also">LDAP</see>
+      </item>
+      <item>
+         <term>Darjeeling</term>
+         <pageno>437</pageno>
+      </item>
+      <item>
+         <term>Datagram Service</term>
+         <see>NBT Datagram Service</see>
+      </item>
+      <item>
+         <term>DC</term>
+         <comment type="brackets">Domain Controller</comment>
+         <pageno>9</pageno>
+         <pageno>143</pageno>
+         <pageno>201</pageno>
+         <pageno>237</pageno>
+         <pageno>253</pageno>
+         <pageno>272</pageno>
+         <pageno>280</pageno>
+         <pageno>286</pageno>
+         <pageno>288</pageno>
+         <pageno start="c15-dc">295</pageno>
+         <pageno end="c15-dc">299</pageno>
+         <pageno>304</pageno>
+         <pageno>339</pageno>
+         <pageno>343</pageno>
+         <pageno>402</pageno>
+         <pageno>443</pageno>
+         <pageno>615</pageno>
+         <subitem>
+            <term>Backup</term>
+            <see>BDC</see>
+         </subitem>
+         <subitem>
+            <term>Primary</term>
+            <see>PDC</see>
+         </subitem>
+      </item>
+      <item>
+         <term>DCE/RPC</term>
+         <comment type="brackets">Distributed Computing Environment/Remote Procedure Call</comment>
+         <pageno>250</pageno>
+         <pageno>292</pageno>
+         <pageno>319</pageno>
+         <see type="also">MS-RPC</see>
+      </item>
+      <item>
+         <term>Deadwiler, Byron</term>
+         <pageno>246</pageno>
+      </item>
+      <item>
+         <term>Debian GNU/Linux</term>
+         <pageno>xxviii</pageno>
+         <pageno>33</pageno>
+      </item>
+      <item>
+         <term>DES</term>
+         <comment type="brackets">Data Encryption Standard</comment>
+         <pageno start="c15-DES">266</pageno>
+         <pageno end="c15-DES">279</pageno>
+      </item>
+      <item>
+         <term>DFS</term>
+         <comment type="brackets">Distributed File System</comment>
+         <pageno>207</pageno>
+         <pageno>246</pageno>
+         <pageno>312</pageno>
+         <pageno start="c17-DFS">326</pageno>
+         <pageno end="c17-DFS">328</pageno>
+         <pageno>400</pageno>
+      </item>
+      <item>
+         <term>DHCP</term>
+         <comment type="brackets">Dynamic Host Configuration Protocol</comment>
+         <pageno>9</pageno>
+      </item>
+      <item>
+         <term>Dia</term>
+         <pageno>xxix</pageno>
+      </item>
+      <item>
+         <term>dialect</term>
+         <pageno>xxvi</pageno>
+         <pageno>147</pageno>
+         <pageno>187</pageno>
+         <pageno start="c13-dialect">221</pageno>
+         <pageno end="c13-dialect">235</pageno>
+         <pageno>239</pageno>
+         <pageno start="c14-dialect">242</pageno>
+         <pageno end="c14-dialect">251</pageno>
+         <pageno>261</pageno>
+         <pageno>338</pageno>
+      </item>
+      <item>
+         <term>Diebel, Judy</term>
+         <pageno>xxix</pageno>
+      </item>
+      <item>
+         <term type="code">disablePlainTextPasswords</term>
+         <pageno>260</pageno>
+      </item>
+      <item>
+         <term>DMB</term>
+         <comment type="brackets">Domain Master Browser</comment>
+         <pageno>29</pageno>
+         <pageno>142</pageno>
+         <pageno start="c19-dmb">340</pageno>
+         <pageno end="c19-dmb">345</pageno>
+         <pageno start="c20-dmb">349</pageno>
+         <pageno end="c20-dmb">353</pageno>
+         <pageno start="c20-dmb2">355</pageno>
+         <pageno end="c20-dmb2">357</pageno>
+         <pageno start="c21-dmb">363</pageno>
+         <pageno end="c21-dmb">365</pageno>
+         <pageno>387</pageno>
+         <pageno>391</pageno>
+         <pageno start="c23-dmb">411</pageno>
+         <pageno end="c23-dmb">417</pageno>
+         <pageno start="c24-dmb">420</pageno>
+         <pageno end="c24-dmb">423</pageno>
+         <pageno start="c25-dmb">425</pageno>
+         <pageno end="c25-dmb">428</pageno>
+         <pageno>443</pageno>
+         <pageno>449</pageno>
+         <pageno>454</pageno>
+         <pageno>616</pageno>
+      </item>
+      <item>
+         <term>DMCA</term>
+         <comment type="brackets">Digital Millennium Copyright Act</comment>
+         <pageno>269</pageno>
+         <pageno>615</pageno>
+      </item>
+      <item>
+         <term>DNS</term>
+         <comment type="brackets">Domain Name System</comment>
+         <pageno>xxiv</pageno>
+         <pageno>xxv</pageno>
+         <pageno start="c3-dns">18</pageno>
+         <pageno end="c3-dns">32</pageno>
+         <pageno start="c4-dns">42</pageno>
+         <pageno end="c4-dns">51</pageno>
+         <pageno>143</pageno>
+         <pageno>155</pageno>
+         <pageno>159</pageno>
+         <pageno>162</pageno>
+         <pageno start="c10-dns">164</pageno>
+         <pageno end="c10-dns">176</pageno>
+         <pageno>178</pageno>
+         <pageno>284</pageno>
+         <pageno>296</pageno>
+         <pageno>301</pageno>
+         <pageno>339</pageno>
+         <pageno>453</pageno>
+         <pageno>455</pageno>
+         <pageno>456</pageno>
+         <pageno>616</pageno>
+      </item>
+      <item>
+         <term type="code">DomainAnnouncement</term>
+         <pageno>352</pageno>
+         <pageno>379</pageno>
+         <pageno>388</pageno>
+         <pageno>399</pageno>
+         <pageno>428</pageno>
+      </item>
+      <item>
+         <term>DoS</term>
+         <comment type="brackets">Denial of Service</comment>
+         <pageno>112</pageno>
+         <pageno>355</pageno>
+         <pageno>613</pageno>
+      </item>
+      <item>
+         <term>DOS</term>
+         <comment type="brackets">Disk Operating System</comment>
+         <pageno>xxvi</pageno>
+         <pageno>3</pageno>
+         <pageno>5</pageno>
+         <pageno>115</pageno>
+         <pageno>147</pageno>
+         <pageno>154</pageno>
+         <pageno>157</pageno>
+         <pageno>210</pageno>
+         <pageno>222</pageno>
+         <pageno>312</pageno>
+         <pageno>324</pageno>
+         <pageno start="c17-dos">328</pageno>
+         <pageno end="c17-dos">331</pageno>
+         <subitem>
+            <term>Code Page 437</term>
+            <pageno>43</pageno>
+         </subitem>
+         <subitem>
+            <term>error codes</term>
+            <pageno>182</pageno>
+            <pageno>188</pageno>
+            <pageno>198</pageno>
+            <pageno>206</pageno>
+            <pageno>291</pageno>
+            <pageno>326</pageno>
+            <pageno>370</pageno>
+            <pageno>398</pageno>
+         </subitem>
+         <subitem>
+            <term>prompt</term>
+            <pageno>101</pageno>
+            <pageno>179</pageno>
+         </subitem>
+      </item>
+      <item>
+         <term type="code">doserr.h</term>
+         <pageno>199</pageno>
+      </item>
+      <item>
+         <term type="code-hyphen">draft-leach-cifs-browser-spec-00.txt</term>
+         <comment/>
+         <pageno>443</pageno>
+      </item>
+      <item>
+         <term>Dzurenko, Jeanne</term>
+         <pageno>xxix</pageno>
+      </item>
+      <item>
+         <term>Earl Grey</term>
+         <pageno>18</pageno>
+      </item>
+      <item>
+         <term>EAs</term>
+         <comment type="brackets">Extended Attributes</comment>
+         <pageno>208</pageno>
+         <pageno>317</pageno>
+         <pageno>331</pageno>
+      </item>
+      <item>
+         <term>election</term>
+         <pageno>340</pageno>
+         <pageno>341</pageno>
+         <pageno>344</pageno>
+         <pageno start="c20-election">350</pageno>
+         <pageno end="c20-election">357</pageno>
+         <pageno>379</pageno>
+         <pageno>383</pageno>
+         <pageno>387</pageno>
+         <pageno>391</pageno>
+         <pageno>392</pageno>
+         <pageno start="c23-election">411</pageno>
+         <pageno end="c23-election">417</pageno>
+         <pageno>423</pageno>
+         <pageno>426</pageno>
+         <pageno>428</pageno>
+         <pageno>444</pageno>
+         <pageno>449</pageno>
+         <pageno>614</pageno>
+      </item>
+      <item>
+         <term>EMACS</term>
+         <comment type="brackets">Editor MACroS</comment>
+         <pageno>209</pageno>
+      </item>
+      <item>
+         <term type="code">EnableSecuritySignature</term>
+         <pageno>306</pageno>
+      </item>
+      <item>
+         <term>Ethereal</term>
+         <pageno>17</pageno>
+         <pageno>30</pageno>
+         <pageno>37</pageno>
+         <pageno>150</pageno>
+         <pageno>180</pageno>
+         <pageno>188</pageno>
+         <pageno>255</pageno>
+         <pageno>264</pageno>
+         <pageno>385</pageno>
+         <pageno>389</pageno>
+         <pageno>400</pageno>
+      </item>
+      <item>
+         <term type="code">Exists.java</term>
+         <pageno>179</pageno>
+         <pageno>187</pageno>
+         <pageno>193</pageno>
+         <pageno>260</pageno>
+         <pageno>261</pageno>
+      </item>
+      <item>
+         <term>Farmer, David</term>
+         <pageno>xxix</pageno>
+      </item>
+      <item>
+         <term>FAT</term>
+         <comment type="brackets">File Allocation Table</comment>
+         <pageno>312</pageno>
+         <pageno>328</pageno>
+      </item>
+      <item>
+         <term>Feigenbaum, Dr. Barry</term>
+         <pageno>147</pageno>
+         <pageno>614</pageno>
+      </item>
+      <item>
+         <term>FID</term>
+         <comment type="brackets">File IDentifier</comment>
+         <pageno>315</pageno>
+      </item>
+      <item>
+         <term type="code">FLAGS</term>
+         <pageno>183</pageno>
+         <pageno>188</pageno>
+         <pageno>197</pageno>
+         <pageno>203</pageno>
+         <pageno>232</pageno>
+         <pageno>247</pageno>
+         <pageno>324</pageno>
+      </item>
+      <item>
+         <term type="code">FLAGS2</term>
+         <pageno>183</pageno>
+         <pageno>188</pageno>
+         <pageno>197</pageno>
+         <pageno>206</pageno>
+         <pageno>232</pageno>
+         <pageno>237</pageno>
+      </item>
+      <item>
+         <term type="code">FMT_ERR</term>
+         <pageno>5</pageno>
+         <pageno>50</pageno>
+         <pageno>76</pageno>
+         <pageno>91</pageno>
+         <pageno>102</pageno>
+      </item>
+      <item>
+         <term>fragmentation</term>
+         <pageno>123</pageno>
+         <pageno start="c5-fragmentation">125</pageno>
+         <pageno end="c5-fragmentation">126</pageno>
+         <pageno>231</pageno>
+         <pageno>320</pageno>
+         <pageno start="c22-fragmentation">407</pageno>
+         <pageno end="c22-fragmentation">408</pageno>
+      </item>
+      <item>
+         <term>French, Steven</term>
+         <pageno>5</pageno>
+         <pageno>147</pageno>
+         <pageno>249</pageno>
+      </item>
+      <item>
+         <term>Galeon</term>
+         <pageno>157</pageno>
+      </item>
+      <item>
+         <term>Gavel, Amy</term>
+         <pageno>xxix</pageno>
+      </item>
+      <item>
+         <term>Geddes, Matthew</term>
+         <pageno>436</pageno>
+      </item>
+      <item>
+         <term type="code">GetBackupListRequest</term>
+         <pageno>350</pageno>
+         <pageno>353</pageno>
+         <pageno>379</pageno>
+         <pageno>384</pageno>
+         <pageno>417</pageno>
+      </item>
+      <item>
+         <term type="code">GetBackupListResponse</term>
+         <pageno>350</pageno>
+         <pageno>379</pageno>
+         <pageno>385</pageno>
+      </item>
+      <item>
+         <term type="code">gethostbyname()</term>
+         <pageno>162</pageno>
+      </item>
+      <item keep="next">
+         <term>GNU Lesser General Public License (LGPL)</term>
+         <pageno>xxxi</pageno>
+      </item>
+      <item>
+         <term>group name</term>
+         <pageno>6</pageno>
+         <pageno start="c2-group">7</pageno>
+         <pageno end="c2-group">11</pageno>
+         <pageno>30</pageno>
+         <pageno>64</pageno>
+         <pageno>69</pageno>
+         <pageno start="c4-group">81</pageno>
+         <pageno end="c4-group">86</pageno>
+         <pageno>96</pageno>
+         <pageno start="c5-group">116</pageno>
+         <pageno end="c5-group">120</pageno>
+         <pageno>142</pageno>
+         <pageno start="c19-group">340</pageno>
+         <pageno end="c19-group">344</pageno>
+         <pageno>356</pageno>
+         <pageno>364</pageno>
+      </item>
+      <item>
+         <term>GSS-API</term>
+         <pageno>292</pageno>
+         <pageno>294</pageno>
+         <pageno>617</pageno>
+      </item>
+      <item>
+         <term>GUID</term>
+         <comment type="brackets">Globally Unique IDentifier</comment>
+         <pageno>236</pageno>
+      </item>
+      <item>
+         <term>H</term>
+         <comment>mode</comment>
+         <pageno>9</pageno>
+         <pageno>10</pageno>
+         <pageno>13</pageno>
+         <pageno>41</pageno>
+         <pageno>44</pageno>
+         <pageno>62</pageno>
+         <pageno start="c4-h">77</pageno>
+         <pageno end="c4-h">86</pageno>
+         <pageno start="c5-h">117</pageno>
+         <pageno end="c5-h">119</pageno>
+         <pageno>122</pageno>
+         <pageno>141</pageno>
+         <pageno>161</pageno>
+         <pageno>356</pageno>
+         <pageno>414</pageno>
+         <pageno>426</pageno>
+         <pageno>428</pageno>
+         <pageno>449</pageno>
+      </item>
+      <item>
+         <term>Harry, Jill</term>
+         <pageno>xxx</pageno>
+      </item>
+      <item>
+         <term>Hill, Paul</term>
+         <pageno>297</pageno>
+      </item>
+      <item>
+         <term>Hirsch, David</term>
+         <pageno>xxix</pageno>
+      </item>
+      <item>
+         <term>HMAC-MD5</term>
+         <pageno start="c15-HMAC-MD5">7</pageno>
+         <pageno end="c15-HMAC-MD5">282</pageno>
+         <pageno>285</pageno>
+         <pageno>287</pageno>
+      </item>
+      <item>
+         <term>HMACT64</term>
+         <pageno>278</pageno>
+      </item>
+      <item>
+         <term type="code">HostAnnouncement</term>
+         <pageno>348</pageno>
+         <pageno>352</pageno>
+         <pageno>354</pageno>
+         <pageno>379</pageno>
+         <pageno>381</pageno>
+         <pageno>387</pageno>
+         <pageno>388</pageno>
+         <pageno>390</pageno>
+         <pageno>399</pageno>
+         <pageno>422</pageno>
+      </item>
+      <item>
+         <term>Howard, Luke</term>
+         <pageno>284</pageno>
+      </item>
+      <item>
+         <term>Howling, Tim</term>
+         <pageno>xxix</pageno>
+      </item>
+      <item>
+         <term>HPFS</term>
+         <comment type="brackets">High Performance File System</comment>
+         <pageno>329</pageno>
+         <pageno>331</pageno>
+      </item>
+      <item>
+         <term type="code">htonl()</term>
+         <pageno>51</pageno>
+         <pageno>193</pageno>
+      </item>
+      <item>
+         <term type="code">htons()</term>
+         <pageno>51</pageno>
+         <pageno>193</pageno>
+      </item>
+      <item>
+         <term>IBM</term>
+         <comment type="brackets">International Business Machines</comment>
+         <pageno>xxvi</pageno>
+         <pageno>5</pageno>
+         <pageno>42</pageno>
+         <pageno>147</pageno>
+         <pageno>338</pageno>
+         <pageno>426</pageno>
+      </item>
+      <item>
+         <term>IDL</term>
+         <comment type="brackets">Interface Definition Language</comment>
+         <see>MIDL</see>
+      </item>
+      <item>
+         <term>IETF</term>
+         <comment type="brackets">Internet Engineering Task Force</comment>
+         <pageno>xxv</pageno>
+         <pageno>6</pageno>
+         <pageno>148</pageno>
+         <pageno>157</pageno>
+         <pageno>451</pageno>
+         <pageno>452</pageno>
+         <pageno>457</pageno>
+      </item>
+      <item>
+         <term type="code">IMP_ERR</term>
+         <pageno>5</pageno>
+         <pageno>50</pageno>
+         <pageno>77</pageno>
+         <pageno>80</pageno>
+         <pageno>91</pageno>
+      </item>
+      <item>
+         <term type="code">inet_aton()</term>
+         <pageno>35</pageno>
+         <pageno>70</pageno>
+         <pageno>137</pageno>
+         <pageno>160</pageno>
+         <pageno>174</pageno>
+      </item>
+      <item>
+         <term type="code">inet_pton()</term>
+         <pageno>161</pageno>
+      </item>
+      <item>
+         <term type="code">InfoLevel</term>
+         <pageno>246</pageno>
+         <pageno>397</pageno>
+         <pageno>406</pageno>
+      </item>
+      <item>
+         <term type="code">IPC$</term>
+         <pageno>258</pageno>
+         <pageno>312</pageno>
+         <pageno>361</pageno>
+         <pageno>363</pageno>
+         <pageno>370</pageno>
+      </item>
+      <item>
+         <term>IPv6</term>
+         <pageno>160</pageno>
+         <pageno>167</pageno>
+      </item>
+      <item>
+         <term>January 1, 1601, 00:00:00.0 UTC</term>
+         <pageno>232</pageno>
+      </item>
+      <item>
+         <term>January 1, 1970, 00:00:00.0 UTC</term>
+         <pageno>233</pageno>
+      </item>
+      <item>
+         <term>jCIFS</term>
+         <pageno>xxvi</pageno>
+         <pageno>xxvii</pageno>
+         <pageno>xxix</pageno>
+         <pageno>xxx</pageno>
+         <pageno>14</pageno>
+         <pageno>18</pageno>
+         <pageno>158</pageno>
+         <pageno>178</pageno>
+         <pageno>179</pageno>
+         <pageno>180</pageno>
+         <pageno>187</pageno>
+         <pageno>198</pageno>
+         <pageno>206</pageno>
+         <pageno>221</pageno>
+         <pageno>250</pageno>
+         <pageno>253</pageno>
+         <pageno>259</pageno>
+         <pageno>261</pageno>
+         <pageno>340</pageno>
+         <pageno>395</pageno>
+      </item>
+      <item>
+         <term>KDE</term>
+         <pageno>157</pageno>
+      </item>
+      <item>
+         <term>Kerberos</term>
+         <pageno>258</pageno>
+         <pageno>292</pageno>
+         <pageno start="c15-kerberos">294</pageno>
+         <pageno end="c15-kerberos">296</pageno>
+         <pageno>617</pageno>
+      </item>
+      <item>
+         <term>KGS!@#$%</term>
+         <pageno>269</pageno>
+         <pageno>274</pageno>
+      </item>
+      <item>
+         <term>Kirsanov, Dmitry</term>
+         <pageno>xxx</pageno>
+      </item>
+      <item>
+         <term>Kirsanova, Alina</term>
+         <pageno>xxx</pageno>
+      </item>
+      <item>
+         <term>Konqueror</term>
+         <pageno>157</pageno>
+         <pageno>223</pageno>
+      </item>
+      <item>
+         <term type="code">L0phtCrack</term>
+         <pageno>274</pageno>
+      </item>
+      <item>
+         <term type="code">L1_Decode()</term>
+         <pageno>47</pageno>
+      </item>
+      <item>
+         <term type="code">L1_Encode()</term>
+         <pageno>24</pageno>
+         <pageno>37</pageno>
+      </item>
+      <item>
+         <term type="code">L2_Decode()</term>
+         <pageno>48</pageno>
+      </item>
+      <item>
+         <term type="code">L2_Encode()</term>
+         <pageno>37</pageno>
+         <pageno>38</pageno>
+         <pageno>174</pageno>
+      </item>
+      <item>
+         <term>Ladwig, John</term>
+         <pageno>xxix</pageno>
+         <pageno>411</pageno>
+      </item>
+      <item>
+         <term>LANA</term>
+         <pageno>103</pageno>
+         <pageno>104</pageno>
+         <pageno>426</pageno>
+         <pageno>617</pageno>
+      </item>
+      <item>
+         <term>Landy, Brian</term>
+         <pageno>120</pageno>
+      </item>
+      <item>
+         <term>Langhus, Mike</term>
+         <pageno>447</pageno>
+      </item>
+      <item>
+         <term>Lankhaar, Vance</term>
+         <pageno>284</pageno>
+      </item>
+      <item>
+         <term>Lapsang Souchong</term>
+         <pageno>18</pageno>
+         <pageno>307</pageno>
+      </item>
+      <item>
+         <term>LDAP</term>
+         <comment type="brackets">Lightweight Directory Access Protocol</comment>
+         <pageno>292</pageno>
+         <pageno>296</pageno>
+         <pageno>339</pageno>
+         <pageno>455</pageno>
+         <pageno>618</pageno>
+      </item>
+      <item>
+         <term>Leach, Paul</term>
+         <pageno>148</pageno>
+         <pageno>292</pageno>
+      </item>
+      <item>
+         <term>Leach/Naik Internet Drafts</term>
+         <pageno>148</pageno>
+         <pageno>176</pageno>
+         <pageno>205</pageno>
+         <pageno>234</pageno>
+         <pageno>266</pageno>
+         <pageno>268</pageno>
+         <pageno>269</pageno>
+         <pageno>297</pageno>
+         <pageno>443</pageno>
+      </item>
+      <item>
+         <term>Leighton, Luke Kenneth Casson</term>
+         <pageno>250</pageno>
+         <pageno>276</pageno>
+         <pageno>284</pageno>
+         <pageno>297</pageno>
+      </item>
+      <item>
+         <term>Levy Haskell, Susan</term>
+         <pageno>xxix</pageno>
+      </item>
+      <item>
+         <term>LGPL</term>
+         <see>GNU Lesser General Public License</see>
+      </item>
+      <item>
+         <term type="code">libcifs</term>
+         <pageno>xxviii</pageno>
+         <pageno>160</pageno>
+         <pageno>446</pageno>
+      </item>
+      <item>
+         <term type="code">libsmbclient</term>
+         <pageno>xxvi</pageno>
+         <pageno>158</pageno>
+         <pageno>223</pageno>
+         <pageno>451</pageno>
+      </item>
+      <item>
+         <term type="code">List.java</term>
+         <pageno>361</pageno>
+         <pageno>395</pageno>
+      </item>
+      <item>
+         <term>LM</term>
+         <comment type="brackets">LAN Manager</comment>
+         <pageno>147</pageno>
+         <pageno>222</pageno>
+         <pageno>242</pageno>
+         <pageno>258</pageno>
+         <pageno>265</pageno>
+         <pageno>275</pageno>
+         <subitem>
+            <term>challenge/response</term>
+            <pageno start="c15-lm-ch-r">265</pageno>
+            <pageno end="c15-lm-ch-r">276</pageno>
+            <pageno start="c15-lm-ch-r-2">286</pageno>
+            <pageno end="c15-lm-ch-r-2">289</pageno>
+            <pageno>297</pageno>
+         </subitem>
+         <subitem>
+            <term>Hash</term>
+            <pageno>7</pageno>
+            <pageno start="c15-hash">268</pageno>
+            <pageno end="c15-hash">275</pageno>
+            <pageno>277</pageno>
+            <pageno>302</pageno>
+         </subitem>
+      </item>
+      <item>
+         <term type="code">LM ANNOUNCE</term>
+         <comment>parameter</comment>
+         <pageno>338</pageno>
+         <pageno>420</pageno>
+      </item>
+      <item>
+         <term>LMB</term>
+         <comment type="brackets">Local Master Browser</comment>
+         <pageno>142</pageno>
+         <pageno>340</pageno>
+         <pageno>342</pageno>
+         <pageno>345</pageno>
+         <pageno start="c20-lmb">348</pageno>
+         <pageno end="c20-lmb">357</pageno>
+         <pageno start="c22-lmb">380</pageno>
+         <pageno end="c22-lmb">382</pageno>
+         <pageno start="c22-lmb-2">387</pageno>
+         <pageno end="c22-lmb-2">391</pageno>
+         <pageno>398</pageno>
+         <pageno>401</pageno>
+         <pageno start="c23-lmb">411</pageno>
+         <pageno end="c23-lmb">417</pageno>
+         <pageno start="c24-lmb">421</pageno>
+         <pageno end="c24-lmb">423</pageno>
+         <pageno>428</pageno>
+         <pageno>444</pageno>
+         <pageno>449</pageno>
+         <pageno>454</pageno>
+         <pageno>618</pageno>
+      </item>
+      <item>
+         <term type="code">LMHOSTS</term>
+         <pageno>143</pageno>
+         <pageno>422</pageno>
+         <pageno>448</pageno>
+      </item>
+      <item>
+         <term>LMv2</term>
+         <comment type="brackets">LM version 2</comment>
+         <pageno>283</pageno>
+         <pageno start="c15-lmv2">286</pageno>
+         <pageno end="c15-lmv2">289</pageno>
+         <pageno>302</pageno>
+         <pageno>305</pageno>
+      </item>
+      <item>
+         <term type="code">LocalMasterAnnouncement</term>
+         <pageno>352</pageno>
+         <pageno>357</pageno>
+         <pageno>379</pageno>
+         <pageno>387</pageno>
+         <pageno>388</pageno>
+         <pageno>411</pageno>
+         <pageno>412</pageno>
+      </item>
+      <item>
+         <term>LZNT</term>
+         <pageno>245</pageno>
+      </item>
+      <item>
+         <term>M</term>
+         <comment>mode</comment>
+         <pageno>9</pageno>
+         <pageno>10</pageno>
+         <pageno>13</pageno>
+         <pageno>41</pageno>
+         <pageno>44</pageno>
+         <pageno>62</pageno>
+         <pageno start="c4-m">77</pageno>
+         <pageno end="c4-m">86</pageno>
+         <pageno start="c5-m">117</pageno>
+         <pageno end="c5-m">119</pageno>
+         <pageno>122</pageno>
+         <pageno>141</pageno>
+         <pageno>161</pageno>
+         <pageno>356</pageno>
+         <pageno>414</pageno>
+         <pageno>426</pageno>
+         <pageno>428</pageno>
+         <pageno>449</pageno>
+      </item>
+      <item>
+         <term>MAC</term>
+         <comment type="brackets">Message Authentication Code</comment>
+         <pageno>207</pageno>
+         <pageno>228</pageno>
+         <pageno>276</pageno>
+         <pageno>277</pageno>
+         <pageno start="c15-mac">300</pageno>
+         <pageno end="c15-mac">307</pageno>
+         <pageno>362</pageno>
+      </item>
+      <item>
+         <term type="italic-code">machine</term>
+         <comment>&lt;00&gt;</comment>
+         <pageno start="c22-mn00">377</pageno>
+         <pageno end="c22-mn00">386</pageno>
+         <pageno start="c22-mn00-2">388</pageno>
+         <pageno end="c22-mn00-2">391</pageno>
+         <pageno>439</pageno>
+         <pageno>446</pageno>
+      </item>
+      <item>
+         <term type="italic-code">machine</term>
+         <comment>&lt;20&gt;</comment>
+         <pageno>377</pageno>
+         <pageno>441</pageno>
+      </item>
+      <item>
+         <term>machine name</term>
+         <pageno>340</pageno>
+         <pageno>354</pageno>
+         <pageno start="c22-mname">380</pageno>
+         <pageno end="c22-mname">385</pageno>
+         <pageno start="c22-mname-2">387</pageno>
+         <pageno end="c22-mname-2">390</pageno>
+         <pageno>446</pageno>
+         <pageno>618</pageno>
+      </item>
+      <item>
+         <term>Maddie</term>
+         <pageno>xxix</pageno>
+      </item>
+      <item>
+         <term>mailslot</term>
+         <pageno>321</pageno>
+         <pageno>359</pageno>
+         <pageno>363</pageno>
+         <pageno start="c22-mailslot">370</pageno>
+         <pageno end="c22-mailslot">380</pageno>
+         <pageno>386</pageno>
+         <pageno>394</pageno>
+      </item>
+      <item>
+         <term>Marchand, Jean-Baptiste</term>
+         <pageno>12</pageno>
+         <pageno>307</pageno>
+      </item>
+      <item>
+         <term>Marika</term>
+         <pageno>xxix</pageno>
+         <pageno>180</pageno>
+      </item>
+      <item>
+         <term>Master Browser</term>
+         <see>LMB</see>
+      </item>
+      <item>
+         <term type="code">MasterAnnouncement</term>
+         <pageno>353</pageno>
+         <pageno>355</pageno>
+         <pageno>379</pageno>
+         <pageno>387</pageno>
+         <pageno>388</pageno>
+         <pageno>416</pageno>
+         <pageno>423</pageno>
+      </item>
+      <item>
+         <term>McCain, Greg</term>
+         <pageno>318</pageno>
+      </item>
+      <item>
+         <term>MD4</term>
+         <pageno>7</pageno>
+         <pageno>275</pageno>
+         <pageno>277</pageno>
+         <pageno>303</pageno>
+         <pageno>304</pageno>
+      </item>
+      <item>
+         <term>MD5</term>
+         <pageno>277</pageno>
+         <pageno>304</pageno>
+      </item>
+      <item>
+         <term>Micouleau, Jean Fran&#231;ois</term>
+         <pageno>100</pageno>
+      </item>
+      <item>
+         <term>Microsoft</term>
+         <pageno start="i-microsoft">xxiii</pageno>
+         <pageno end="i-microsoft">xxvii</pageno>
+         <pageno>xxix</pageno>
+         <pageno>3</pageno>
+         <pageno>5</pageno>
+         <pageno>11</pageno>
+         <pageno>17</pageno>
+         <pageno>19</pageno>
+         <pageno>30</pageno>
+         <pageno>42</pageno>
+         <pageno>64</pageno>
+         <pageno>78</pageno>
+         <pageno>80</pageno>
+         <pageno>106</pageno>
+         <pageno>119</pageno>
+         <pageno>122</pageno>
+         <pageno>128</pageno>
+         <pageno>147</pageno>
+         <pageno>154</pageno>
+         <pageno>178</pageno>
+         <pageno>200</pageno>
+         <pageno>222</pageno>
+         <pageno>242</pageno>
+         <pageno>246</pageno>
+         <pageno>263</pageno>
+         <pageno>279</pageno>
+         <pageno>288</pageno>
+         <pageno>292</pageno>
+         <pageno>294</pageno>
+         <pageno>296</pageno>
+         <pageno>318</pageno>
+         <pageno>328</pageno>
+         <pageno>337</pageno>
+         <pageno>339</pageno>
+         <pageno>341</pageno>
+         <pageno>343</pageno>
+         <pageno>344</pageno>
+         <pageno>356</pageno>
+         <pageno>362</pageno>
+         <pageno>394</pageno>
+         <pageno>416</pageno>
+         <pageno>426</pageno>
+         <pageno>442</pageno>
+         <pageno>447</pageno>
+      </item>
+      <item>
+         <term type="code">MID</term>
+         <comment type="brackets">Multiplex IDentifierMultiplex IDentifier</comment>
+         <pageno>181</pageno>
+         <pageno>185</pageno>
+         <pageno>197</pageno>
+         <pageno>211</pageno>
+         <pageno>216</pageno>
+         <pageno>230</pageno>
+         <pageno>245</pageno>
+      </item>
+      <item>
+         <term>MIDL</term>
+         <comment type="brackets">Microsoft Interface Definition Language</comment>
+         <pageno>250</pageno>
+         <pageno>292</pageno>
+         <pageno>618</pageno>
+      </item>
+      <item>
+         <term>Minshall, Conrad</term>
+         <pageno>314</pageno>
+      </item>
+      <item>
+         <term>mode (B, P, M, H)</term>
+         <see>node type</see>
+      </item>
+      <item>
+         <term>Monyo</term>
+         <comment type="brackets">Motonobu Takahashi</comment>
+         <pageno>84</pageno>
+      </item>
+      <item>
+         <term>MS-DOS</term>
+         <see>DOS</see>
+      </item>
+      <item>
+         <term>MS-RPC</term>
+         <comment type="brackets">Microsoft Remote Procedure Call</comment>
+         <pageno>250</pageno>
+         <pageno>290</pageno>
+         <pageno>292</pageno>
+         <pageno>295</pageno>
+         <pageno>297</pageno>
+         <pageno>309</pageno>
+         <pageno>319</pageno>
+         <pageno>334</pageno>
+         <pageno>361</pageno>
+         <pageno>409</pageno>
+         <pageno>619</pageno>
+      </item>
+      <item>
+         <term type="code">MSBROWSE&lt;01&gt;</term>
+         <comment type="brackets-code">\01\02__MSBROWSE__\02&lt;01&gt;</comment>
+         <pageno>43</pageno>
+         <pageno>341</pageno>
+         <pageno>351</pageno>
+         <pageno>357</pageno>
+         <pageno>380</pageno>
+         <pageno>384</pageno>
+         <pageno>388</pageno>
+         <pageno>445</pageno>
+         <pageno>453</pageno>
+      </item>
+      <item>
+         <term>Mudge</term>
+         <pageno>274</pageno>
+      </item>
+      <item>
+         <term>multi-homed host</term>
+         <pageno>5</pageno>
+         <pageno>26</pageno>
+         <pageno>50</pageno>
+         <pageno>81</pageno>
+         <pageno>88</pageno>
+         <pageno>96</pageno>
+         <pageno>100</pageno>
+         <pageno>142</pageno>
+         <pageno>426</pageno>
+         <pageno>448</pageno>
+      </item>
+      <item>
+         <term>Naik, Dilip</term>
+         <pageno>148</pageno>
+      </item>
+      <item>
+         <term>naked transport</term>
+         <pageno>150</pageno>
+         <pageno>154</pageno>
+         <pageno start="c10-naked">163</pageno>
+         <pageno end="c10-naked">166</pageno>
+         <pageno>175</pageno>
+         <pageno>339</pageno>
+      </item>
+      <item>
+         <term type="code">NAM_ERR</term>
+         <pageno>5</pageno>
+         <pageno>50</pageno>
+         <pageno>91</pageno>
+         <pageno>103</pageno>
+      </item>
+      <item>
+         <term>name conflict</term>
+         <pageno>67</pageno>
+         <pageno start="c4-conflict">81</pageno>
+         <pageno end="c4-conflict">85</pageno>
+         <pageno>105</pageno>
+         <pageno start="c4-conflict2">111</pageno>
+         <pageno end="c4-conflict2">112</pageno>
+         <pageno>341</pageno>
+      </item>
+      <item>
+         <term type="code">NAME CONFLICT DEMAND</term>
+         <pageno start="c4-ncdemand">111</pageno>
+         <pageno end="c4-ncdemand">113</pageno>
+      </item>
+      <item>
+         <term>name query</term>
+         <pageno>18</pageno>
+         <pageno>26</pageno>
+         <pageno start="c3-query">29</pageno>
+         <pageno end="c3-query">38</pageno>
+         <pageno>41</pageno>
+         <pageno>53</pageno>
+         <pageno>61</pageno>
+         <pageno>69</pageno>
+         <pageno>79</pageno>
+         <pageno start="c4-query">83</pageno>
+         <pageno end="c4-query">89</pageno>
+         <pageno>93</pageno>
+         <pageno>161</pageno>
+         <pageno>166</pageno>
+         <pageno>180</pageno>
+      </item>
+      <item>
+         <term type="code">NAME QUERY</term>
+         <pageno>8</pageno>
+         <pageno>18</pageno>
+         <pageno>27</pageno>
+         <pageno>28</pageno>
+         <pageno>79</pageno>
+         <pageno>83</pageno>
+         <pageno start="c4-QUERY">85</pageno>
+         <pageno end="c4-QUERY">97</pageno>
+         <pageno>112</pageno>
+         <pageno start="c5-QUERY">116</pageno>
+         <pageno end="c5-QUERY">120</pageno>
+         <pageno>142</pageno>
+         <pageno>166</pageno>
+         <pageno>444</pageno>
+         <pageno>446</pageno>
+         <pageno>448</pageno>
+         <pageno>449</pageno>
+      </item>
+      <item>
+         <term>Name Refresh</term>
+         <pageno>26</pageno>
+         <pageno>76</pageno>
+         <pageno>98</pageno>
+      </item>
+      <item>
+         <term type="code">NAME REFRESH REQUEST</term>
+         <pageno>98</pageno>
+      </item>
+      <item>
+         <term>name registration</term>
+         <pageno>7</pageno>
+         <pageno>26</pageno>
+         <pageno>41</pageno>
+         <pageno start="c4-registration">62</pageno>
+         <pageno end="c4-registration">81</pageno>
+         <pageno>85</pageno>
+         <subitem>
+            <term>multi-homed</term>
+            <pageno>26</pageno>
+            <pageno>81</pageno>
+         </subitem>
+      </item>
+      <item>
+         <term type="code">NAME REGISTRATION</term>
+         <pageno>46</pageno>
+         <pageno start="c4-REGISTRATION">62</pageno>
+         <pageno end="c4-REGISTRATION">84</pageno>
+         <pageno>99</pageno>
+         <pageno>111</pageno>
+         <subitem>
+            <term type="code">MULTI-HOMED</term>
+            <pageno>83</pageno>
+            <pageno>448</pageno>
+         </subitem>
+      </item>
+      <item>
+         <term>name release</term>
+         <pageno>26</pageno>
+         <pageno>41</pageno>
+         <pageno>100</pageno>
+      </item>
+      <item>
+         <term type="code">NAME RELEASE</term>
+         <pageno>100</pageno>
+         <pageno>102</pageno>
+         <pageno>112</pageno>
+      </item>
+      <item>
+         <term>Name Service</term>
+         <see>NBT Name Service</see>
+      </item>
+      <item>
+         <term type="code">NAME_TRN_ID</term>
+         <pageno>7</pageno>
+         <pageno>25</pageno>
+         <pageno>50</pageno>
+         <pageno>75</pageno>
+         <pageno>83</pageno>
+         <pageno>122</pageno>
+      </item>
+      <item>
+         <term type="code">namequery</term>
+         <pageno>37</pageno>
+      </item>
+      <item>
+         <term>Narver, Andrew</term>
+         <pageno>233</pageno>
+      </item>
+      <item>
+         <term type="code">NB</term>
+         <pageno>6</pageno>
+         <pageno>28</pageno>
+         <pageno>37</pageno>
+         <pageno>53</pageno>
+         <pageno>56</pageno>
+         <pageno>91</pageno>
+      </item>
+      <item>
+         <term>NBDD</term>
+         <comment type="brackets">NetBIOS Datagram Distribution Server</comment>
+         <pageno start="c5-NBDD">116</pageno>
+         <pageno end="c5-NBDD">125</pageno>
+         <pageno start="c5-NBDD-2">127</pageno>
+         <pageno end="c5-NBDD-2">128</pageno>
+         <pageno>142</pageno>
+         <pageno>144</pageno>
+         <pageno>356</pageno>
+         <pageno>619</pageno>
+      </item>
+      <item>
+         <term>NBNS</term>
+         <comment type="brackets">NetBIOS Name Server</comment>
+         <pageno>9</pageno>
+         <pageno>10</pageno>
+         <pageno>13</pageno>
+         <pageno>18</pageno>
+         <pageno>22</pageno>
+         <pageno>56</pageno>
+         <pageno>62</pageno>
+         <pageno start="c4-NBNS">75</pageno>
+         <pageno end="c4-NBNS">104</pageno>
+         <pageno>112</pageno>
+         <pageno start="c5-NBNS">117</pageno>
+         <pageno end="c5-NBNS">120</pageno>
+         <pageno>127</pageno>
+         <pageno>128</pageno>
+         <pageno>141</pageno>
+         <pageno>142</pageno>
+         <pageno>161</pageno>
+         <pageno>165</pageno>
+         <pageno start="c19-NBNS">341</pageno>
+         <pageno end="c19-NBNS">344</pageno>
+         <pageno>353</pageno>
+         <pageno>355</pageno>
+         <pageno>415</pageno>
+         <pageno>420</pageno>
+         <pageno>426</pageno>
+         <pageno>444</pageno>
+         <pageno>447</pageno>
+         <pageno>454</pageno>
+         <pageno>457</pageno>
+         <pageno>619</pageno>
+         <subitem>
+            <term>poisoning</term>
+            <pageno>301</pageno>
+         </subitem>
+      </item>
+      <item>
+         <term type="code">NBSTAT</term>
+         <pageno>6</pageno>
+         <pageno>28</pageno>
+         <pageno>53</pageno>
+         <pageno>56</pageno>
+         <pageno>103</pageno>
+      </item>
+      <item>
+         <term>NBT</term>
+         <subitem>
+            <term>Datagram Service</term>
+            <pageno>6</pageno>
+            <pageno>10</pageno>
+            <pageno>12</pageno>
+            <pageno>17</pageno>
+            <pageno start="c45-datagram">114</pageno>
+            <pageno end="c45-datagram">126</pageno>
+            <pageno start="c5-datagram-2">127</pageno>
+            <pageno end="c5-datagram-2">128</pageno>
+            <pageno>131</pageno>
+            <pageno>321</pageno>
+            <pageno>351</pageno>
+            <pageno>363</pageno>
+            <pageno>377</pageno>
+         </subitem>
+         <subitem>
+            <term>LAN</term>
+            <see>NBT vLAN</see>
+         </subitem>
+         <subitem>
+            <term>name</term>
+            <pageno>22</pageno>
+            <pageno>28</pageno>
+            <pageno>30</pageno>
+            <pageno start="c4-nbt-name">41</pageno>
+            <pageno end="c4-nbt-name">42</pageno>
+            <pageno>45</pageno>
+            <pageno start="c4-nbt-name-2">53</pageno>
+            <pageno end="c4-nbt-name-2">56</pageno>
+            <pageno>81</pageno>
+            <pageno>120</pageno>
+            <pageno>126</pageno>
+            <pageno>142</pageno>
+            <pageno>349</pageno>
+            <see type="also">NetBIOS name</see>
+         </subitem>
+         <subitem>
+            <term>Name Service</term>
+            <pageno start="c2-nservice">6</pageno>
+            <pageno end="c2-nservice">11</pageno>
+            <pageno>15</pageno>
+            <pageno>17</pageno>
+            <pageno start="c3-nservice">25</pageno>
+            <pageno end="c3-nservice">28</pageno>
+            <pageno>32</pageno>
+            <pageno>41</pageno>
+            <pageno>45</pageno>
+            <pageno start="c4-nservice">48</pageno>
+            <pageno end="c4-nservice">62</pageno>
+            <pageno>80</pageno>
+            <pageno>89</pageno>
+            <pageno>107</pageno>
+            <pageno>114</pageno>
+            <pageno>120</pageno>
+            <pageno>130</pageno>
+            <pageno>142</pageno>
+            <pageno>143</pageno>
+            <pageno>166</pageno>
+            <pageno>355</pageno>
+            <pageno>364</pageno>
+            <pageno>428</pageno>
+         </subitem>
+         <subitem>
+            <term>namespace</term>
+            <pageno>22</pageno>
+            <pageno>296</pageno>
+            <pageno>344</pageno>
+            <pageno>421</pageno>
+            <pageno>427</pageno>
+         </subitem>
+         <subitem>
+            <term>scope</term>
+            <pageno>12</pageno>
+            <pageno>41</pageno>
+            <pageno>44</pageno>
+            <pageno>81</pageno>
+            <pageno>86</pageno>
+            <pageno>105</pageno>
+            <pageno>117</pageno>
+            <pageno>125</pageno>
+            <pageno>131</pageno>
+            <pageno>160</pageno>
+            <pageno>353</pageno>
+            <pageno>355</pageno>
+         </subitem>
+         <subitem>
+            <term>Scope ID</term>
+            <pageno>14</pageno>
+            <pageno>22</pageno>
+            <pageno>23</pageno>
+            <pageno>31</pageno>
+            <pageno>37</pageno>
+            <pageno>44</pageno>
+            <pageno>45</pageno>
+            <pageno>53</pageno>
+            <pageno>86</pageno>
+            <pageno>105</pageno>
+            <pageno>116</pageno>
+            <pageno>124</pageno>
+            <pageno>131</pageno>
+            <pageno>161</pageno>
+            <pageno>457</pageno>
+            <pageno>616</pageno>
+            <pageno>619</pageno>
+            <pageno>621</pageno>
+         </subitem>
+         <subitem>
+            <term>Session Service</term>
+            <pageno>6</pageno>
+            <pageno>11</pageno>
+            <pageno>15</pageno>
+            <pageno>17</pageno>
+            <pageno start="6-nbt-ss">129</pageno>
+            <pageno end="6-nbt-ss">140</pageno>
+            <pageno>143</pageno>
+            <pageno>150</pageno>
+            <pageno>162</pageno>
+            <pageno>220</pageno>
+            <pageno>376</pageno>
+            <pageno>395</pageno>
+         </subitem>
+         <subitem>
+            <term>vLAN</term>
+            <pageno end="c2-vlan">11</pageno>
+            <pageno>12</pageno>
+            <pageno start="c2-vlan">13</pageno>
+            <pageno>44</pageno>
+            <pageno>80</pageno>
+            <pageno>104</pageno>
+            <pageno>114</pageno>
+            <pageno start="c5-vlan">115</pageno>
+            <pageno>141</pageno>
+            <pageno>355</pageno>
+            <pageno>426</pageno>
+            <pageno>454</pageno>
+         </subitem>
+      </item>
+      <item>
+         <term type="code">nbtstat</term>
+         <pageno>30</pageno>
+         <pageno>32</pageno>
+         <pageno>38</pageno>
+         <pageno>101</pageno>
+         <pageno>442</pageno>
+      </item>
+      <item>
+         <term type="code">NEGOTIATE PROTOCOL</term>
+         <comment type="brackets">NegProt</comment>
+         <pageno>182</pageno>
+         <pageno>186</pageno>
+         <pageno>192</pageno>
+         <pageno>205</pageno>
+         <pageno>221</pageno>
+         <pageno start="c13-negotiate">224</pageno>
+         <pageno end="c13-negotiate">238</pageno>
+         <pageno start="c14-negotiate">239</pageno>
+         <pageno end="c14-negotiate">251</pageno>
+         <pageno>261</pageno>
+         <pageno>270</pageno>
+         <pageno>272</pageno>
+         <pageno>290</pageno>
+         <pageno>297</pageno>
+         <pageno>309</pageno>
+         <pageno>314</pageno>
+      </item>
+      <item>
+         <term>Neko</term>
+         <pageno>xxix</pageno>
+         <pageno>20</pageno>
+         <pageno>22</pageno>
+         <pageno>29</pageno>
+         <pageno>32</pageno>
+      </item>
+      <item>
+         <term>Nelis, Paul</term>
+         <pageno>xxix</pageno>
+      </item>
+      <item>
+         <term>nerp</term>
+         <pageno>378</pageno>
+      </item>
+      <item>
+         <term>NetBEUI</term>
+         <pageno>xxx</pageno>
+         <pageno>205</pageno>
+         <pageno>426</pageno>
+         <pageno>427</pageno>
+         <pageno>620</pageno>
+      </item>
+      <item>
+         <term>NetBIOS</term>
+         <comment type="brackets">Network Basic Input Output System</comment>
+         <pageno>xxiv</pageno>
+         <pageno>xxv</pageno>
+         <pageno>xxviii</pageno>
+         <pageno>xxx</pageno>
+         <pageno end="c1-2-netbios">16</pageno>
+         <pageno>17</pageno>
+         <pageno>115</pageno>
+         <pageno>125</pageno>
+         <pageno>148</pageno>
+         <pageno>296</pageno>
+         <pageno>338</pageno>
+         <pageno>426</pageno>
+         <pageno>454</pageno>
+         <pageno>456</pageno>
+         <pageno>620</pageno>
+         <subitem>
+            <term>API</term>
+            <pageno>xxviii</pageno>
+            <pageno>3</pageno>
+            <pageno>5</pageno>
+            <pageno>6</pageno>
+            <pageno>15</pageno>
+            <pageno>28</pageno>
+            <pageno>41</pageno>
+            <pageno>115</pageno>
+            <pageno>125</pageno>
+            <pageno>126</pageno>
+            <pageno>150</pageno>
+            <pageno>338</pageno>
+            <pageno>351</pageno>
+         </subitem>
+         <subitem>
+            <term>LAN</term>
+            <pageno>6</pageno>
+            <see type="also">NBT vLAN</see>
+         </subitem>
+         <subitem>
+            <term>name</term>
+            <pageno start="c2-NetBIOS-name">7</pageno>
+            <pageno start="c3-NetBIOS-name">19</pageno>
+            <pageno end="c3-NetBIOS-name">25</pageno>
+            <pageno>29</pageno>
+            <pageno>37</pageno>
+            <pageno start="c4-NetBIOS-name">41</pageno>
+            <pageno end="c4-NetBIOS-name">48</pageno>
+            <pageno>75</pageno>
+            <pageno>81</pageno>
+            <pageno>85</pageno>
+            <pageno>105</pageno>
+            <pageno>116</pageno>
+            <pageno>131</pageno>
+            <pageno>143</pageno>
+            <pageno>155</pageno>
+            <pageno>159</pageno>
+            <pageno>160</pageno>
+            <pageno>163</pageno>
+            <pageno>164</pageno>
+            <pageno>175</pageno>
+            <pageno>178</pageno>
+            <pageno>236</pageno>
+            <pageno>253</pageno>
+            <pageno>261</pageno>
+            <pageno>280</pageno>
+            <pageno>284</pageno>
+            <pageno start="c19-NetBIOS-name">339</pageno>
+            <pageno end="c19-NetBIOS-name">342</pageno>
+            <pageno>351</pageno>
+            <pageno>354</pageno>
+            <pageno>362</pageno>
+            <pageno>365</pageno>
+            <pageno>384</pageno>
+            <pageno>388</pageno>
+            <pageno>428</pageno>
+            <pageno start="b-name">439</pageno>
+            <pageno end="b-name">449</pageno>
+            <pageno>454</pageno>
+            <pageno>455</pageno>
+            <pageno>457</pageno>
+            <see type="also">NBT name</see>
+         </subitem>
+         <subitem>
+            <term>namespace</term>
+            <see>NBT namespace</see>
+         </subitem>
+         <subitem>
+            <term>vLAN (virtual LAN)</term>
+            <see>NBT vLAN</see>
+         </subitem>
+      </item>
+      <item>
+         <term>NetMon</term>
+         <pageno>17</pageno>
+         <pageno>30</pageno>
+         <pageno>150</pageno>
+         <pageno>200</pageno>
+         <pageno>442</pageno>
+      </item>
+      <item>
+         <term type="code">NetrShareEnum</term>
+         <pageno>409</pageno>
+      </item>
+      <item>
+         <term type="code">NetServerEnum2</term>
+         <pageno>362</pageno>
+         <pageno>363</pageno>
+         <pageno>376</pageno>
+         <pageno>383</pageno>
+         <pageno>388</pageno>
+         <pageno>394</pageno>
+         <pageno>395</pageno>
+         <pageno>402</pageno>
+         <pageno>406</pageno>
+         <pageno>409</pageno>
+         <pageno>416</pageno>
+         <pageno>423</pageno>
+         <pageno>426</pageno>
+      </item>
+      <item>
+         <term type="code">NetShareEnum</term>
+         <pageno>406</pageno>
+         <pageno>407</pageno>
+         <pageno>409</pageno>
+         <pageno>420</pageno>
+      </item>
+      <item>
+         <term>Network Neighborhood</term>
+         <pageno>xxiii</pageno>
+         <pageno>xxv</pageno>
+         <pageno>xxvii</pageno>
+         <pageno>321</pageno>
+         <pageno>337</pageno>
+         <pageno>339</pageno>
+         <pageno>341</pageno>
+         <pageno>345</pageno>
+         <pageno>347</pageno>
+         <pageno>349</pageno>
+         <pageno>353</pageno>
+         <pageno>361</pageno>
+         <pageno>395</pageno>
+         <pageno>411</pageno>
+         <pageno>419</pageno>
+         <pageno>425</pageno>
+         <pageno>426</pageno>
+         <pageno>431</pageno>
+      </item>
+      <item>
+         <term type="code">nmbd</term>
+         <pageno>100</pageno>
+         <pageno>139</pageno>
+      </item>
+      <item>
+         <term type="code">nmblookup</term>
+         <pageno>32</pageno>
+         <pageno>106</pageno>
+         <pageno>446</pageno>
+      </item>
+      <item>
+         <term>node status</term>
+         <pageno>53</pageno>
+         <pageno>103</pageno>
+         <pageno>166</pageno>
+         <see type="also">adapter status</see>
+      </item>
+      <item>
+         <term type="code">NODE STATUS</term>
+         <pageno>28</pageno>
+         <pageno>56</pageno>
+         <pageno>104</pageno>
+         <pageno>105</pageno>
+         <pageno>107</pageno>
+         <pageno>446</pageno>
+      </item>
+      <item>
+         <term>node type</term>
+         <comment type="brackets">B, P, M, H</comment>
+         <pageno>7</pageno>
+         <pageno>10</pageno>
+         <pageno>12</pageno>
+         <pageno>18</pageno>
+         <pageno>85</pageno>
+         <pageno>97</pageno>
+         <pageno>116</pageno>
+         <pageno>414</pageno>
+         <pageno>427</pageno>
+         <pageno>449</pageno>
+         <pageno>457</pageno>
+         <subitem>
+            <term>B</term>
+            <see>B mode</see>
+         </subitem>
+         <subitem>
+            <term>H</term>
+            <see>H mode</see>
+         </subitem>
+         <subitem>
+            <term>M</term>
+            <see>M mode</see>
+         </subitem>
+         <subitem>
+            <term>P</term>
+            <see>P mode</see>
+         </subitem>
+      </item>
+      <item>
+         <term>Norton, Virginia</term>
+         <pageno>xxix</pageno>
+      </item>
+      <item>
+         <term type="code">NSCOUNT</term>
+         <pageno>27</pageno>
+         <pageno>51</pageno>
+      </item>
+      <item>
+         <term>NT Domain</term>
+         <pageno>xxv</pageno>
+         <pageno>xxviii</pageno>
+         <pageno>11</pageno>
+         <pageno>38</pageno>
+         <pageno>143</pageno>
+         <pageno>236</pageno>
+         <pageno>253</pageno>
+         <pageno>280</pageno>
+         <pageno>283</pageno>
+         <pageno>284</pageno>
+         <pageno>620</pageno>
+         <subitem>
+            <term>controller</term>
+            <see>DC</see>
+         </subitem>
+      </item>
+      <item>
+         <term>NT Hash</term>
+         <pageno>275</pageno>
+      </item>
+      <item>
+         <term>NT LM 0.12</term>
+         <pageno>188</pageno>
+         <pageno start="c13-lm0.12">221</pageno>
+         <pageno end="c13-lm0.12">224</pageno>
+         <pageno>227</pageno>
+         <pageno>235</pageno>
+         <pageno>239</pageno>
+         <pageno>253</pageno>
+         <pageno>255</pageno>
+         <pageno>261</pageno>
+         <pageno>262</pageno>
+         <pageno>264</pageno>
+         <pageno>315</pageno>
+         <pageno>330</pageno>
+      </item>
+      <item>
+         <term>NT RAS</term>
+         <comment type="brackets">NT Remote Access Service</comment>
+         <pageno>401</pageno>
+      </item>
+      <item>
+         <term type="italic-code">nt_domain</term>
+         <comment>&lt;1B&gt;</comment>
+         <pageno>344</pageno>
+         <pageno>443</pageno>
+         <pageno>449</pageno>
+         <pageno>620</pageno>
+      </item>
+      <item>
+         <term type="italic-code">nt_domain</term>
+         <comment>&lt;1C&gt;</comment>
+         <pageno>344</pageno>
+         <pageno>443</pageno>
+         <pageno>448</pageno>
+         <pageno>449</pageno>
+         <pageno>615</pageno>
+         <pageno>620</pageno>
+      </item>
+      <item>
+         <term>NT_STATUS</term>
+         <pageno>183</pageno>
+         <pageno>198</pageno>
+         <pageno>202</pageno>
+         <pageno>206</pageno>
+         <pageno>215</pageno>
+         <pageno>248</pageno>
+         <pageno>291</pageno>
+         <pageno>326</pageno>
+      </item>
+      <item>
+         <term type="code">nterr.h</term>
+         <pageno>199</pageno>
+      </item>
+      <item>
+         <term>NTFS</term>
+         <comment type="brackets">New Technology File System</comment>
+         <pageno>312</pageno>
+         <pageno>329</pageno>
+      </item>
+      <item>
+         <term>NTLM</term>
+         <subitem>
+            <term>challenge/response</term>
+            <pageno>258</pageno>
+            <pageno>275</pageno>
+            <pageno>276</pageno>
+            <pageno>279</pageno>
+            <pageno>284</pageno>
+         </subitem>
+         <subitem>
+            <term>Hash</term>
+            <pageno>275</pageno>
+            <pageno>279</pageno>
+            <pageno>302</pageno>
+         </subitem>
+      </item>
+      <item>
+         <term>NTLMSSP</term>
+         <pageno>293</pageno>
+      </item>
+      <item>
+         <term>NTLMv2</term>
+         <comment type="brackets">NTLM version 2</comment>
+         <subitem>
+            <term>challenge/response</term>
+            <pageno>278</pageno>
+            <pageno>280</pageno>
+            <pageno>281</pageno>
+            <pageno>284</pageno>
+            <pageno>286</pageno>
+         </subitem>
+         <subitem>
+            <term>hash</term>
+            <pageno>279</pageno>
+            <pageno>283</pageno>
+            <pageno>302</pageno>
+         </subitem>
+      </item>
+      <item keep="next">
+         <term type="code">ntohl()</term>
+         <pageno>51</pageno>
+         <pageno>193</pageno>
+      </item>
+      <item>
+         <term type="code">ntohs()</term>
+         <pageno>51</pageno>
+         <pageno>193</pageno>
+      </item>
+      <item>
+         <term>NTtrans</term>
+         <comment type="brackets-code">SMB_COM_NT_TRANSACT</comment>
+         <pageno>320</pageno>
+         <pageno>408</pageno>
+      </item>
+      <item>
+         <term type="code">OEMDomainName</term>
+         <pageno>237</pageno>
+      </item>
+      <item>
+         <term>Oolong</term>
+         <pageno>437</pageno>
+      </item>
+      <item>
+         <term type="code">OPBATCH</term>
+         <pageno>203</pageno>
+      </item>
+      <item>
+         <term type="code">OPEN_ANDX</term>
+         <comment type="brackets-code">SMB_COM_OPEN_ANDX</comment>
+         <pageno>204</pageno>
+         <pageno>315</pageno>
+      </item>
+      <item>
+         <term>OpLocks</term>
+         <pageno>192</pageno>
+         <pageno>203</pageno>
+         <pageno>237</pageno>
+         <pageno>248</pageno>
+         <pageno start="c17-OpLocks">323</pageno>
+         <pageno end="c17-OpLocks">326</pageno>
+      </item>
+      <item>
+         <term>OS/2</term>
+         <pageno>4</pageno>
+         <pageno>120</pageno>
+         <pageno>147</pageno>
+         <pageno>154</pageno>
+         <pageno>157</pageno>
+         <pageno>182</pageno>
+         <pageno>198</pageno>
+         <pageno>203</pageno>
+         <pageno>204</pageno>
+         <pageno>208</pageno>
+         <pageno>211</pageno>
+         <pageno>222</pageno>
+         <pageno>242</pageno>
+         <pageno>328</pageno>
+         <pageno>338</pageno>
+         <pageno>362</pageno>
+         <pageno>452</pageno>
+      </item>
+      <item>
+         <term>P</term>
+         <comment>mode</comment>
+         <pageno>9</pageno>
+         <pageno>10</pageno>
+         <pageno>13</pageno>
+         <pageno>41</pageno>
+         <pageno>44</pageno>
+         <pageno>62</pageno>
+         <pageno>66</pageno>
+         <pageno start="c4-p">77</pageno>
+         <pageno end="c4-p">86</pageno>
+         <pageno start="c5-p">117</pageno>
+         <pageno end="c5-p">119</pageno>
+         <pageno>122</pageno>
+         <pageno>142</pageno>
+         <pageno>161</pageno>
+         <pageno>356</pageno>
+         <pageno>414</pageno>
+         <pageno>426</pageno>
+         <pageno>428</pageno>
+         <pageno>449</pageno>
+      </item>
+      <item>
+         <term>PAC</term>
+         <comment type="brackets">Privilege Access Certificate</comment>
+         <pageno>294</pageno>
+      </item>
+      <item>
+         <term>patent</term>
+         <pageno>231</pageno>
+      </item>
+      <item>
+         <term>PC-DOS</term>
+         <see>DOS</see>
+      </item>
+      <item>
+         <term>PDC</term>
+         <comment type="brackets">Primary Domain Controller</comment>
+         <pageno>201</pageno>
+         <pageno>298</pageno>
+         <pageno>343</pageno>
+         <pageno>414</pageno>
+         <pageno>423</pageno>
+         <pageno>428</pageno>
+         <pageno>443</pageno>
+         <pageno>614</pageno>
+         <pageno>615</pageno>
+         <pageno>620</pageno>
+         <see type="also">DC, BDC</see>
+      </item>
+      <item>
+         <term>Perens, Bruce</term>
+         <pageno>xxx</pageno>
+      </item>
+      <item>
+         <term>Phrep</term>
+         <pageno>620</pageno>
+      </item>
+      <item>
+         <term type="code">PID</term>
+         <comment type="brackets">Process IDentifier</comment>
+         <pageno>181</pageno>
+         <pageno>184</pageno>
+         <pageno>197</pageno>
+         <pageno>208</pageno>
+         <pageno>211</pageno>
+         <pageno>230</pageno>
+         <pageno>245</pageno>
+      </item>
+      <item>
+         <term>Potential Browser</term>
+         <pageno>344</pageno>
+         <pageno>350</pageno>
+         <pageno>353</pageno>
+         <pageno>354</pageno>
+         <pageno>356</pageno>
+         <pageno>383</pageno>
+         <pageno>389</pageno>
+         <pageno>411</pageno>
+         <pageno>412</pageno>
+         <pageno>426</pageno>
+         <pageno>621</pageno>
+      </item>
+      <item>
+         <term>Potter, Tim</term>
+         <pageno>17</pageno>
+      </item>
+      <item>
+         <term>Preferred Master Browser</term>
+         <pageno>411</pageno>
+         <pageno>415</pageno>
+         <pageno>417</pageno>
+      </item>
+      <item>
+         <term type="code">PrimaryDomain</term>
+         <pageno>253</pageno>
+         <pageno>299</pageno>
+      </item>
+      <item>
+         <term>primates</term>
+         <pageno>333</pageno>
+      </item>
+      <item>
+         <term>Provider</term>
+         <see>Browse Service Provider</see>
+      </item>
+      <item>
+         <term type="code">PWdump</term>
+         <pageno>274</pageno>
+      </item>
+      <item>
+         <term type="code">QDCOUNT</term>
+         <pageno>27</pageno>
+         <pageno>51</pageno>
+      </item>
+      <item>
+         <term type="code">QUESTION_CLASS</term>
+         <pageno>28</pageno>
+         <pageno>32</pageno>
+         <pageno>53</pageno>
+      </item>
+      <item>
+         <term type="code">QUESTION_NAME</term>
+         <pageno>53</pageno>
+         <pageno>63</pageno>
+      </item>
+      <item>
+         <term type="code">QUESTION_RECORD</term>
+         <pageno>46</pageno>
+         <pageno>63</pageno>
+      </item>
+      <item>
+         <term type="code">QUESTION_TYPE</term>
+         <pageno>28</pageno>
+         <pageno>32</pageno>
+         <pageno>53</pageno>
+      </item>
+      <item>
+         <term>rabbit-pellet mode</term>
+         <pageno>298</pageno>
+      </item>
+      <item>
+         <term>Rachel</term>
+         <pageno>xxix</pageno>
+      </item>
+      <item>
+         <term>Ranum, Marcus</term>
+         <pageno>411</pageno>
+      </item>
+      <item>
+         <term>RAP</term>
+         <comment type="brackets">Remote Access Protocol</comment>
+         <pageno>250</pageno>
+         <pageno>256</pageno>
+         <pageno>259</pageno>
+         <pageno>318</pageno>
+         <pageno>321</pageno>
+         <pageno>334</pageno>
+         <pageno>351</pageno>
+         <pageno>354</pageno>
+         <pageno>361</pageno>
+         <pageno>363</pageno>
+         <pageno>370</pageno>
+         <pageno>377</pageno>
+         <pageno>383</pageno>
+         <pageno>394</pageno>
+         <pageno>395</pageno>
+         <pageno>406</pageno>
+         <pageno>408</pageno>
+         <pageno>420</pageno>
+      </item>
+      <item>
+         <term>raw read/write mode</term>
+         <comment type="brackets-code">READ RAW/WRITE RAW</comment>
+         <pageno>231</pageno>
+         <pageno>242</pageno>
+      </item>
+      <item>
+         <term>raw transport</term>
+         <see>naked transport</see>
+      </item>
+      <item>
+         <term type="code">RCODE</term>
+         <pageno>27</pageno>
+         <pageno>49</pageno>
+         <pageno>62</pageno>
+         <pageno>68</pageno>
+         <pageno>76</pageno>
+         <pageno>84</pageno>
+         <pageno>91</pageno>
+         <pageno>93</pageno>
+         <pageno>102</pageno>
+      </item>
+      <item>
+         <term type="code">RDATA</term>
+         <pageno>57</pageno>
+         <pageno>63</pageno>
+         <pageno>64</pageno>
+         <pageno>68</pageno>
+         <pageno>91</pageno>
+         <pageno>96</pageno>
+         <pageno>100</pageno>
+         <pageno>105</pageno>
+         <pageno>106</pageno>
+      </item>
+      <item>
+         <term type="code">READ_ANDX</term>
+         <comment type="brackets-code">SMB_COM_READ_ANDX</comment>
+         <pageno>246</pageno>
+         <pageno>315</pageno>
+      </item>
+      <item>
+         <term>recursion</term>
+         <see>recursion</see>
+      </item>
+      <item>
+         <term type="code">recv()</term>
+         <pageno>70</pageno>
+         <pageno>93</pageno>
+         <pageno>107</pageno>
+         <pageno>133</pageno>
+         <pageno>168</pageno>
+         <pageno>315</pageno>
+      </item>
+      <item>
+         <term>redirector</term>
+         <pageno>203</pageno>
+         <pageno>242</pageno>
+         <pageno>307</pageno>
+      </item>
+      <item>
+         <term type="code">RequestElection</term>
+         <pageno>356</pageno>
+         <pageno>379</pageno>
+         <pageno>383</pageno>
+         <pageno>392</pageno>
+         <pageno>411</pageno>
+         <pageno>412</pageno>
+         <pageno>413</pageno>
+         <pageno>427</pageno>
+      </item>
+      <item>
+         <term type="code">RequireSecuritySignature</term>
+         <pageno>306</pageno>
+      </item>
+      <item>
+         <term type="code">ResetBrowserState</term>
+         <pageno>379</pageno>
+         <pageno>390</pageno>
+      </item>
+      <item>
+         <term type="code">RETARGET SESSION RESPONSE</term>
+         <pageno>133</pageno>
+         <pageno>138</pageno>
+      </item>
+      <item>
+         <term type="code">RFS_ERR</term>
+         <pageno>5</pageno>
+         <pageno>50</pageno>
+         <pageno>77</pageno>
+         <pageno>91</pageno>
+         <pageno>103</pageno>
+      </item>
+      <item>
+         <term>RPC (Remote Procedure Call)</term>
+         <see>MS-RPC</see>
+      </item>
+      <item>
+         <term type="code">RR_CLASS</term>
+         <pageno>6</pageno>
+         <pageno>56</pageno>
+      </item>
+      <item>
+         <term type="code">RR_NAME</term>
+         <pageno>6</pageno>
+         <pageno>46</pageno>
+         <pageno>56</pageno>
+         <pageno>63</pageno>
+         <pageno>105</pageno>
+      </item>
+      <item>
+         <term type="code">RR_TYPE</term>
+         <pageno>6</pageno>
+         <pageno>56</pageno>
+         <pageno>90</pageno>
+         <pageno>91</pageno>
+      </item>
+      <item>
+         <term>SAM</term>
+         <comment type="brackets">Security Accounts Manager</comment>
+         <pageno>295</pageno>
+         <pageno>296</pageno>
+         <pageno>297</pageno>
+         <pageno>298</pageno>
+         <pageno>303</pageno>
+      </item>
+      <item>
+         <term>Samba</term>
+         <pageno>xxvi</pageno>
+         <pageno>xxix</pageno>
+         <pageno>9</pageno>
+         <pageno>14</pageno>
+         <pageno>18</pageno>
+         <pageno>30</pageno>
+         <pageno>32</pageno>
+         <pageno>50</pageno>
+         <pageno>76</pageno>
+         <pageno>106</pageno>
+         <pageno>112</pageno>
+         <pageno>120</pageno>
+         <pageno>133</pageno>
+         <pageno>143</pageno>
+         <pageno>150</pageno>
+         <pageno>154</pageno>
+         <pageno>158</pageno>
+         <pageno>164</pageno>
+         <pageno>176</pageno>
+         <pageno>177</pageno>
+         <pageno>179</pageno>
+         <pageno>188</pageno>
+         <pageno>193</pageno>
+         <pageno>199</pageno>
+         <pageno>223</pageno>
+         <pageno>232</pageno>
+         <pageno>236</pageno>
+         <pageno>246</pageno>
+         <pageno>253</pageno>
+         <pageno>259</pageno>
+         <pageno>262</pageno>
+         <pageno>263</pageno>
+         <pageno>264</pageno>
+         <pageno>276</pageno>
+         <pageno>284</pageno>
+         <pageno>298</pageno>
+         <pageno>310</pageno>
+         <pageno>312</pageno>
+         <pageno>313</pageno>
+         <pageno>329</pageno>
+         <pageno>338</pageno>
+         <pageno>343</pageno>
+         <pageno>361</pageno>
+         <pageno>362</pageno>
+         <pageno>397</pageno>
+         <pageno>400</pageno>
+         <pageno>415</pageno>
+         <pageno start="c24-samba">419</pageno>
+         <pageno end="c24-samba">423</pageno>
+         <pageno start="c25-samba">426</pageno>
+         <pageno end="c25-samba">428</pageno>
+         <pageno>440</pageno>
+         <pageno>451</pageno>
+         <subitem>
+            <term>eXPerience conference</term>
+            <pageno>xxvii</pageno>
+         </subitem>
+         <subitem>
+            <term>Team</term>
+            <pageno>xxvi</pageno>
+            <pageno>xxix</pageno>
+            <pageno>xxx</pageno>
+            <pageno>17</pageno>
+            <pageno>149</pageno>
+            <pageno>199</pageno>
+            <pageno>206</pageno>
+            <pageno>223</pageno>
+            <pageno>231</pageno>
+            <pageno>236</pageno>
+            <pageno>276</pageno>
+            <pageno>289</pageno>
+            <pageno>302</pageno>
+            <pageno>303</pageno>
+            <pageno>310</pageno>
+            <pageno>451</pageno>
+         </subitem>
+         <subitem>
+            <term>technical mailing list</term>
+            <pageno>xxvii</pageno>
+            <pageno>xxix</pageno>
+            <pageno>232</pageno>
+            <pageno>314</pageno>
+            <pageno>451</pageno>
+         </subitem>
+      </item>
+      <item>
+         <term>Samba-TNG</term>
+         <pageno>xxvi</pageno>
+         <pageno>xxvii</pageno>
+         <pageno>xxix</pageno>
+         <pageno>276</pageno>
+         <pageno>283</pageno>
+         <pageno>285</pageno>
+      </item>
+      <item>
+         <term>Schneier, Bruce</term>
+         <pageno>266</pageno>
+         <pageno>277</pageno>
+         <pageno>294</pageno>
+      </item>
+      <item>
+         <term>scones</term>
+         <pageno>436</pageno>
+      </item>
+      <item>
+         <term>scope</term>
+         <see>NBT scope</see>
+      </item>
+      <item>
+         <term>security level</term>
+         <subitem>
+            <term>Share</term>
+            <see>Share Level Security</see>
+         </subitem>
+         <subitem>
+            <term>User</term>
+            <see>User Level Security</see>
+         </subitem>
+      </item>
+      <item>
+         <term>SecurityBlob</term>
+         <pageno>236</pageno>
+         <pageno>252</pageno>
+         <pageno>256</pageno>
+         <pageno>290</pageno>
+         <pageno>291</pageno>
+      </item>
+      <item>
+         <term type="code">SecurityMode</term>
+         <pageno>228</pageno>
+         <pageno>261</pageno>
+         <pageno>272</pageno>
+      </item>
+      <item>
+         <term>Server Service</term>
+         <see>SMB Server Service</see>
+      </item>
+      <item>
+         <term>Session Service</term>
+         <see>NBT Session Service</see>
+      </item>
+      <item>
+         <term type="code">SESSION SETUP</term>
+         <pageno>188</pageno>
+         <pageno>192</pageno>
+         <pageno>198</pageno>
+         <pageno>209</pageno>
+         <pageno>232</pageno>
+         <pageno start="c14-setup">239</pageno>
+         <pageno end="c14-setup">256</pageno>
+         <pageno>258</pageno>
+         <pageno>264</pageno>
+         <pageno>272</pageno>
+         <pageno>273</pageno>
+         <pageno>275</pageno>
+         <pageno>290</pageno>
+         <pageno>298</pageno>
+         <pageno>304</pageno>
+         <pageno>309</pageno>
+         <pageno>313</pageno>
+         <pageno>343</pageno>
+         <pageno>361</pageno>
+      </item>
+      <item>
+         <term type="code">SessionKey</term>
+         <pageno>231</pageno>
+         <pageno>241</pageno>
+         <pageno>242</pageno>
+         <pageno>244</pageno>
+      </item>
+      <item>
+         <term>Shakespeare, William</term>
+         <pageno>xxiii</pageno>
+         <pageno>239</pageno>
+      </item>
+      <item>
+         <term>Share Level Security</term>
+         <pageno>193</pageno>
+         <pageno>210</pageno>
+         <pageno>230</pageno>
+         <pageno>239</pageno>
+         <pageno>259</pageno>
+         <pageno>261</pageno>
+         <pageno>264</pageno>
+         <pageno>272</pageno>
+         <pageno>273</pageno>
+         <pageno>311</pageno>
+      </item>
+      <item>
+         <term>Sharpe</term>
+         <subitem>
+            <term>Richard</term>
+            <pageno>xxvi</pageno>
+            <pageno>17</pageno>
+            <pageno>284</pageno>
+            <pageno>451</pageno>
+         </subitem>
+         <subitem>
+            <term>Thang</term>
+            <pageno>9</pageno>
+            <pageno>277</pageno>
+         </subitem>
+      </item>
+      <item>
+         <term>SMB</term>
+         <comment type="brackets">Server Message Block</comment>
+         <pageno>148</pageno>
+         <pageno>177</pageno>
+         <pageno>614</pageno>
+         <pageno>621</pageno>
+         <subitem>
+            <term>authentication</term>
+            <see>authentication</see>
+         </subitem>
+         <subitem>
+            <term>Core Plus Protocol</term>
+            <pageno>222</pageno>
+         </subitem>
+         <subitem>
+            <term>Core Protocol</term>
+            <pageno>148</pageno>
+            <pageno>222</pageno>
+         </subitem>
+         <subitem>
+            <term>dialect</term>
+            <see>dialect</see>
+         </subitem>
+         <subitem>
+            <term>Server Service</term>
+            <pageno>32</pageno>
+            <pageno>143</pageno>
+            <pageno>177</pageno>
+            <pageno>236</pageno>
+            <pageno>361</pageno>
+            <pageno>377</pageno>
+            <pageno>387</pageno>
+            <pageno>440</pageno>
+            <pageno>621</pageno>
+         </subitem>
+         <subitem>
+            <term>Transaction</term>
+            <pageno>318</pageno>
+         </subitem>
+         <subitem>
+            <term>URL</term>
+            <pageno>157</pageno>
+            <pageno>162</pageno>
+            <pageno>260</pageno>
+            <pageno start="c-smburl">451</pageno>
+            <pageno end="c-smburl">461</pageno>
+         </subitem>
+      </item>
+      <item>
+         <term type="code">smb.conf</term>
+         <pageno>176</pageno>
+         <pageno>253</pageno>
+         <pageno>259</pageno>
+         <pageno>262</pageno>
+         <pageno>264</pageno>
+      </item>
+      <item>
+         <term type="code">SMB-LM1X.PS</term>
+         <pageno>242</pageno>
+      </item>
+      <item>
+         <term type="code">SMB-LM21.DOC</term>
+         <pageno>223</pageno>
+      </item>
+      <item>
+         <term type="code">smbclient</term>
+         <pageno>154</pageno>
+         <pageno>178</pageno>
+         <pageno>179</pageno>
+         <pageno>188</pageno>
+         <pageno>193</pageno>
+         <pageno>253</pageno>
+         <pageno>260</pageno>
+      </item>
+      <item>
+         <term type="code">smbd</term>
+         <pageno>138</pageno>
+         <pageno>164</pageno>
+         <pageno>200</pageno>
+         <pageno>260</pageno>
+         <pageno>262</pageno>
+      </item>
+      <item>
+         <term type="code">SMBFS</term>
+         <pageno>223</pageno>
+      </item>
+      <item>
+         <term type="code">smbtorture</term>
+         <pageno>201</pageno>
+      </item>
+      <item>
+         <term>SMBtrans</term>
+         <comment type="brackets-code">SMB_COM_TRANSACTION</comment>
+         <pageno>320</pageno>
+         <pageno>321</pageno>
+         <pageno>351</pageno>
+         <pageno>361</pageno>
+         <pageno>363</pageno>
+         <pageno start="c22-SMBtrans">367</pageno>
+         <pageno end="c22-SMBtrans">378</pageno>
+         <pageno start="c22-SMBtrans-2">393</pageno>
+         <pageno end="c22-SMBtrans-2">402</pageno>
+         <pageno>408</pageno>
+      </item>
+      <item>
+         <term>SNIA</term>
+         <comment type="brackets">Storage Network Industry Association</comment>
+         <pageno>xxvii</pageno>
+         <pageno>148</pageno>
+         <pageno>333</pageno>
+         <subitem>
+            <term>CIFS Technical Reference</term>
+            <pageno>xxvii</pageno>
+            <pageno start="c8-snia">148</pageno>
+            <pageno end="c8-snia">151</pageno>
+            <pageno>178</pageno>
+            <pageno>182</pageno>
+            <pageno>192</pageno>
+            <pageno start="c12-snia">198</pageno>
+            <pageno end="c12-snia">208</pageno>
+            <pageno>221</pageno>
+            <pageno>222</pageno>
+            <pageno>232</pageno>
+            <pageno>234</pageno>
+            <pageno>237</pageno>
+            <pageno>238</pageno>
+            <pageno>241</pageno>
+            <pageno>255</pageno>
+            <pageno>266</pageno>
+            <pageno>290</pageno>
+            <pageno>303</pageno>
+            <pageno>310</pageno>
+            <pageno>312</pageno>
+            <pageno>315</pageno>
+            <pageno>316</pageno>
+            <pageno>321</pageno>
+            <pageno>328</pageno>
+            <pageno>331</pageno>
+            <pageno>370</pageno>
+            <pageno>372</pageno>
+            <pageno>379</pageno>
+         </subitem>
+      </item>
+      <item>
+         <term>Soffer, Nir</term>
+         <pageno>263</pageno>
+      </item>
+      <item>
+         <term>SPNEGO</term>
+         <pageno>292</pageno>
+         <pageno>622</pageno>
+      </item>
+      <item>
+         <term type="code">SRV_ERR</term>
+         <pageno>5</pageno>
+         <pageno>50</pageno>
+         <pageno>76</pageno>
+         <pageno>91</pageno>
+         <pageno>102</pageno>
+      </item>
+      <item>
+         <term>suffix byte</term>
+         <pageno>32</pageno>
+         <pageno>37</pageno>
+         <pageno>42</pageno>
+         <pageno>48</pageno>
+         <pageno>105</pageno>
+         <pageno>120</pageno>
+         <pageno>141</pageno>
+         <pageno>142</pageno>
+         <pageno>143</pageno>
+         <pageno>161</pageno>
+         <pageno>166</pageno>
+         <pageno>176</pageno>
+         <pageno>178</pageno>
+         <pageno>281</pageno>
+         <pageno>283</pageno>
+         <pageno>340</pageno>
+         <pageno>341</pageno>
+         <pageno>390</pageno>
+         <pageno>420</pageno>
+         <pageno start="b-suffix">439</pageno>
+         <pageno end="b-suffix">447</pageno>
+         <pageno>622</pageno>
+      </item>
+      <item>
+         <term>Sytec</term>
+         <pageno>426</pageno>
+         <pageno>620</pageno>
+      </item>
+      <item>
+         <term>Taub, Mark</term>
+         <pageno>xxx</pageno>
+      </item>
+      <item>
+         <term>TCP</term>
+         <comment type="brackets">Transmission Control Protocol</comment>
+         <pageno>xxviii</pageno>
+         <pageno start="c2-TCP">5</pageno>
+         <pageno end="c2-TCP">7</pageno>
+         <pageno>10</pageno>
+         <pageno>11</pageno>
+         <pageno>130</pageno>
+         <pageno>139</pageno>
+         <pageno>142</pageno>
+         <pageno>150</pageno>
+         <pageno>163</pageno>
+         <pageno>180</pageno>
+         <pageno>211</pageno>
+         <pageno>301</pageno>
+         <pageno>313</pageno>
+         <pageno>361</pageno>
+         <subitem>
+            <term>naked</term>
+            <see>naked transport</see>
+         </subitem>
+         <subitem>
+            <term>port 137</term>
+            <see>137/TCP</see>
+         </subitem>
+         <subitem>
+            <term>port 138</term>
+            <see>138/TCP</see>
+         </subitem>
+         <subitem>
+            <term>port 139</term>
+            <see>139/TCP</see>
+         </subitem>
+         <subitem>
+            <term>port 445</term>
+            <see>445/TCP</see>
+         </subitem>
+      </item>
+      <item>
+         <term>TCPBEUI</term>
+         <pageno>5</pageno>
+         <pageno>622</pageno>
+      </item>
+      <item>
+         <term>TCPDump</term>
+         <pageno>17</pageno>
+         <pageno>37</pageno>
+      </item>
+      <item>
+         <term>tea</term>
+         <pageno>xxiii</pageno>
+         <pageno>4</pageno>
+         <pageno>12</pageno>
+         <pageno>18</pageno>
+         <pageno>38</pageno>
+         <pageno>196</pageno>
+         <pageno>257</pageno>
+         <pageno>325</pageno>
+         <pageno start="a_tea">435</pageno>
+         <pageno end="a_tea">438</pageno>
+      </item>
+      <item>
+         <term>teashop</term>
+         <pageno>307</pageno>
+         <pageno>337</pageno>
+      </item>
+      <item>
+         <term>TECO</term>
+         <pageno>209</pageno>
+      </item>
+      <item>
+         <term>Terpstra, John</term>
+         <pageno>129</pageno>
+      </item>
+      <item>
+         <term type="code">TID</term>
+         <comment type="brackets">Tree IDentifier</comment>
+         <pageno>181</pageno>
+         <pageno>184</pageno>
+         <pageno>188</pageno>
+         <pageno>197</pageno>
+         <pageno>209</pageno>
+         <pageno>230</pageno>
+         <pageno>245</pageno>
+         <pageno>261</pageno>
+         <pageno>313</pageno>
+         <pageno>317</pageno>
+         <pageno>370</pageno>
+      </item>
+      <item>
+         <term>Trans2</term>
+         <comment type="brackets-code">SMB_COM_TRANSACTION2</comment>
+         <pageno>320</pageno>
+         <pageno>327</pageno>
+         <pageno>408</pageno>
+      </item>
+      <item>
+         <term type="code">TRANS2_GET_DFS_REFERRAL</term>
+         <pageno>327</pageno>
+      </item>
+      <item>
+         <term type="code">TREE CONNECT</term>
+         <pageno>191</pageno>
+         <pageno>194</pageno>
+         <pageno>210</pageno>
+         <pageno>239</pageno>
+         <pageno>264</pageno>
+         <pageno>309</pageno>
+         <pageno>310</pageno>
+         <pageno>361</pageno>
+         <pageno>370</pageno>
+      </item>
+      <item>
+         <term>Tridge</term>
+         <pageno>xxix</pageno>
+         <pageno>200</pageno>
+         <pageno>252</pageno>
+         <pageno>269</pageno>
+         <pageno>310</pageno>
+         <pageno>333</pageno>
+      </item>
+      <item>
+         <term>Tridgell, Andrew</term>
+         <see>Tridge</see>
+      </item>
+      <item>
+         <term>Tschal&#228;r, Ronald</term>
+         <pageno>286</pageno>
+      </item>
+      <item>
+         <term type="code">TTL</term>
+         <comment type="brackets">Time to Live</comment>
+         <pageno>55</pageno>
+         <pageno>63</pageno>
+         <pageno>66</pageno>
+         <pageno>76</pageno>
+      </item>
+      <item>
+         <term type="code">ubiqx.org</term>
+         <pageno>xxviii</pageno>
+         <pageno>153</pageno>
+         <pageno>160</pageno>
+         <pageno>446</pageno>
+      </item>
+      <item>
+         <term>UCS-2LE</term>
+         <pageno>11</pageno>
+         <pageno>206</pageno>
+         <pageno>255</pageno>
+         <pageno>275</pageno>
+         <pageno>279</pageno>
+         <pageno>280</pageno>
+         <pageno>283</pageno>
+         <pageno>284</pageno>
+      </item>
+      <item>
+         <term>UDP</term>
+         <comment type="brackets">User Datagram Protocol</comment>
+         <pageno>6</pageno>
+         <pageno>10</pageno>
+         <pageno>107</pageno>
+         <pageno>117</pageno>
+         <pageno>118</pageno>
+         <pageno start="c5-udp">122</pageno>
+         <pageno end="c5-udp">126</pageno>
+         <pageno>142</pageno>
+         <pageno>363</pageno>
+         <pageno>412</pageno>
+         <subitem>
+            <term>port 137</term>
+            <see>137/UDP</see>
+         </subitem>
+         <subitem>
+            <term>port 138</term>
+            <see>138/UDP</see>
+         </subitem>
+      </item>
+      <item>
+         <term type="code">UID</term>
+         <comment type="brackets">User IDentifier</comment>
+         <pageno>181</pageno>
+         <pageno>184</pageno>
+         <pageno>188</pageno>
+         <pageno>197</pageno>
+         <pageno>209</pageno>
+         <pageno>230</pageno>
+         <pageno>245</pageno>
+         <pageno>261</pageno>
+      </item>
+      <item>
+         <term>UNC</term>
+         <comment type="brackets">Universal Naming Convention</comment>
+         <pageno start="c9-unc">153</pageno>
+         <pageno end="c9-unc">158</pageno>
+         <pageno>176</pageno>
+         <pageno>207</pageno>
+         <pageno>311</pageno>
+         <pageno>326</pageno>
+         <pageno>362</pageno>
+         <pageno>452</pageno>
+      </item>
+      <item>
+         <term>Unicode</term>
+         <pageno>11</pageno>
+         <pageno>206</pageno>
+         <pageno>237</pageno>
+         <pageno>248</pageno>
+         <pageno>252</pageno>
+         <pageno>263</pageno>
+         <pageno>275</pageno>
+         <pageno>279</pageno>
+         <pageno>280</pageno>
+         <pageno>284</pageno>
+         <pageno>303</pageno>
+         <pageno>311</pageno>
+      </item>
+      <item>
+         <term>unique name</term>
+         <pageno>7</pageno>
+         <pageno>64</pageno>
+         <pageno>68</pageno>
+         <pageno>81</pageno>
+         <pageno>105</pageno>
+         <pageno>116</pageno>
+         <pageno>118</pageno>
+         <pageno>120</pageno>
+         <pageno>141</pageno>
+         <pageno>142</pageno>
+         <pageno>143</pageno>
+         <pageno>166</pageno>
+         <pageno>340</pageno>
+         <pageno>341</pageno>
+         <pageno>344</pageno>
+         <pageno>364</pageno>
+      </item>
+      <item>
+         <term>User Level Security</term>
+         <pageno>211</pageno>
+         <pageno>230</pageno>
+         <pageno>237</pageno>
+         <pageno>239</pageno>
+         <pageno>261</pageno>
+         <pageno>272</pageno>
+         <pageno>273</pageno>
+         <subitem>
+            <term>UTF-16LE</term>
+            <pageno>206</pageno>
+         </subitem>
+      </item>
+      <item>
+         <term>VC</term>
+         <comment type="brackets">Virtual Circuit</comment>
+         <pageno>221</pageno>
+         <pageno>230</pageno>
+         <pageno>241</pageno>
+         <pageno start="c14-vc">242</pageno>
+         <pageno end="c14-vc">245</pageno>
+      </item>
+      <item>
+         <term>VFAT</term>
+         <pageno>329</pageno>
+      </item>
+      <item>
+         <term type="code">VUID</term>
+         <comment type="brackets">Virtual User IDentifier</comment>
+         <see type="code">UID</see>
+      </item>
+      <item>
+         <term>W2K Domain</term>
+         <comment type="brackets">Windows2000 Domain</comment>
+         <pageno>xxv</pageno>
+         <pageno>284</pageno>
+         <pageno start="c15-w2k">295</pageno>
+         <pageno end="c15-w2k">299</pageno>
+         <pageno>339</pageno>
+      </item>
+      <item>
+         <term type="code">WACK</term>
+         <comment type="brackets">Wait for ACKnowledgement</comment>
+         <pageno>5</pageno>
+         <pageno>26</pageno>
+         <pageno>49</pageno>
+         <pageno>50</pageno>
+         <pageno>77</pageno>
+         <pageno>83</pageno>
+      </item>
+      <item>
+         <term>Warwick, Bridget</term>
+         <see>Allison, Bridget</see>
+      </item>
+      <item>
+         <term>web browser</term>
+         <pageno>22</pageno>
+         <pageno>44</pageno>
+         <pageno>153</pageno>
+         <pageno>157</pageno>
+         <pageno>162</pageno>
+         <pageno>299</pageno>
+      </item>
+      <item>
+         <term>wildcard</term>
+         <subitem>
+            <term>Domain Master Browser query</term>
+            <pageno>420</pageno>
+         </subitem>
+         <subitem>
+            <term>NetBIOS name</term>
+            <pageno>86</pageno>
+            <pageno>105</pageno>
+            <pageno>116</pageno>
+            <pageno>124</pageno>
+            <pageno>446</pageno>
+         </subitem>
+         <subitem>
+            <term>query</term>
+            <pageno>30</pageno>
+            <pageno>31</pageno>
+            <pageno>86</pageno>
+         </subitem>
+         <subitem>
+            <term>service type string</term>
+            <pageno>311</pageno>
+         </subitem>
+      </item>
+      <item>
+         <term>Windows-1252 character set</term>
+         <pageno>44</pageno>
+      </item>
+      <item>
+         <term>WINS</term>
+         <comment type="brackets">Windows Internet Name Service</comment>
+         <pageno>9</pageno>
+         <pageno>44</pageno>
+         <pageno>78</pageno>
+         <pageno>119</pageno>
+         <pageno>128</pageno>
+         <pageno start="c7-wins">141</pageno>
+         <pageno end="c7-wins">143</pageno>
+         <pageno>341</pageno>
+         <pageno>343</pageno>
+         <pageno>355</pageno>
+         <pageno>426</pageno>
+         <pageno>444</pageno>
+         <pageno start="b-WINS">447</pageno>
+         <pageno end="b-WINS">449</pageno>
+         <pageno>457</pageno>
+         <pageno>622</pageno>
+         <see type="also">NBNS</see>
+      </item>
+      <item>
+         <term type="code">wins.dat</term>
+         <pageno>100</pageno>
+      </item>
+      <item>
+         <term type="italic-code">workgroup</term>
+         <comment>&lt;00&gt;</comment>
+         <pageno>340</pageno>
+         <pageno>443</pageno>
+      </item>
+      <item>
+         <term type="italic-code">workgroup</term>
+         <comment>&lt;1B&gt;</comment>
+         <pageno>342</pageno>
+         <pageno>353</pageno>
+         <pageno>355</pageno>
+         <pageno>421</pageno>
+         <pageno>443</pageno>
+      </item>
+      <item>
+         <term type="italic-code">workgroup</term>
+         <comment>&lt;1D&gt;</comment>
+         <pageno>340</pageno>
+         <pageno>341</pageno>
+         <pageno>348</pageno>
+         <pageno>351</pageno>
+         <pageno>444</pageno>
+         <pageno>449</pageno>
+      </item>
+      <item>
+         <term type="italic-code">workgroup</term>
+         <comment>&lt;1E&gt;</comment>
+         <pageno>340</pageno>
+         <pageno>344</pageno>
+         <pageno>351</pageno>
+         <pageno>352</pageno>
+         <pageno>353</pageno>
+         <pageno>357</pageno>
+         <pageno>444</pageno>
+      </item>
+      <item>
+         <term>Workgroup</term>
+         <pageno>xxv</pageno>
+         <pageno>38</pageno>
+         <pageno>236</pageno>
+         <pageno start="c19-workgroup">339</pageno>
+         <pageno end="c19-workgroup">344</pageno>
+         <pageno>352</pageno>
+         <pageno>355</pageno>
+         <pageno>357</pageno>
+         <pageno>380</pageno>
+         <pageno start="c22-workgroup">383</pageno>
+         <pageno end="c22-workgroup">390</pageno>
+         <pageno start="c22-workgroup">397</pageno>
+         <pageno>400</pageno>
+         <pageno>417</pageno>
+         <pageno>421</pageno>
+         <pageno>422</pageno>
+         <pageno>425</pageno>
+         <pageno>428</pageno>
+         <pageno>443</pageno>
+         <pageno>445</pageno>
+         <pageno>449</pageno>
+         <pageno>452</pageno>
+         <pageno>453</pageno>
+         <pageno>454</pageno>
+         <pageno>457</pageno>
+         <pageno>622</pageno>
+      </item>
+      <item>
+         <term type="code">WRITE_ANDX</term>
+         <comment type="brackets-code">SMB_COM_WRITE_ANDX</comment>
+         <pageno>246</pageno>
+         <pageno>314</pageno>
+         <pageno>316</pageno>
+      </item>
+      <item>
+         <term type="code">WrLeh</term>
+         <pageno>406</pageno>
+      </item>
+      <item>
+         <term type="code">WrLehDz</term>
+         <pageno>395</pageno>
+      </item>
+      <item>
+         <term>X/Open SMB Documentation</term>
+         <pageno>148</pageno>
+         <pageno>178</pageno>
+         <pageno>205</pageno>
+         <pageno>221</pageno>
+         <pageno>222</pageno>
+         <pageno>231</pageno>
+         <pageno>267</pageno>
+         <pageno>268</pageno>
+      </item>
+      <item>
+         <term>X.500</term>
+         <pageno>292</pageno>
+         <pageno>296</pageno>
+         <pageno>618</pageno>
+      </item>
+      <item>
+         <term>Xenix</term>
+         <pageno>401</pageno>
+      </item>
+      <item>
+         <term>Yerkes, Chris</term>
+         <pageno>xxix</pageno>
+      </item>
+      <item>
+         <term>Yunnan</term>
+         <pageno>437</pageno>
+      </item>
+      <item>
+         <term>Zathras</term>
+         <pageno>106</pageno>
+      </item>
+      <item>
+         <term>zepto</term>
+         <pageno>233</pageno>
+      </item>
+   </index>
+</oim>

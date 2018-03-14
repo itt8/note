@@ -1,0 +1,524 @@
+<?xml version="1.0" encoding="US-ASCII"?>
+<!DOCTYPE oim SYSTEM "oimxml.dtd" [
+  <!ENTITY nbsp  "&#160;">
+  <!ENTITY lsquo "&#8216;">
+  <!ENTITY rsquo "&#8217;">
+  <!ENTITY minus "&#8211;">
+  <!ENTITY times "&#xd7;">
+  <!ENTITY copy "&#xa9;">
+  <!ENTITY eacute "&#233;">
+  <!ENTITY auml "&#228;">
+] >
+<oim xmlns:dk="http://www.kirsanov.com">
+<glossary>
+
+<epigraph dk:padding-top="60">
+<p>It's a <em>thingy</em>!</p>
+<attribution>Prairie Barnes<idx>Barnes, Prairie</idx></attribution>
+</epigraph>
+
+<dl>
+<dt>Abstract Syntax Notation One (ASN.1)<idx>ASN.1</idx></dt> 
+
+<dd><p>A language used to define the structure and content of objects
+such as data records and protocol messages, along the lines of a
+super-duper version of the <code>typedef</code> in C, only a lot more
+powerful. ASN.1 was developed as part of the Open Systems
+Interconnection (OSI) environment, and was originally used for writing
+specifications. More recently, though, tools have been developed that
+will generate software from ASN.1.</p>
+
+<p><em>See also:</em> Distinguished Encoding Rules</p>
+<p><em>Web reference:</em> The ASN.1 Consortium</p> 
+<p dk:indent="no">(<url>http://www.asn1.org/</url>)</p></dd>
+ 
+<dt>Astoundium</dt> 
+
+<dd><p>The element of suprise.</p></dd>
+ 
+<dt>Attacker</dt> 
+
+<dd><p>In this context, one who attacks a computer system either to
+gain access or, as in a "Denial of Service attack,"<idx>DoS</idx> to cause a failure
+in the system or data loss.</p>
+
+<p><em>See also:</em> Cracker</p></dd>
+ 
+<dt>Backup Browser<idx>Backup Browser</idx></dt> 
+
+<dd><p>A Browser node which is not elected to be the Local Master
+Browser, but which stores a backup copy of the Browse List and will
+respond to client requests for the Browse List. A Potential Browser
+may decide on its own to become a Backup Browser, or it may be
+appointed by the Local Master Browser.</p>
+
+<p><em>See also:</em> Local Master Browser, Potential Browser</p></dd>
+ 
+<dt>Backup Domain Controller (BDC<idx>BDC</idx>)</dt>
+
+<dd><p>A Windows NT Domain Controller (DC) which keeps a backup copy
+of the user/group authentication database in an NT Domain. The master
+copy is maintained by the Primary Domain Controller (PDC<idx>PDC</idx>). A Backup
+Domain Controller can be promoted to the role of PDC in a pinch. Only
+one PDC is permitted per NT Domain, but there may be any number of
+BDCs.</p>
+
+<p><em>See also:</em> Domain Controller, Primary Domain Controller</p></dd>
+ 
+<dt>BAF Protocol<idx>BAF protocol</idx></dt> 
+
+<dd><p>The very first name for the protocol formerly known as
+SMB.<idx>SMB</idx> The SMB protocol was originally developed by
+Dr. Barry A. Feigenbaum<idx>Feigenbaum, Dr. Barry</idx> at IBM and,
+according to legend, was originally given his initials. It was later
+renamed SMB and, more recently, CIFS.</p>
+
+<p><em>See also:</em> CIFS, SMB</p></dd>
+ 
+<dt>Bran<idx>Bran</idx></dt> 
+
+<dd><p>Pronounced <em>Brahhn</em>. The name of my dog.</p></dd>
+ 
+<dt>Browser Node</dt> 
+
+<dd><p><em>See:</em> Potential Browser</p></dd>
+ 
+<dt>Browser Election</dt> 
+
+<dd><p>The process by which a browser node on a NetBIOS LAN is chosen
+to be the primary repository of service information for that LAN (that
+is, the Local Master Browser). Under NBT, the
+election<idx>election</idx> process takes place within the confines of
+the local IP subnet.</p></dd>
+ 
+<dt>CIFS</dt> 
+
+<dd><p><b>C</b>ommon <b>I</b>nternet <b>F</b>ile
+<b>S</b>ystem.<idx>CIFS</idx> The protocol formerly known as Server
+Message Block (SMB<idx>SMB</idx>) and, before that, as the BAF
+protocol (after its original creator, Dr. Barry Feigenbaum). CIFS is a
+protocol for file and device sharing across a network.</p>
+
+<p><em>See also:</em> SMB</p></dd>
+ 
+<dt>Cracker</dt> 
+
+<dd><p>One who attacks a system in an effort to break security,
+probably to gain unauthorized access.</p>
+ 
+<p>Goodguy<fn>The use of the term "good<em>guy</em>" is in no way
+intended to imply gender.</fn> crackers (sometimes called "White Hat"
+crackers) used to provide the very beneficial service of exposing
+weaknesses so that they could be fixed, but then the US Congress
+enacted the Digital Millennium Copyright Act (DMCA<idx>DMCA</idx>)
+which made talking about such things illegal in the US and potentially
+dangerous elsewhere.</p>
+
+<p><em>See also:</em> Attacker</p>
+<p><em>Do not see also:</em> Hacker</p></dd>
+ 
+<dt>Distinguished Encoding Rules (DER)</dt>
+
+<dd><p>A set of rules for encoding and decoding ASN.1 data for network
+transport. DER provides a standard format for transport of data over a
+network so that the receiving end can convert the data back into their
+correct ASN.1 format. DER is a specialized form of a more general
+encoding known as BER (<b>B</b>asic <b>E</b>ncoding <b>R</b>ules). DER
+is designed to work well with security protocols, and is used for
+encoding Kerberos and <dk:nobr>LDAP exchanges.</dk:nobr></p>
+
+<p><em>See also:</em> ASN.1, Kerberos, LDAP</p></dd>
+ 
+<dt>Domain Controller (DC<idx>DC</idx>)</dt>
+
+<dd><p>An authentication<idx>authentication</idx> server in a Windows
+NT or Windows 2000 Domain. A Domain Controller maintains a database of
+user, group, and machine accounts and other security information, and
+provides authentication services to the NT or W2K Domain.</p>
+
+<p>In an NT Domain, one of the DCs will be designated the
+<dk:nobr><em>Primary</em></dk:nobr> Domain Controller (PDC<idx>PDC</idx>). All
+security database administration is handled via the PDC, and copies of
+the database are then distributed to any available <em>Backup</em>
+Domain Controllers (BDCs). NT Domain controllers register the Group
+Special NetBIOS name
+<dk:nobr><em>nt_domain</em><code>&lt;1C&gt;</code><idx
+type="1C">nt_domain</idx></dk:nobr> to identify
+<dk:nobr>themselves.</dk:nobr></p>
+
+<p>In Windows 2000 Domains the security database is stored in the
+Active Directory, and there is no distinction between primary and
+secondary controllers.</p>
+
+<p><em>See also:</em> Backup Domain Controller, Primary Domain Controller</p></dd>
+ 
+<dt>Domain Name System (DNS<idx>DNS</idx>)</dt>
+
+<dd><p>The Domain Name System is a distributed database system that
+provides mappings between Internet names and Internet Protocol (IP)
+addresses. The DNS name space is hierarchical in structure.</p>
+
+<p><em>Web reference:</em> the DNS Resources Directory</p>
+<p dk:indent="no">(<url>http://www.dns.net/dnsrd/</url>)</p></dd>
+ 
+<dt>Domain Master Browser (DMB<idx>DMB</idx>)</dt>
+
+<dd><p>A host system that is designated to coordinate Browse Lists for
+matching workgroups across multiple subnets. The DMB receives subnet
+Browse List updates from Local Master Browsers, combines those lists,
+and distributes the combined list back to the Local Masters for the
+workgroup.</p>
+
+<p><em>See also:</em> Local Master Browser</p></dd>
+
+<dt>Doveryay, no proveryay</dt>  <dd><p>Trust, but verify.</p></dd>
+ 
+<dt>Encoded NBT Name</dt> 
+
+<dd><p>The term used in this book for the fully qualified Second Level
+Encoded form of the NetBIOS Name and Scope ID<idx>NBT<sidx>Scope
+ID</sidx></idx>. For example, the string</p>
+
+<pre>"\x20EGEFCACACACACACACACACACACACACACA\x2FI\x2FO\x3FUM\0" </pre>
+
+<p dk:indent="no">is the fully encoded form of the NetBIOS name
+<em>FE</em><code>&lt;20&gt;</code> and the scope ID
+"<code>FI.FO.FUM</code>".</p>
+
+<p><em>See also:</em> NBT Name, First Level Encoding, Scope ID, Second Level Encoding</p></dd>
+ 
+<dt>First Level Encoding</dt> 
+
+<dd><p>The conversion of a NetBIOS name to a format complying with DNS
+"best practices."</p>
+
+<p>NetBIOS names may contain characters which are not considered valid
+for use in DNS names, yet RFC 1001 and RFC 1002 attempted to map the
+NetBIOS name space into the DNS name space. To work around this
+conflict, NetBIOS names are encoded by splitting each byte of the name
+into two nibbles and then adding the value of &lsquo;A&rsquo;
+(<code>0x41</code>). Thus, the &lsquo;&amp;&rsquo; character
+(<code>0x26</code>) would be encoded as "<code>CG</code>". NetBIOS
+names are usually padded with spaces before being encoded.</p>
+
+<p>In this book, the term "NBT Name" is used to indicate the fully
+qualified form of the First Level Encoded name. The NBT Name includes
+the Scope ID.</p>
+
+<p><em>See also:</em> NBT Name, Scope ID, Second Level Encoding</p></dd>
+ 
+<dt>GSS-API<idx>GSS-API</idx></dt> 
+
+<dd><p><b>G</b>eneric <b>S</b>ecurity <b>S</b>ervice
+<b>A</b>pplication <b>P</b>rogram <b>I</b>nterface. A generic
+interface to a set of security services. It makes it possible to write
+software that does not care what the underlying security mechanisms
+actually are.</p>
+
+<p><em>See:</em> RFC 2078 </p>
+<p dk:indent="no">(<url>http://www.faqs.org/rfcs/rfc2078.html</url>)</p>
+<p><em>See also:</em> SPNEGO</p></dd>
+ 
+<dt>Hacker</dt> 
+
+<dd><p>One who fiddles with an existing system to see if it can be
+improved. Hacking is generally the fine art of [creating and]
+recursively revising software or a software-based system.</p>
+
+<p><em>Do not see also:</em> Cracker</p></dd>
+ 
+<dt>Kerberos<idx>Kerberos</idx></dt> 
+
+<dd><p>A network authentication service developed at MIT and later
+adopted by Microsoft for use with Windows 2000 and SMB over naked
+TCP/IP transport.</p>
+
+<p><em>See:</em> RFC 1510</p> 
+<p dk:indent="no">(<url>http://www.faqs.org/rfcs/rfc1510.html</url>)</p></dd>
+ 
+<dt>LANA<idx>LANA</idx></dt> 
+
+<dd><p>NetBIOS <b>LAN A</b>dapter card.</p>
+
+<p>For the original PC Network System, IBM sold both Broadband and
+Baseband network interface cards, which they called LAN Adapters. The
+NBT system supports the concept of a "virtual LANA."</p>
+
+<p><em>See also:</em> NBT</p></dd>
+ 
+<dt>LDAP<idx>LDAP</idx></dt> 
+
+<dd><p>The <b>L</b>ightweight <b>D</b>irectory <b>A</b>ccess
+<b>P</b>rotocol. A standard protocol used to access directory services
+based on the X.500<idx>X.500</idx> directory service model
+<dk:nobr>(e.g., Novell Directory</dk:nobr> Services and Microsoft
+Active Directory).</p>
+
+<p dk:keep="next"><em>See:</em> RFC 2251 </p>
+<p dk:indent="no">(<url>http://www.faqs.org/rfcs/rfc2251.html</url>)</p></dd>
+ 
+<dt>Local Master Browser (LMB)<idx>LMB</idx></dt>
+
+<dd><p>A host system that is "elected" to manage the Browse List for
+the local IP LAN. The LMB collects service announcements from servers
+on the local LAN, distributes the Browse List to any Backup Browsers on the
+LAN, and exchanges service lists with the Domain Master Browser (if
+there <dk:nobr>is one).</dk:nobr></p>
+
+<p><em>See also:</em> Domain Master Browser, Backup Browser</p></dd>
+ 
+<dt>Machine Name<idx>machine name</idx></dt> 
+
+<dd><p>Host name. A name which is typically assigned in the system
+configuration and used as the base name creating the NetBIOS names of
+several <dk:nobr>important</dk:nobr> services. The service names are composed by
+appending a <dk:nobr>service-specific</dk:nobr> suffix to the machine name.</p></dd>
+ 
+<dt>Master Browser</dt> 
+
+<dd><p>A common shorthand for "Local Master Browser."</p>
+
+<p><em>See:</em> Local Master Browser</p></dd>
+ 
+<dt>MIDL<idx>MIDL</idx></dt> 
+
+<dd><p><b>M</b>icrosoft <b>I</b>nterface <b>D</b>efinition
+<b>L</b>anguage, Microsoft's version of the <b>I</b>nterface
+<b>D</b>efinition <b>L</b>anguage (IDL). MIDL is used to specify the
+parameters to MS-RPC function calls. MIDL is also used to define the
+interfaces to Microsoft's <b>D</b>ynamically <b>L</b>inked <b>L</b>ibrary (DLL)
+functions.</p>
+
+<p><em>See also:</em> MS-RPC</p></dd>
+ 
+<dt>Moore's Law</dt> 
+
+<dd><p>The observation (by Gordon Moore) that the transistor density
+on computer chips doubles roughly every 1.5 years. This is generally
+taken to mean that processing speeds also double every 1.5
+years. Software developers compensate by writing bad code and adding
+unnecessary features to maintain status quo.</p></dd>
+ 
+<dt>MS-RPC<idx>MS-RPC</idx></dt> 
+
+<dd><p><b>M</b>icro<b>s</b>oft <b>R</b>emote <b>P</b>rocedure
+<b>C</b>all. RPC in general is a system that allows a process on one
+system to make function calls against libraries on another
+system. MS-RPC is Microsoft's implementation of RPC.</p>
+
+<p><em>See also:</em> MIDL</p></dd>
+ 
+<dt>NBDD<idx>NBDD</idx></dt> 
+
+<dd><p><b>N</b>et<b>B</b>IOS <b>D</b>atagram <b>D</b>istribution
+Server. This server relays broadcast and multicast (group)
+datagrams to all intended recipients.</p>
+
+<p>When a P, M, or H node wishes to send a broadcast or multicast
+datagram, it will send the datagram to the NBDD. The NBDD will obtain
+the list of destination IPs from the NBNS and then unicast the
+datagram to each of those nodes.</p>
+
+<p>Most implementations do not provide NBDD support.</p>
+
+<p><em>See also:</em> NBNS</p></dd>
+ 
+<dt>NBNS<idx>NBNS</idx></dt> 
+
+<dd><p><b>N</b>et<b>B</b>IOS <b>N</b>ame <b>S</b>erver. A server
+providing NetBIOS name to IP address mapping. The NBNS is part of the
+NBT mechanism and does not need to participate directly in the NetBIOS
+LAN.</p>
+
+<p><em>See also:</em> WINS</p></dd>
+ 
+<dt>NBT</dt> 
+
+<dd><p><b>N</b>et<b>B</b>IOS over <b>T</b>CP/IP; also known as NetBT
+and, less commonly, as TCPBEUI. NBT is an implementation of the
+NetBIOS API on top of a TCP/IP transport layer.</p></dd>
+ 
+<dt>NBT Name</dt> 
+
+<dd><p>The term used in this book for the fully qualified First Level
+Encoded form of the NetBIOS Name and Scope ID.<idx>NBT<sidx>Scope
+ID</sidx></idx> For example, the NBT name</p>
+
+<pre>EGEFCACACACACACACACACACACACACACA.FI.FO.FUM</pre>
+
+<p dk:indent="no">is composed of the NetBIOS name
+<em>FE</em><code>&lt;20&gt;</code> and the scope ID
+"<code>FI.FO.FUM</code>".</p>
+
+<p><em>See also:</em> Scope ID, First Level Encoding</p></dd>
+ 
+<dt>Network Data Representation (NDR)</dt>
+
+<dd><p>The on-the-wire encoding for parameters passed via
+MS-RPC. MS-RPC input parameters are marshalled into NDR format for
+transmission over the network, and then unmarshalled on the server
+side. The process is then reversed to return the results.</p>
+
+<p><em>See also:</em> MS-RPC</p></dd>
+ 
+<dt>NetBEUI<idx>NetBEUI</idx></dt> 
+
+<dd><p><b>NetB</b>IOS <b>E</b>xtended <b>U</b>ser
+<b>I</b>nterface.
+
+Also known as <b>N</b>et<b>B</b>IOS <b>F</b>rame Protocol
+(NBF). NetBEUI provides a simple mapping of NetBIOS API parameters and
+data to a transport suitable for passing messages on Ethernet and
+Token Ring networks.</p>
+
+<p><em>Web reference:</em> <cite>NetBIOS NetBEUI NBF
+Networking</cite>, by Timothy&nbsp;D.&nbsp;Evans (<url>http://ourworld.compuserve.com/homepages/<dk:br/>timothydevans/contents.htm</url>)</p></dd>
+ 
+<dt>NetBIOS<idx>NetBIOS</idx></dt> 
+
+<dd><p><b>Net</b>work <b>B</b>asic <b>I</b>nput <b>O</b>utput
+<b>S</b>ystem.
+
+NetBIOS is the <b>A</b>pplication <b>P</b>rogramming <b>I</b>nterface
+(API) to a proprietary LAN system that was developed by IBM and
+Sytec<idx>Sytec</idx>. The NetBIOS API has been implemented on top of
+several different network transports including TCP/IP, DECnet,
+IPX/SPX, and others.</p>
+
+<p><em>See also:</em> NBT, NetBT</p></dd>
+ 
+<dt>NetBT</dt> 
+
+<dd><p>NetBIOS over TCP/IP. Better known as NBT.</p>
+
+<p><em>See:</em> NBT</p></dd>
+ 
+<dt>NT Domain<idx>NT Domain</idx></dt> 
+
+<dd><p>A Workgroup with a Domain Controller.</p>
+
+<p><em>See also:</em> Domain Controller, Workgroup</p></dd>
+ 
+<dt>Phrep<idx>Phrep</idx></dt> 
+
+<dd><p>An expletive, roughly equivalent to "dang," "drat," or
+"bother," but without connotation.</p></dd>
+ 
+<dt>Primary Domain Controller (PDC)</dt>
+
+<dd><p>A Windows NT Domain Controller (DC) which keeps the master copy
+of the user/group authentication database in an NT Domain. Only one
+PDC<idx>PDC</idx> is permitted per NT Domain. In addition to registering the
+<dk:nobr><em>nt_domain</em><code>&lt;1C&gt;</code><idx
+type="1C">nt_domain</idx></dk:nobr> Group Special name, the PDC also
+registers the unique <em>nt_domain</em><code>&lt;1B&gt;</code><idx
+type="1B">nt_domain</idx> NetBIOS name (where <i>nt_domain</i> is the
+name of the NT Domain). Microsoft's WINS server ensures that the IP
+address registered to the <em>nt_domain</em><code>&lt;1B&gt;</code>
+name is always at the top of the list of IPs associated with the
+<em>nt_domain</em><code>&lt;1C&gt;</code> Group Special name.</p>
+
+<p><em>See also:</em> Backup Domain Controller, Domain Controller</p></dd>
+ 
+<dt>Potential Browser</dt> 
+
+<dd><p><idx>Potential Browser</idx>Any node on a local IP LAN that is
+willing and able to participate in browser elections and take on the
+role of Local Master Browser or <dk:nobr>Backup Browser.</dk:nobr></p>
+
+<p><em>See also:</em> Local Master Browser, Backup Browser</p></dd>
+ 
+<dt>Scope ID<idx>NBT<sidx>Scope ID</sidx></idx></dt> 
+
+<dd><p>A string of dot-separated labels, formatted per DNS naming
+rules. The Scope ID defines a virtual NBT LAN by dividing the NetBIOS
+<dk:nobr>namespace.</dk:nobr></p>
+
+<p><em>See also:</em> NBT Name, DNS, First Level Encoding, Second
+Level Encoding</p></dd>
+ 
+<dt>Second Level Encoding</dt> 
+
+<dd><p>The on-the-wire format of an NBT name. The encoding scheme
+replaces the familiar dot characters used in DNS names with a byte
+containing the length of the next label. The Second Level Encoded form
+of the <dk:nobr>NBT Name</dk:nobr></p>
+
+<pre>EGEFCACACACACACACACACACACACACACA.FI.FO.FUM</pre>
+
+<p dk:indent="no">would be</p>
+
+<pre>"\x20EGEFCACACACACACACACACACACACACACA\x02FI\x02FO\x03FUM\0"</pre>
+
+<p><em>See also:</em> NBT Name, DNS, First Level Encoding</p></dd>
+ 
+<dt>Server Message Block (SMB<idx>SMB</idx>)</dt>
+
+<dd><p>A file- and print-sharing protocol developed by IBM, Intel,
+3Com, and Microsoft for use with PC-DOS and MS-DOS. It has since been
+<dk:nobr>renamed CIFS.</dk:nobr></p>
+
+<p>Also a name for the messages exchanged via the SMB or CIFS
+protocol. An SMB message is often referred to simply as "an SMB."</p>
+
+<p><em>See also:</em> CIFS</p></dd>
+ 
+<dt>Server Service</dt> 
+
+<dd><p>An SMB filesharing service provider. The Server
+Service<idx>SMB<sidx>Server Service</sidx></idx> registers a
+<dk:nobr>NetBIOS</dk:nobr> name consisting of the machine name with a
+suffix value of <code>0x20</code>. On many platforms, the Server
+Service will also accept NBT connection requests with a <code>CALLING
+NAME</code><idx>CALLING NAME</idx> of
+<code>*SMBSERVER&lt;20&gt;</code>.<idx>*SMBSERVER&lt;20&gt;</idx></p></dd>
+ 
+<dt>Simple Protected Negotiation (SPNEGO<idx>SPNEGO</idx>)</dt>
+
+<dd><p>The "Simple and Protected GSS-API Negotiation Mechanism" is a
+protocol used with GSS-API to negotiate authentication mechanisms
+between a client and server.</p>
+
+<p><em>See:</em> RFC 2478</p>
+<p dk:indent="no">(<url>http://www.faqs.org/rfcs/rfc2478.html</url>)</p>
+<p><em>See also:</em> GSS-API</p></dd>
+ 
+<dt>Suffix Byte<idx>suffix byte</idx></dt> 
+
+<dd><p>The sixteenth byte of a NetBIOS name. This byte is used to
+indicate the type of service that has registered the name.</p></dd>
+ 
+<dt>TCPBEUI<idx>TCPBEUI</idx></dt> 
+
+<dd><p>Yet another name for NBT. The name TCPBEUI is primarily used by
+folks from IBM.</p>
+
+<p><em>See:</em> NBT</p></dd>
+ 
+<dt>Thermomostat</dt> 
+
+<dd><p>The internal sensor that causes your mother to tell you to put
+on a sweater when she is cold.</p></dd>
+ 
+<dt>WINS<idx>WINS</idx></dt> 
+
+<dd><p><b>W</b>indows <b>I</b>nternet <b>N</b>ame
+<b>S</b>ervice. Microsoft's name for their NBNS <dk:nobr>implementation.</dk:nobr></p>
+
+<p><em>See:</em> NBNS</p></dd>
+ 
+<dt>Workgroup<idx>Workgroup</idx></dt> 
+
+<dd><p>An NT Domain without a Domain Controller.
+
+The distinction between an NT Domain and a Workgroup is blurry. The
+two are basically the same thing, except that an NT Domain has a
+Domain Controller, which provides authentication services. The Primary
+Domain Controller also always runs the Domain Master Browser (DMB)
+service, which coordinates the workgroup Browse Lists across subnets.</p>
+
+<p><em>See also:</em> Domain Master Browser, Domain Controller,
+Primary Domain Controller</p></dd>
+</dl>
+</glossary>
+</oim>

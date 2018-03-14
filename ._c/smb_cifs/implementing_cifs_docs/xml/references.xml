@@ -1,0 +1,481 @@
+<?xml version="1.0" encoding="US-ASCII"?>
+<!DOCTYPE oim SYSTEM "oimxml.dtd" [
+  <!ENTITY nbsp  "&#160;">
+  <!ENTITY lsquo "&#8216;">
+  <!ENTITY rsquo "&#8217;">
+  <!ENTITY minus "&#8211;">
+  <!ENTITY times "&#xd7;">
+  <!ENTITY copy   "&#xa9;">
+  <!ENTITY eacute "&#234;">
+  <!ENTITY aacute "&#225;">
+  <!ENTITY auml   "&#228;">
+] >
+<oim xmlns:dk="http://www.kirsanov.com">
+<references>
+
+<epigraph dk:padding-top="24">
+<p>
+<line>Freedom of information is</line>
+<line>a fundamental human right and is</line>
+<line>the touchstone of all the freedoms.</line>
+</p>
+<attribution>
+<line>United Nations General Assembly</line>
+<line>Resolution 59(i), adopted 1946</line>
+</attribution>
+</epigraph>
+
+<h5>Books</h5>
+
+<dl>
+<dt>Applied Cryptography, Second Edition: Protocols, Algorithms, and Source Code in&nbsp;C</dt>
+    <dd><p>Bruce Schneier. ISBN 0-471-11709-9, John Wiley &amp; Sons, Inc., 1996.</p></dd>
+
+<dt>C Programmer's Guide to NetBIOS, IPX, and SPX</dt>
+    <dd><p>
+    W. David Schwaderer. ISBN 0-672-30050-8, Sam's Publishing, 1992.</p></dd>
+
+<dt>Corgiville Fair</dt>
+    <dd><p>
+    Tasha Tudor. ISBN 0316853127, Little, Brown &amp; Company, April 1998. </p></dd>
+
+<dt>A Decent Cup of Tea</dt>
+    <dd><p>
+    Malachi McCormick. ISBN 0-517-58462<dk:dash>-</dk:dash>X, Clarkson N. Potter Publishers, 1991. </p></dd>
+
+<dt>DCE/RPC over SMB: Samba and Windows NT Domain Internals</dt>
+    <dd><p>
+    Luke Kenneth Casson Leighton. ISBN 1-57870-150-3, Macmillan Technical Publishing, December 1999. </p></dd>
+
+<dt>Fog on the Tyne: The Official History of Lindisfarne</dt>
+    <dd><p>
+    Dave Ian Hill. ISBN 1-900711-07-9, Northdown Publishing, November 1998. </p></dd>
+
+<dt>IPC Mechanisms for SMB</dt>
+    <dd><p>
+    ISBN 1-872630-28-6, The Open Group, February 1992.</p>
+    <p dk:indent="no">
+    (Now available online at: <url>http://www.opengroup.org/</url></p>
+<p dk:indent="no"><url>products/publications/catalog/c195.htm</url>) </p></dd>
+
+<dt>The Lindisfarne Gospels</dt>
+    <dd><p>
+    Janet Backhouse. ISBN 0-7148-2461-5, Phaidon, April 1993. </p></dd>
+
+<dt>Network Programming in C</dt>
+    <dd><p>
+    Barry Nance. ISBN 0-88022-569-6, Que Corporation, 1990. </p></dd>
+
+<dt>NT Network Plumbing: Routers, Proxies, and Web Services</dt>
+    <dd><p>
+    Anthony Northrup. ISBN 076453209X, IDG Books, July 1998. </p></dd>
+
+<dt>Protocols for X/Open<idx>X/Open SMB Documentation</idx> PC Interworking: SMB, Version 2</dt>
+    <dd><p>
+    ISBN 1-872630-45-6, The Open Group, October 1992.</p>
+    <p dk:indent="no">(Now available online at: <url>http://www.opengroup.org/</url></p>
+    <p dk:indent="no"><url>products/publications/catalog/c209.htm</url>) </p></dd>
+
+<dt>Samba: Integrating Unix and Windows</dt>
+    <dd><p>
+    John D. Blair. ISBN 1-57831-006-7, Specialized Systems Consultants, 1998. </p></dd>
+
+<dt>SAMS Teach Yourself Samba in 24 Hours</dt>
+    <dd><p>
+    Gerald Carter and Richard Sharpe. ISBN 0-67231-609-9, MacMillan Publishing, April 1999. </p></dd>
+
+<dt>The Unix System Today</dt>
+    <dd><p>
+    ISBN 1-85912-296-5, The Open Group in association with VA Linux Systems, April 2000. </p></dd>
+
+<dt>Using Samba</dt>
+    <dd><p>
+    Robert Eckstein, David Collier-Brown, and Peter Kelly. ISBN 1-56592-449-5, O'Reilly, November 1999.</p>
+    <p dk:indent="no">
+    (This book has been officially adopted by the Samba Team. It is available online under an open content license.) </p></dd>
+
+<dt>Windows NT TCP/IP</dt>
+    <dd><p>
+    Dr. Karanjit Siyan. ISBN 1-56205-887-8, New Riders, August 1998. </p></dd>
+
+<dt>See Also:</dt>
+    <dd><p>
+    The Samba Team maintains a list of books about Samba and SMB/CIFS networking in general. See any of the Samba mirror sites, and select "books" from the menu at the top of each page.</p></dd>
+</dl> 
+
+<h5>Web</h5>
+
+<p><em>Note that the Web is a dynamic medium. Things tend to move around a bit, and the URLs listed below may change without notice, rhyme, or reason.</em></p>
+
+<dl>
+<dt>Browsing and Windows 95 Networking</dt>
+    <dd><p>
+    Microsoft TechNet, December, 1996.</p>
+    <p dk:indent="no">
+    <url>http://www.microsoft.com/technet/archive/</url></p>
+    <p dk:indent="no"><url>default.asp?url=/TechNet/Archive/win95/w95brows.asp</url> </p></dd>
+
+<dt>CIFS: A Common Internet File System</dt>
+    <dd><p>
+    Paul Leach and Dan Perry. Microsoft Interactive Developer magazine, November, 1996.</p>
+    <p dk:indent="no">
+    <url>http://www.microsoft.com/mind/1196/cifs.asp</url> </p></dd>
+
+<dt>CIFS Authentication and Security [TR3020]</dt>
+    <dd><p>
+    Bridget Allison<idx>Allison, Bridget</idx>. Network Appliance, Inc., 199?.</p>
+    <p dk:indent="no">
+    <url>http://www.netapp.com/tech_library/3020.html</url> </p></dd>
+
+<dt>Draft-leach-cifs-browser-spec-00: CIFS/E Browser Protocol Preliminary Draft</dt>
+    <dd><p>
+    Paul J. Leach and Dilip C. Naik. Expired Internet Draft. IETF, January 10, 1997.</p>
+    <p dk:indent="no">
+    <url>ftp://ftp.microsoft.com/developr/drg/CIFS/</url></p>
+    <p dk:indent="no"><url>cifsbrow.txt</url> </p></dd>
+
+<dt>Draft-leach-cifs-rap-spec-00: CIFS Remote Administration Protocol, Preliminary Draft</dt>
+    <dd><p>
+    Paul J. Leach and Dilip C. Naik. Expired Internet Draft. IETF, February 26, 1997.</p>
+    <p dk:indent="no">
+    <url>ftp://ftp.microsoft.com/developr/drg/cifs/</url></p>
+    <p dk:indent="no"><url>cifsrap2.txt</url> </p></dd>
+
+<dt>Draft-leach-cifs-v1-spec-02: A Common Internet File System (CIFS/1.0) Protocol</dt>
+    <dd><p>
+    Paul J. Leach and Dilip C. Naik. Expired Internet Draft. IETF, March 13, 1997.</p>
+    <p dk:indent="no">
+    <url>http://www.ubiqx.org/cifs/rfc-draft/</url></p>
+    <p dk:indent="no"><url>draft-leach-cifs-v1-spec-02.html</url> </p></dd>
+
+<dt>How to Disable LM Authentication on Windows NT</dt>
+    <dd><p>
+    Microsoft Knowledge Base Article #147706.</p>
+    <p dk:indent="no">
+    <url>http://support.microsoft.com/</url></p>
+    <p dk:indent="no">
+    <url>default.aspx?scid=KB;en-us;147706</url> </p></dd>
+
+<dt>How to Enable NTLM 2 Authentication for Windows 95/98/2000 and NT</dt>
+    <dd><p>
+    Microsoft Knowledge Base Article #239869.</p>
+    <p dk:indent="no">
+    <url>http://support.microsoft.com/</url></p>
+    <p dk:indent="no"><url>default.aspx?scid=KB;en-us;239869</url> </p></dd>
+
+<dt>IETF RFC 883: Domain Names - Implementation and Specification</dt>
+    <dd><p>
+    Paul Mockapetris. IETF, November 1983.</p>
+    <p dk:indent="no">
+    <url>http://www.faqs.org/rfcs/rfc883.html</url> </p></dd>
+
+<dt>IETF RFC 1001: Protocol Standard for a NetBIOS Service on a TCP/UDP Transport: Concepts and Methods</dt>
+    <dd><p>
+    Karl Auerbach, Avnish Aggarwal, et al. IETF, March, 1987.</p>
+    <p dk:indent="no">
+    <url>http://www.ubiqx.org/cifs/rfc-draft/rfc1001.html</url> </p></dd>
+
+<dt>IETF RFC 1002: Protocol Standard for a NetBIOS Service on a TCP/UDP Transport: Detailed Specifications</dt>
+    <dd><p>
+    Karl Auerbach, Avnish Aggarwal, et al. IETF, March, 1987.</p>
+    <p dk:indent="no">
+    <url>http://www.ubiqx.org/cifs/rfc-draft/rfc1002.html</url> </p></dd>
+
+<dt>IETF RFC 1034: Domain Names - Concepts and Facilities</dt>
+    <dd><p>
+    Paul Mockapetris. IETF, November, 1987.</p>
+    <p dk:indent="no">
+    <url>http://www.faqs.org/rfcs/rfc1034.html</url> </p></dd>
+
+<dt>IETF RFC 1035: Domain Names - Implementation and Specification</dt>
+    <dd><p>
+    Paul Mockapetris. IETF, November, 1987.</p>
+    <p dk:indent="no">
+    <url>http://www.faqs.org/rfcs/rfc1035.html</url> </p></dd>
+
+<dt>IETF RFC 1149: A Standard for the Transmission of IP Datagrams on Avian Carriers</dt>
+    <dd><p>
+    David Waitzman. IETF, April, 1990.</p>
+    <p dk:indent="no">
+    <url>http://www.faqs.org/rfcs/rfc1149.html</url> </p></dd>
+
+<dt>IETF RFC 1320: The MD4 Message-Digest Algorithm</dt>
+    <dd><p>
+    Ron Rivest. IETF, April, 1992.</p>
+    <p dk:indent="no">
+    <url>http://www.faqs.org/rfcs/rfc1320.html</url> </p></dd>
+
+<dt>IETF RFC 1321: The MD5 Message-Digest Algorithm</dt>
+    <dd><p>
+    Ron Rivest. IETF, April, 1992.</p>
+    <p dk:indent="no">
+    <url>http://www.faqs.org/rfcs/rfc1321.html</url> </p></dd>
+
+<dt>IETF RFC 1510: The Kerberos Network Authentication Service (V5)</dt>
+    <dd><p>
+    J. Kohl and C. Neuman. IETF, September, 1993.</p>
+    <p dk:indent="no">
+    <url>http://www.faqs.org/rfcs/rfc1510.html</url> </p></dd>
+
+<dt>IETF RFC 1964: The Kerberos Version 5 GSS-API Mechanism</dt>
+    <dd><p>
+    J. Linn. IETF, June, 1996.</p>
+    <p dk:indent="no">
+    <url>http://www.faqs.org/rfcs/rfc1964.html</url> </p></dd>
+
+<dt>IETF RFC 2078: Generic Security Service Application Program Interface, Version&nbsp;2</dt>
+    <dd><p>
+    J. Linn. IETF, January, 1997.</p>
+    <p dk:indent="no">
+    <url>http://www.faqs.org/rfcs/rfc2078.html</url> </p></dd>
+
+<dt>IETF RFC 2104: HMAC: Keyed-Hashing for Message Authentication</dt>
+    <dd><p>
+    H. Krawczyk, M. Bellare, and R. Canetti. IETF, February, 1997.</p>
+    <p dk:indent="no">
+    <url>http://www.faqs.org/rfcs/rfc2104.html</url> </p></dd>
+
+<dt>IETF RFC 2181: Clarifications to the DNS Specification</dt>
+    <dd><p>
+    Randy Bush and Robert Elz. IETF, July, 1997.</p>
+    <p dk:indent="no">
+    <url>http://www.faqs.org/rfcs/rfc2181.html</url> </p></dd>
+
+<dt>IETF RFC 2251: Lightweight Directory Access Protocol (v3)</dt>
+    <dd><p>
+    M. Wahl, T. Howes, and S. Kille. IETF, December, 1997.</p>
+    <p dk:indent="no">
+    <url>http://www.faqs.org/rfcs/rfc2251.html</url> </p></dd>
+
+<dt>IETF RFC 2396: Uniform Resource Identifiers (URI): Generic Syntax</dt>
+    <dd><p>
+    Tim Berners-Lee, Roy Fielding, and Larry Masinter. IETF, August, 1998.</p>
+    <p dk:indent="no">
+    <url>http://www.faqs.org/rfcs/rfc2396.html</url> </p></dd>
+
+<dt>IETF RFC 2478: The Simple and Protected GSS-API Negotiation Mechanism</dt>
+    <dd><p>
+    E. Baize and D. Pinkas. IETF, December, 1998.</p>
+    <p dk:indent="no">
+    <url>http://www.faqs.org/rfcs/rfc2478.html</url> </p></dd>
+
+<dt>IETF RFC 2732: Format for Literal IPv6 Addresses in URL's</dt>
+    <dd><p>
+    R. Hinden, B. Carpenter, and L. Masinter. IETF, December, 1999.</p>
+    <p dk:indent="no">
+    <url>http://www.faqs.org/rfcs/rfc2732.html</url> </p></dd>
+
+<dt>IETF RFC 3244: Microsoft Windows 2000 Kerberos Change Password and Set Password Protocols</dt>
+    <dd><p>
+    M. Swift, J. Trostle, and J. Brezak. IETF, February, 2002.</p>
+    <p dk:indent="no">
+    <url>http://www.faqs.org/rfcs/rfc3244.html</url> </p></dd>
+
+<dt>Information on Browser Operation</dt>
+    <dd><p>
+    Microsoft Knowledge Base Article #102878.</p>
+    <p dk:indent="no">
+    <url>http://support.microsoft.com/</url></p>
+    <p dk:indent="no">
+    <url>default.aspx?scid=KB;en-us;102878</url> </p></dd>
+
+<dt>Inside SP4 NTLMv2 Security Enhancements</dt>
+    <dd><p>
+    Randy Franklin Smith. Windows &amp; .Net Magazine, September, 1999.</p>
+    <p dk:indent="no">
+    <url>http://www.winnetmag.com/Articles/</url></p>
+    <p dk:indent="no">
+    <url>Index.cfm?ArticleID=7072</url> </p></dd>
+
+<dt>Jargon File</dt>
+    <dd><p>
+    Edited by Eric S. Raymond. V4.3.3, September, 2002.</p>
+    <p dk:indent="no">
+    <url>http://catb.org/esr/jargon/</url> </p></dd>
+
+<dt>jCIFS Project</dt>
+    <dd><p>
+    CIFS in Java.</p>
+    <p dk:indent="no">
+    <url>http://jcifs.samba.org/</url> </p></dd>
+
+<dt>Just What is SMB?</dt>
+    <dd><p>
+    Richard Sharpe. V1.2, October, 2002.</p>
+    <p dk:indent="no">
+    <url>http://www.samba.org/cifs/docs/what-is-smb.html</url> </p></dd>
+
+<dt>LAN Technical Reference: 802.2 and NetBIOS APIs</dt>
+    <dd><p>
+    IBM Corp., 1986, 1996.</p>
+    <p dk:indent="no">
+    <url>http://publibz.boulder.ibm.com/cgi-bin/</url></p>
+    <p dk:indent="no">
+    <url>bookmgr_OS390/BOOKS/BK8P7001/COVER</url> </p></dd>
+
+<dt>More Than You Ever Wanted to Know about NT Login Authentication</dt>
+    <dd><p>
+    Philip C. Cox<idx>Cox,
+Philip</idx> and Paul B. Hill<idx>Hill, Paul</idx>. SystemExperts Corporation, 2001.</p>
+    <p dk:indent="no">
+    [PDF file] <url>http://www.systemexperts.com/tutors/</url> </p>
+    <p dk:indent="no">
+    <url>NT_Login_3.0.pdf</url></p></dd>
+
+<dt>Microsoft's CIFS FTP site</dt>
+    <dd><p>
+    <url>ftp://ftp.microsoft.com/developr/drg/cifs/</url> </p></dd>
+
+<dt>Microsoft's CIFS mailing list archives</dt>
+    <dd><p>
+    <url>http://discuss.microsoft.com/archives/</url></p>
+    <p dk:indent="no">
+    <url>cifs.html </url></p></dd>
+
+<dt>Microsoft Networks/OpenNet Filesharing Protocol, Version 2.0</dt>
+    <dd><p>
+    Microsoft Corporation/Intel Corporation, November 7, 1988.</p>
+    <p dk:indent="no">
+    <url>ftp://ftp.microsoft.com/developr/drg/cifs/</url></p>
+    <p dk:indent="no">
+    <url>smb-core.ps</url> </p></dd>
+
+<dt>Microsoft Networks/SMB File Sharing Protocol Extensions, Version&nbsp;2.0, Document Version 3.3</dt>
+    <dd><p>
+    Microsoft Corporation, November 7, 1988.</p>
+    <p dk:indent="no">
+    <url>ftp://ftp.microsoft.com/developr/drg/cifs/</url></p>
+    <p dk:indent="no">
+    <url>SMB-LM1X.PS</url> </p></dd>
+
+<dt>Microsoft Networks/SMB File Sharing Protocol Extensions, Version&nbsp;3.0, Document Version&nbsp;1.11</dt>
+    <dd><p>
+    Microsoft Corporation, June 19, 1990.</p>
+    <p dk:indent="no">
+    <url>ftp://ftp.microsoft.com/developr/drg/cifs/</url></p>
+    <p dk:indent="no">
+    <url>SMB-LM20.PS</url> </p></dd>
+
+<dt>Microsoft Networks/SMB File Sharing Protocol Extensions, Document Version&nbsp;3.4</dt>
+    <dd><p>
+    Microsoft Corporation, February 29, 1992.</p>
+    <p dk:indent="no">
+    <url>ftp://ftp.microsoft.com/developr/drg/cifs/</url></p>
+    <p dk:indent="no">
+    <url>SMB-LM21.DOC</url></p>
+    <p>
+    <i>Note:</i>   The ".DOC" format is proprietary and may be unreadable on many platforms without the use of special software. Fortunately, the Google service can convert the ".DOC" format to HTML. Try searching for "SMB-LM21.DOC" and look for results that offer an option to "View as HTML."</p></dd>
+
+<dt>NetBIOS NetBEUI NBF Networking</dt>
+    <dd><p>
+    Timothy D. Evans. February, 2002.</p>
+    <p dk:indent="no">
+    <url>http://ourworld.compuserve.com/homepages/</url></p>
+    <p dk:indent="no">
+    <url>timothydevans/contents.htm</url> </p></dd>
+
+<dt>NetBIOS Specification</dt>
+    <dd><p>
+    Gavin Winston.</p>
+    <p dk:indent="no">
+    <url>http://members.tripod.com/~Gavin_Winston/</url></p>
+    <p dk:indent="no">
+    <url>NETBIOS.HTM</url></p>
+    <p dk:indent="no">
+    (Warning! Frames, pop-ups, advertisements...) </p></dd>
+
+<dt>NT Cryptographic Password Attacks &amp; Defences</dt>
+    <dd><p>
+    Alan Ramsbottom. July, 1997.</p>
+    <p dk:indent="no">
+    <url>http://www.ntbugtraq.com/</url></p>
+    <p dk:indent="no">
+    <url>default.asp?sid=1&amp;pid=47&amp;aid=17</url> </p></dd>
+
+<dt>The NTLM Authentication Protocol</dt>
+    <dd><p>Eric Glass, 2003</p>
+    <p dk:indent="no">
+    <url>http://davenport.sourceforge.net/ntlm.html</url></p></dd>
+
+<dt>NTLM Authentication Scheme for HTTP</dt>
+    <dd><p>
+    Ronald Tschal&auml;r. March, 2001.</p>
+    <p dk:indent="no">
+    <url>http://www.innovation.ch/java/ntlm.html</url> </p></dd>
+
+<dt>Remoted Net API Format Strings</dt>
+    <dd><p>
+    Archived Email from Paul Leach. Microsoft, September 27, 1996.</p>
+    <p dk:indent="no">
+    <url>http://discuss.microsoft.com/SCRIPTS/</url></p>
+    <p dk:indent="no">
+    <url>WA-MSD.EXE?A2=ind9609d&amp;L=cifs&amp;T=0&amp;F=&amp;S=&amp;P=1674</url> </p></dd>
+
+<dt>Russian Tea HowTo</dt>
+    <dd><p>
+    D&aacute;niel Nagy. April, 2002.</p>
+    <p dk:indent="no">
+    <url>http://www.fazekas.hu/~nagydani/rth/</url></p>
+    <p dk:indent="no">
+    <url>Russian-tea-HOWTO-v2.html</url> </p></dd>
+
+<dt>Samba web sites</dt>
+    <dd><p>
+    <url>http://www.samba.org/</url> </p></dd>
+
+<dt>SNIA Common Internet Filesystem Technical Reference</dt>
+    <dd><p>
+    Storage Network Industry Association, CIFS Workging Group.</p>
+    <p dk:indent="no">
+    <url>http://www.snia.org/tech_activities/CIFS</url> </p></dd>
+
+<dt>Tea Health Homepage</dt>
+    <dd><p>
+    The Tea Council.</p>
+    <p dk:indent="no">
+    <url>http://www.teahealth.co.uk/</url> </p></dd>
+
+<dt>Unicode in the Unix Environment</dt>
+    <dd><p>
+    Roman Czyborra.</p>
+    <p dk:indent="no">
+    <url>http://czyborra.com/</url></p></dd>
+
+<dt>Unicode, Inc.</dt>
+    <dd><p>
+    <url>http://www.unicode.org/</url> </p></dd>
+
+<dt>User Authentication with Windows NT</dt>
+    <dd><p>
+    Microsoft Knowledge Base Article #102716.</p>
+    <p dk:indent="no">
+    <url>http://support.microsoft.com/</url></p>
+    <p dk:indent="no">
+    <url>default.aspx?scid=KB;en-us;102716</url> </p></dd>
+
+<dt>Using jCIFS to Connect to Win32 Named Pipes</dt>
+    <dd><p>
+    Michael B. Allen.</p>
+    <p dk:indent="no">
+    <url>http://jcifs.samba.org/src/docs/pipes.html</url> </p></dd>
+
+<dt>Who Will Own Your Next Good Idea?</dt>
+    <dd><p>
+    Charles C. Mann. The Atlantic Online, September, 1998.</p>
+    <p dk:indent="no">
+    <url>http://www.theatlantic.com/issues/98sep/copy.htm</url> </p></dd>
+
+<dt>Windows 2000 Authorization Data in Kerberos Tickets</dt>
+    <dd><p>
+    Microsoft Corporation, 2002.</p>
+    <p dk:indent="no">
+    <url>http://msdn.microsoft.com/library/en-us/dnkerb/</url></p>    
+    <p dk:indent="no">
+    <url>protocol/windows_2000_authorization_data_</url></p>
+    <p dk:indent="no">
+    <url>in_kerberos_tickets.asp</url> </p></dd>
+
+</dl>
+
+</references>
+</oim>

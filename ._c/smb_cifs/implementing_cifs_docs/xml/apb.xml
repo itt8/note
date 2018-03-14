@@ -1,0 +1,631 @@
+<?xml version="1.0" encoding="US-ASCII"?>
+<!DOCTYPE oim SYSTEM "oimxml.dtd" [
+  <!ENTITY nbsp  "&#160;">
+  <!ENTITY lsquo "&#8216;">
+  <!ENTITY rsquo "&#8217;">
+  <!ENTITY minus "&#8211;">
+  <!ENTITY times "&#xd7;">
+  <!ENTITY copy "&#xa9;">
+  <!ENTITY eacute "&#233;">
+] >
+<oim xmlns:dk="http://www.kirsanov.com">
+<chapter id="Appendix-C">
+<chapopen><title>Known NetBIOS Suffix Values</title>
+<epigraph dk:padding-top="48">
+<p><line>...no warranty,</line>
+<line>expressed or implied...</line>
+</p>
+<attribution>relevant disclaimer</attribution>
+</epigraph>
+</chapopen>
+
+<h1>NetBIOS Name Suffix Bytes</h1><h1s>
+
+<p><idx start="b-name" >NetBIOS<sidx>name</sidx></idx><idx
+start="b-suffix">suffix byte</idx>The table below classifies NetBIOS
+names according to their base names, the suffix byte, and their status
+as a unique or group name. The list was gathered from sources
+scattered around the Internet, old documentation, and hear-say. There
+are many references out there, and a good deal of variation among
+them. As usual, what is available is at times both contradictory and
+incomplete. As a result, the information presented below should be
+viewed with suspicion. If you have updates or comments which you can
+share freely, please send them to <url>ubiqx@ubiqx.org</url>.</p>
+
+<table colwidths="25* 8* 18* 49*">
+<thead>
+<tr dk:border="after">
+<th><p>Name Format</p></th> 
+<th><p>Suffix </p></th>
+<th><p>Group/Unique </p></th>
+<th><p>Service/Description</p></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><p><em>machine</em><idx type="00">machine</idx></p></td>
+<td><p><code>&lt;00&gt;</code></p></td>
+<td><p>unique</p></td>
+<td><p><b>Workstation Service</b></p>
+
+<p dk:indent="no">Known as the <i>NetBIOS Computer Name</i> or the
+Client Service Name because it is typically sent as the <code>CALLING NAME</code>
+(NBT source address) in NBT Session requests. </p></td></tr>
+<tr>
+<td><p></p></td><td><p></p></td><td><p></p></td>
+<td><p>Some of the
+documentation indicates that the purpose of the Workstation Service is
+to receive mailslot messages directed at the node.</p></td>
+</tr>
+<tr>
+<td><p><em>machine</em></p></td>
+<td><p><code>&lt;01&gt;</code></p></td>
+<td><p>unique</p></td>
+<td><p><b>Messenger Service</b></p>
+
+<p dk:indent="no">Under some versions of Windows, this name is
+registered by the Messenger Service and used as the <code>CALLING
+NAME</code> (NBT source address) when creating an NBT session with the
+Messenger Service on another node.</p>
+
+<p>Not all implementations use this name as the <code>CALLING
+NAME</code> when setting up a Messenger Service
+session. Samba<idx>Samba</idx> uses the
+<em>machine</em><code>&lt;00&gt;</code> name, and Windows 2000 uses
+the <em>machine</em><code>&lt;03&gt;</code> name.</p></td>
+</tr>
+<tr>
+<td><p><em>machine</em></p></td>
+<td><p><code>&lt;03&gt;</code></p></td>
+<td><p>unique</p></td>
+<td><p><b>Messenger Service</b></p>
+
+<p dk:indent="no">This name is registered by the Messenger Service,
+which is used to exchange "WinPopup" messages. Like the Server
+Service,<idx>SMB<sidx>Server Service</sidx></idx> the Messenger
+Service speaks SMB protocol, but it uses a different set of SMB
+messages and is a distinct service.</p>
+
+<p>When creating an NBT session, the Messenger Service client uses
+either the <em>username</em><code>&lt;03&gt;</code> or
+<em>machine</em><code>&lt;03&gt;</code> name as the <code>CALLED
+NAME</code><idx>CALLED NAME</idx> (NBT destination address) in the NBT
+<code>SESSION REQUEST</code>. The choice, of course, depends upon
+whether the message is being sent to a user or a node.</p>
+
+<p>
+Some, but not all, implementations of the Messenger Service client
+will also use the client's <em>machine</em><code>&lt;03&gt;</code>
+name as the <code>CALLING NAME</code> in the NBT <code>SESSION
+REQUEST</code>.</p>
+</td></tr>
+<tr>
+<td><p></p></td><td><p></p></td><td><p></p></td>
+<td>
+
+<p>See also <em>machine</em><code>&lt;01&gt;</code> and
+<em>username</em><code>&lt;03&gt;</code>.</p></td>
+</tr>
+<tr>
+<td><p><em>machine</em></p></td>
+<td><p><code>&lt;06&gt;</code></p></td>
+<td><p>unique</p></td>
+<td><p><b>RAS Server Service</b></p></td>
+</tr>
+<tr>
+<td><p><em>machine</em></p></td>
+<td><p><code>&lt;1F&gt;</code></p></td>
+<td><p>unique</p></td>
+<td><p><b>NetDDE Service</b></p></td>
+</tr>
+<tr>
+<td><p><em>machine</em><idx type="20">machine</idx></p></td>
+<td><p><code>&lt;20&gt;</code><idx type="20">machine</idx></p></td>
+<td><p>unique</p></td>
+<td><p><b>File Server Service</b></p>
+
+<p dk:indent="no">This, of course, is the <b>Server Service</b>, which
+is the primary recipient of SMB connections. SMB services may be
+offered under any name, but this is the standard. Clients expect that
+the <b>Server Service</b> name will have a suffix value of
+<code>0x20</code>.</p></td>
+</tr>
+<tr>
+<td><p><em>machine</em></p></td>
+<td><p><code>&lt;21&gt;</code></p></td>
+<td><p>unique</p></td>
+<td><p><b>RAS Client Service</b></p></td>
+</tr>
+<tr>
+<td><p><em>machine</em></p></td>
+<td><p><code>&lt;22&gt;</code></p></td>
+<td><p>unique</p></td>
+<td><p><b>Microsoft Exchange</b></p></td>
+</tr>
+<tr>
+<td><p><em>machine</em></p></td>
+<td><p><code>&lt;23&gt;</code></p></td>
+<td><p>unique</p></td>
+<td><p><b>Microsoft Exchange</b></p></td>
+</tr>
+<tr>
+<td><p><em>machine</em></p></td>
+<td><p><code>&lt;24&gt;</code></p></td>
+<td><p>unique</p></td>
+<td><p><b>Microsoft Exchange</b></p></td>
+</tr>
+<tr>
+<td><p><em>machine</em></p></td>
+<td><p><code>&lt;2B&gt;</code></p></td>
+<td><p>group</p></td>
+<td><p><b>Lotus Notes Server Service</b></p></td>
+</tr>
+<tr>
+<td><p><em>machine</em></p></td>
+<td><p><code>&lt;30&gt;</code></p></td>
+<td><p>unique</p></td>
+<td><p><b>Modem Sharing Server Service</b></p></td>
+</tr>
+<tr>
+<td><p><em>machine</em></p></td>
+<td><p><code>&lt;31&gt;</code></p></td>
+<td><p>unique</p></td>
+<td><p><b>Modem Sharing Client Service</b></p></td>
+</tr>
+<tr>
+<td><p><em>machine</em></p></td>
+<td><p><code>&lt;42&gt;</code></p></td>
+<td><p>unique</p></td>
+<td><p><b>McAfee anit-virus</b></p>
+
+<p dk:indent="no">Several sites list this suffix as being used by
+McAfee (or, incorrectly, McCaffee) anti-virus software, but no further
+documentation was found to support the claim. The information may be
+out of date.</p></td>
+</tr>
+<tr>
+<td><p><em>machine</em></p></td>
+<td><p><code>&lt;43&gt;</code></p></td>
+<td><p>unique</p></td>
+<td><p><b>SMS Client Remote Control</b></p></td>
+</tr>
+<tr>
+<td><p><em>machine</em></p></td>
+<td><p><code>&lt;44&gt;</code></p></td>
+<td><p>unique</p></td>
+<td><p><b>SMS Administration Remote Control Tool</b></p></td>
+</tr>
+<tr>
+<td><p><em>machine</em></p></td>
+<td><p><code>&lt;45&gt;</code></p></td>
+<td><p>unique</p></td>
+<td><p><b>SMS Client Chat</b></p></td>
+</tr>
+<tr>
+<td><p><em>machine</em></p></td>
+<td><p><code>&lt;46&gt;</code></p></td>
+<td><p>unique</p></td>
+<td><p><b>SMS Client Remote Transfer</b></p></td>
+</tr>
+<tr>
+<td><p><em>machine</em></p></td>
+<td><p><code>&lt;4C&gt;</code></p></td>
+<td><p>unique</p></td>
+<td><p><b>DEC Pathworks TCP/IP Service for Windows NT</b></p></td>
+</tr>
+<tr>
+<td><p><em>machine</em></p></td>
+<td><p><code>&lt;52&gt;</code></p></td>
+<td><p>unique</p></td>
+<td><p><b>DEC Pathworks TCP/IP Service for Windows NT</b></p></td>
+</tr>
+<tr>
+<td><p><em>machine</em></p></td>
+<td><p><code>&lt;6A&gt;</code></p></td>
+<td><p>unique</p></td>
+<td><p><b>Microsoft Exchange</b></p></td>
+</tr>
+<tr>
+<td><p><em>machine</em></p></td>
+<td><p><code>&lt;87&gt;</code></p></td>
+<td><p>unique</p></td>
+<td><p><b>Microsoft Exchange</b></p></td>
+</tr>
+<tr>
+<td><p><em>machine</em></p></td>
+<td><p><code>&lt;BE&gt;</code></p></td>
+<td><p>unique</p></td>
+<td><p><b>Network Monitor Agent</b></p>
+
+<p dk:indent="no">Microsoft's<idx>Microsoft</idx> Network Monitor
+(NetMon<idx>NetMon</idx>) is split into two pieces: the "Agent" and
+the "Client Application."</p>
+
+<p>The agent does the work of capturing packets, and the NetMon client
+provides the user interface. The advantage of this architecture is
+that agents and clients may run on separate machines. A single NetMon
+client can, therefore, have access to the capture services of multiple
+agents, scattered all around an intranet (or, in theory, the
+Internet). Putting aside the obvious security problems associated with
+having live capture agents on networks, this can be useful for
+testing and monitoring purposes.</p>
+
+<p>The <i>Network Monitor Agent</i> name is composed of the
+<em>machine</em> name padded with the value <code>0xBE</code> (rather
+than the normal space padding) and ending with a suffix value of
+<code>0xBE</code>. Microsoft's <code>nbtstat</code><idx>nbtstat</idx>
+utility has a strange habit of displaying this special padding
+character as a plus sign (&lsquo;<code>+</code>&rsquo;).</p></td>
+</tr>
+<tr>
+<td><p><em>machine</em></p></td>
+<td><p><code>&lt;BF&gt;</code></p></td>
+<td><p>unique</p></td>
+<td><p><b>Network Monitor Client Application</b></p>
+
+<p dk:indent="no">The Network Monitor Client Application is the GUI
+front-end that is used to control, filter, and display NetMon
+captures.</p>
+
+<p>The <i>Network Monitor Client</i> name is composed of the
+<em>machine</em> name padded with the value <code>0xBF</code> (rather
+than the normal space padding or the <code>0xBE</code> value used by
+the agent) and ending with a suffix value of
+<code>0xBF</code>. Microsoft's <code>nbtstat</code></p>
+</td></tr>
+<tr>
+<td><p></p></td><td><p></p></td><td><p></p></td>
+<td>
+<p>utility still has
+a strange habit of displaying this special padding character as a plus
+sign (&lsquo;<code>+</code>&rsquo;).</p>
+
+<p>The NetMon NetBIOS names may not be in use any longer. Newer
+versions of NetMon (starting with 2.0?) appear to use a different
+mechanism for communicating.</p></td>
+</tr>
+<tr>
+<td><p><em>workgroup</em><idx type="00">workgroup</idx></p></td>
+<td><p><code>&lt;00&gt;</code></p></td>
+<td><p>group</p></td>
+<td><p><b>LAN Manager Browse Service</b></p>
+
+<p>This name is a remnant of an older Browse List distribution
+mechanism. There are still references to the older system in documents
+such as the Leach/Naik Internet Draft<idx>Leach/Naik Internet
+Drafts</idx> for Browsing
+(<code>draft-leach-cifs-browser-spec-00.txt</code><idx type="hyphen">draft-leach-cifs-browser-spec-00.txt</idx>),
+copies of which can be found by searching the web.</p></td>
+</tr>
+<tr>
+<td><p><em>workgroup</em><idx type="1B">workgroup</idx> or <em>nt_domain</em><idx type="1B">nt_domain</idx></p></td>
+<td><p><code>&lt;1B&gt;</code></p></td>
+<td><p>unique</p></td>
+<td><p><b>Domain Master Browser</b></p>
+
+<p dk:indent="no">This name identifies the Domain Master Browser
+(DMB<idx>DMB</idx>).</p>
+
+<p>A Samba server can behave as a DMB without also being a Primary
+Domain Controller (PDC<idx>PDC</idx>). The existence of a PDC promotes
+the Workgroup<idx>Workgroup</idx> to the status of an NT Domain, in
+which case we write <em>nt_domain</em><code>&lt;1B&gt;</code> instead
+of <em>workgroup</em><code>&lt;1B&gt;</code>. If there is a PDC, it
+<em>must</em> provide the DMB service for the NT Domain.</p>
+
+<p>Domain Controllers<idx>DC</idx> (both Primary and Backup<idx>BDC</idx>) register the
+<em>nt_domain</em><code>&lt;1C&gt;</code><idx type="1C">nt_domain</idx> Internet Group
+name. Registration of the <em>nt_domain</em><code>&lt;1B&gt;</code> name
+effectively distinguishes the PDC from all other DCs in the
+domain. The NBNS will ensure that the IP address of the (unique)
+<code>&lt;1B&gt;</code> name is the first in the list of IP
+addresses.</p></td>
+</tr>
+<tr>
+<td><p><em>nt_domain</em></p></td>
+<td><p><code>&lt;1C&gt;</code></p></td>
+<td><p>Internet Group<dk:space/></p></td>
+<td><p><b>Domain Controller</b></p>
+
+<p dk:indent="no">Every domain controller in the NT Domain will
+register this group name. The NBNS<idx>NBNS</idx> (WINS<idx>WINS</idx>
+server) is expected to store all of the IP addresses associated with
+the name, though it will report at most 25 IP addresses in a
+<code>NAME QUERY RESPONSE</code>.<idx>NAME QUERY</idx></p>
+
+<p>The first entry in the list should be the IP address of the
+<em>Primary</em> Domain Controller (PDC). The rest of the IPs are
+ordered most recent first. This is atypical handling for group names
+under WINS. WINS (and, therefore, any NBNS which is WINS-compatible)
+will usually report only the limited broadcast address
+(255.255.255.255<idx>255.255.255.255</idx>) when queried
+for a group name.</p></td>
+</tr>
+<tr>
+<td><p><em>workgroup</em><idx type="1D">workgroup</idx></p></td>
+<td><p><code>&lt;1D&gt;</code></p></td>
+<td><p>LAN unique</p></td>
+<td><p><b>Local Master Browser</b></p>
+
+<p dk:indent="no">This name identifies the Local Master Browser
+(LMB<idx>LMB</idx>, sometimes called simply "Master Browser") for a
+subnet. A WINS server (and an NBNS which is WINS-compatible) will
+accept registration for <code>&lt;1D&gt;</code> unique names, but when
+queried, will always reply with a <code>NEGATIVE NAME QUERY
+RESPONSE</code>. As a result, the LMB name is unique within its local
+subnet only.</p></td>
+</tr>
+<tr>
+<td><p><em>workgroup</em><idx type="1E">workgroup</idx></p></td>
+<td><p><code>&lt;1E&gt;</code></p></td>
+<td><p>group</p></td>
+<td><p><b>Browser Election Service</b></p>
+
+<p dk:indent="no">Every node that is capable of acting as a browser
+registers this group name so that it can listen for election<idx>election</idx>
+announcements.</p></td>
+</tr>
+<tr>
+<td dk:align="left" colspan="3"><p><code>\x01\x02__MSBROWSE__\x02</code><idx>MSBROWSE&lt;01&gt;</idx></p></td>
+<td rowspan="2"><p><b>Local Master Browser</b></p>
+
+<p dk:indent="no">This group name is registered by all Local Master
+Browsers (LMBs). It allows LMBs on a local LAN to find one another in
+order to exchange Browse Lists.<idx>Browse List</idx> This is how
+Browse Lists for multiple Workgroups<idx>Workgroup</idx> and/or NT
+Domains are combined.</p></td>
+</tr>
+<tr>
+<td><p></p></td>
+<td><p><code>&lt;01&gt;</code></p></td>
+<td><p>group</p></td>
+</tr>
+<tr>
+<td><p><em>username</em></p></td>
+<td><p><code>&lt;03&gt;</code></p></td>
+
+<td><p>unique</p></td>
+
+<td><p><b>Messenger Service</b></p>
+
+<p dk:indent="no">This name is used in the same way as
+<em>machine</em><code>&lt;03&gt;</code> described above. A client
+opens an SMB connection to the Messenger Service (just as would be
+done with the Server Service) and uses SMB protocol to send the body
+of the message. The client that displays these messages is known as
+"WinPopup," and there are dozens of third-party implementations out
+there.</p>
+
+<p>Some Microsoft documentation lists this name as a group name, which
+would be nice. Unfortunately, in practice the name is a unique name
+which means that a single user logged on to multiple machines can only
+receive messages (sent to the <i>username</i>) on one of those
+machines.</p>
+
+<p>See also <em>machine</em><code>&lt;01&gt;</code> and 
+<em>machine</em><code>&lt;03&gt;</code>.</p></td>
+</tr>
+<tr>
+<td><p><em>internetgroup</em></p></td>
+<td><p><code>&lt;20&gt;</code></p></td>
+<td><p>Internet Group<dk:space/></p></td>
+<td><p><b>User Defined</b></p>
+
+<p>This name type was probably introduced with Windows 2000. Group
+names with a suffix byte value of <code>0x20</code> can be defined as
+"Internet Group" names, which means that the NBNS must report up to 25
+IP addresses per name when queried. The <code>0x20</code> Internet
+Group names are used to identify groups of systems for administrative
+purposes.</p></td>
+</tr>
+<tr>
+<td><p><code>*</code></p></td>
+<td><p><code>&lt;00&gt;</code></p></td>
+<td><p>unspecified</p></td>
+<td><p><b>Wildcard Name</b></p>
+
+<p dk:indent="no">The wildcard<idx>wildcard<sidx>NetBIOS
+name</sidx></idx> name is composed of an asterisk (&lsquo;*&rsquo;)
+followed by fifteen nulls (the last of which is the suffix byte). This
+name is never registered, so it is neither a unique nor a group
+name. The wildcard name may be used when sending NBT <code>NAME QUERY
+REQUEST</code><idx>NAME QUERY</idx> and <code>NODE STATUS
+REQUEST</code><idx>NODE STATUS</idx> messages.</p></td>
+
+</tr>
+<tr>
+<td><p><code>*SMBSERVER</code><idx>*SMBSERVER&lt;20&gt;</idx></p></td>
+<td><p><code>&lt;20&gt;</code></p></td>
+<td><p>unspecified</p></td>
+<td><p><b>File Server Service</b></p>
+
+<p dk:indent="no">This name is never registered (it begins with an
+asterisk and is, therefore, an illegal name under NBT). Many
+implementations, however, will accept it as a valid <code>CALLED
+NAME</code><idx>CALLED
+NAME</idx> in an NBT <code>SESSION REQUEST</code> message.</p></td>
+</tr>
+<tr>
+<td><p><code>INet~Services</code></p></td>
+<td><p><code>&lt;1C&gt;</code></p></td>
+<td><p>[Internet] group</p></td>
+<td><p><b>Internet Information Server</b></p>
+
+<p dk:indent="no">This name is registered by IIS servers and handled
+as an Internet Group name. Note that the name is in mixed UPPER/lower
+case. It is, in fact, encoded that way, which is a little
+awkward.<fn>As of this writing, Samba's
+<code>nmblookup</code><idx>nmblookup</idx> tool always uppercases
+NetBIOS names, so it cannot send a successful query for the
+<code>INet~Services&lt;1C&gt;</code> name. (Yes, when I get time I'll
+try to fix that. Maybe. Note that the <code>libcifs
+nbtquery</code><idx>libcifs</idx> tool <em>can</em> handle mixed-case
+NetBIOS names; see<idx>ubiqx.org</idx>
+<url>http://ubiqx.org/libcifs/</url>.)</fn></p></td>
+</tr>
+<tr>
+<td><p><code>IS~</code><em>machine</em></p></td>
+<td><p><code>&lt;00&gt;</code><idx type="00">machine</idx></p></td>
+<td><p>unique</p></td>
+<td><p><b>Internet Information Server</b></p>
+
+<p dk:indent="no">This name is formed by adding the prefix
+"<code>IS~</code>" to the machine name,<idx>machine name</idx> padding
+with nuls, and using a suffix byte value of <code>0x00</code>.</p>
+
+<p>The handling of NetBIOS names by IIS is a little... er...
+unusual. Nul bytes are not supposed to be used as padding except in
+the wildcard name.<idx>wildcard<sidx>NetBIOS name</sidx></idx> There
+is also a bug</p> </td></tr>
+<tr>
+<td><p></p></td><td><p></p></td><td><p></p></td>
+<td>
+<p> (verified in testing
+against a set of Windows 2000 systems running IIS) which causes the
+suffix byte to be overwritten if the name is longer than 15
+bytes.</p>
+
+<p>For example, adding "<code>IS~</code>" to the machine name
+"AHOSETHIULLMAN" (13 bytes) would give
+"<code>IS~AHOSETHIULLMAN</code>", which is 16 bytes long. The correct
+thing to do is to truncate the string and register the name
+"<code>IS~AHOSETHIULLMA&lt;00&gt;</code>". Instead, the trailing
+&lsquo;<code>N</code>&rsquo; in the machine name overwrites the suffix
+byte, giving "<code>IS~AHOSETHIULLMA&lt;4E&gt;</code>" (the hex value
+of &lsquo;<code>N</code>&rsquo; is <code>0x4E</code>).<fn>I finally
+got to see this in the wild while trying to solve a browsing problem
+with Mike Langhus<idx>Langhus, Mike</idx> at the University of
+Minnesota. There were several IIS servers on the subnet, and roughly a
+third of them had names long enough to cause the suffix byte overwrite
+problem. I do not know which versions of IIS are affected, but it does
+not appear as though it causes any real trouble. It's more of a
+curiousity than a bug.</fn></p></td>
+</tr>
+<tr>
+<td><p><code>IRISMULTICAST</code></p></td>
+<td><p><code>&lt;2F&gt;</code></p></td>
+<td><p>group</p></td>
+<td><p><b>Lotus Notes</b></p></td>
+</tr>
+<tr>
+<td><p><code>IRISNAMESERVER</code></p></td>
+<td><p><code>&lt;33&gt;</code></p></td>
+<td><p>group</p></td>
+<td><p><b>Lotus Notes</b></p></td>
+</tr>
+<tr>
+<td><p><code>Forte_$ND800ZA</code></p></td>
+<td><p><code>&lt;20&gt;</code></p></td>
+<td><p>group</p></td>
+<td><p><b>DCA IrmaLan Gateway Server Service</b><idx
+end="b-suffix">suffix byte</idx></p></td>
+</tr>
+</tbody>
+</table>
+
+</h1s><h1>Special Handling of NetBIOS Names in WINS</h1><h1s>
+
+<p>The Windows Internet Name Service (WINS<idx
+start="b-WINS">WINS</idx>) is Microsoft's<idx>Microsoft</idx>
+implementation of the NetBIOS Name Server (NBNS<idx>NBNS</idx>)
+described in the RFCs. WINS does not match the RFC specifications,
+however, and its behavior is somewhat quirky. Known quirks are listed
+below.</p>
+
+<dl>
+<dt>Unique names</dt>
+
+<dd><p>Unique names are handled per the RFC specifications with two
+exceptions: multi-homed<idx>multi-homed host</idx> host names and the
+Domain Master Browser name. <dk:nobr>Read on...</dk:nobr></p></dd>
+
+<dt>Multi-homed host names</dt>
+
+<dd><p>Multi-homed hosts register unique names by sending a special
+<code><dk:nobr>MULTI-HOMED</dk:nobr> NAME REGISTRATION
+REQUEST</code><idx>NAME REGISTRATION<sidx>MULTI-HOMED</sidx></idx>
+packet to the NBNS. The procedure is described in <ref
+refid="NBT1.4.3.1.4"/> of this book. WINS servers (and WINS-compatible
+NBNS implementations) keep track of the list of IP addresses
+registered by a multi-homed host, and will report up to 25 IP
+addresses when queried for the multi-homed host name.</p></dd>
+
+<dt>Group names</dt>
+
+<dd><p>By default, in reply to a <code>NAME QUERY
+REQUEST</code><idx>NAME QUERY</idx> for a group name, WINS will send
+the limited broadcast address,
+255.255.255.255.<idx>255.255.255.255</idx> This is
+clearly not what the RFC authors had in mind.</p></dd>
+
+<dt>Internet Group, Special Group, and Domain Group names</dt>
+
+<dd><p>There are a few things to be said about these:</p>
+
+<dl>
+<dt>Thing 1</dt> 
+
+<dd><p>The terms "Internet Group" and "Special Group" are used
+interchangeably in much of the available documentation.</p></dd>
+ 
+<dt>Thing 2</dt> 
+
+<dd><p>Older references use the terms "Internet Group" and "Special
+Group" when referring to group names with the <code>&lt;1C&gt;</code>
+suffix. More recent sources add the term "Domain Group" specifically
+for the <dk:nobr><em>nt_domain</em><code>&lt;1C&gt;</code><idx
+type="1C">nt_domain</idx></dk:nobr> names, and expand the use of the
+other terms to include groups defined by adding a special static
+entry, with a suffix value of <code>&lt;20&gt;</code>, to the WINS
+database.<fn>It was difficult to find more than superficial
+documentation regarding the <code>&lt;20&gt;</code> Internet Group
+names, which suggests that the feature is not widely used. If you want
+to dig deeper, search the web for information regarding the
+<code>#SG</code><idx>#SG</idx> and <code>#DOM</code><idx>#DOM</idx>
+keywords used in the <dk:nobr><code>LMHOSTS</code><idx>LMHOSTS</idx>
+file.</dk:nobr></fn></p></dd>
+ 
+<dt>Thing 3</dt> 
+
+<dd><p>Internet (aka Special) and Domain Groups are defined by using
+the <code>#SG</code> and <code>#DOM</code> keywords in the
+<code>LMHOSTS</code> file, or via WINS configuration dialogs on
+Windows systems.</p></dd>
+</dl>
+
+<p>As with multi-homed host entries, the WINS server should keep track
+of as many IP addresses per name as it can handle. When queried, the
+<code>POSITIVE NAME QUERY RESPONSE</code><idx>NAME QUERY</idx> should
+list at most 25 IP addresses per Internet Group name.</p></dd>
+
+<dt>Local Master Browser</dt>
+
+<dd><p>The LMB<idx>LMB</idx> registers the
+<em>workgroup</em><code>&lt;1D&gt;</code><idx
+type="1D">workgroup</idx> unique name. A WINS server will accept all
+such registrations, ignoring any conflicts, and will reply with a
+<code>NEGATIVE NAME QUERY RESPONSE</code> when queried for the
+name. This behavior forces M<idx>M</idx> and H nodes<idx>node
+type</idx><idx>H</idx> to search for the LMB on the local IP
+subnet. If there is no LMB for the Workgroup<idx>Workgroup</idx> on
+the local subnet, then the client that sent the request may call for a
+browser election<idx>election</idx>. P nodes<idx>P</idx> cannot
+talk to Local Master Browsers, so they communicate directly with the
+Domain Master Browser (if there is one).</p></dd>
+
+<dt>Domain Master Browser</dt>
+
+<dd><p>The DMB<idx>DMB</idx> registers the unique
+<em>nt_domain</em><code>&lt;1B&gt;</code><idx
+type="1B">nt_domain</idx> name. The WINS server will ensure that the
+IP address associated with the
+<em>nt_domain</em><code>&lt;1B&gt;</code> name is always the first in
+the list of IPs associated with the
+<em>nt_domain</em><code>&lt;1C&gt;</code><idx
+type="1C">nt_domain</idx> Domain Group name.<idx end="b-name"
+>NetBIOS<sidx>name</sidx></idx><idx end="b-WINS">WINS</idx></p></dd>
+</dl>
+
+    </h1s>
+  </chapter>
+</oim>

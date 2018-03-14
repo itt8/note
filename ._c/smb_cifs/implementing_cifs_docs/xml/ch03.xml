@@ -1,0 +1,1353 @@
+<?xml version="1.0" encoding="US-ASCII"?>
+
+<!DOCTYPE oim SYSTEM "oimxml.dtd" [
+  <!ENTITY nbsp "&#160;">
+  <!ENTITY lsquo "&#8216;">
+  <!ENTITY rsquo "&#8217;">
+  <!ENTITY times "&#xd7;">
+] >
+
+<oim xmlns:dk="http://www.kirsanov.com">
+<chapter id="NBT1.3">
+<chapopen><title>The Basics of NBT Implementation</title>
+
+<epigraph dk:padding-top="48">
+<p><line>In theory, theory and practice are the same.</line>
+<line>In practice, they're not.</line></p>
+<attribution>Unknown</attribution>
+</epigraph>
+</chapopen>
+
+<p>Ready?</p>
+
+<p>We have identified the three key parts of NBT: the Name
+Service<idx>NBT<sidx>Name Service</sidx></idx>, the Datagram
+Service<idx>NBT<sidx>Datagram Service</sidx></idx>, and the Session
+Service.<idx>NBT<sidx>Session Service</sidx></idx> This is enough to
+get us started. We will begin by coding up a simple Name Service
+Query, just to see what kind of trouble that gets us into.</p>
+
+<p>Before we start, though, it's probably a good idea to check our
+tools.</p>
+
+<dl>
+<dt><checkmark/>Sniffer</dt>
+
+<dd><p>You need one of these. If you have Windows systems available,
+see if you can get a copy of Microsoft's<idx>Microsoft</idx>
+NetMon<idx>NetMon</idx> (<b>Net</b>work <b>Mon</b>itor). You will want
+the latest and most complete version. The advantage of NetMon is that
+Microsoft have included parsers for many of their protocols.</p>
+
+<p>Another excellent choice is Ethereal,<idx>Ethereal</idx> an Open
+Source protocol analyzer portable to most Unix-ish platforms and to
+Windows. It can create its own captures or read captures made by
+several other sniffer packages, including TCPDump<idx>TCPDump</idx>
+and NetMon.  Richard Sharpe<idx>Sharpe<sidx>Richard</sidx></idx> and
+Tim Potter<idx>Potter, Tim</idx> of the Samba
+Team<idx>Samba<sidx>Team</sidx></idx> have worked on
+NetBIOS<idx>NetBIOS</idx> and SMB packet parsers for Ethereal, which
+helps a big bunch.</p>
+</dd>
+
+<dt><checkmark/>Language</dt>
+<dd>
+<p>There are a lot of programming languages out
+there. Samba<idx>Samba</idx> is written in C, and
+jCIFS<idx>jCIFS</idx> is in Java. The key factors when choosing a
+language for your implementation are:</p>
+<ul>
+<li><p>Good network coding capabilities.</p></li>
+
+<li><p>That warm fuzzy feeling you get when you code in a language you
+truly grok.</p></li>
+</ul>
+
+<p dk:indent="no">Meditate on that for a while. Bad
+karma in the coding environment will distract you from
+your purpose.</p></dd>
+
+<dt><checkmark/>Test Environment</dt>
+<dd>
+<p>If you do not have a couple of hubs, a router, various Windows
+boxes, and some Samba servers in your home, you may need to do your
+testing at the office. Netiquette and job security would suggest that
+you test after hours. (Um... actually, you probably shouldn't do any
+testing on a <dk:nobr>production</dk:nobr> network... and check office
+policy before you sniff.)</p></dd>
+
+<dt><checkmark/>Medication</dt>
+<dd>
+<p>An aromatic black tea<idx>tea</idx>, such as a good Earl
+Grey<idx>Earl Grey</idx>, is best. Try Lapsang Souchong<idx>Lapsang
+Souchong</idx> to get through really difficult coding sessions.  Those
+sweet, mass-produced, over-caffeinated soft drinks will disturb your
+focus.</p></dd>
+
+<dt/>
+<dd><p>Ready!</p></dd>
+</dl>
+
+<p>In this section, we will implement a broadcast <code>NAME QUERY
+REQUEST</code><idx>NAME QUERY</idx>.  That is, B mode<idx>B</idx>
+name resolution. This will allow us to introduce some of the basic
+concepts and establish a frame of reference. In other words, we have
+to start somewhere and this seems to be as good a place as any.</p>
+
+<h1>You Got the Name, Look Up the Number</h1><h1s>
+
+<p><idx>node type</idx><idx start="c3-dns">DNS</idx>The structure of
+an NBT name query<idx>name query</idx> is similar to that of a Domain
+Name System query. As RFC 1001, Section 11.1.1, explains:</p>
+
+<pre>The NBNS<idx>NBNS</idx> design attempts to align itself with the
+Domain Name System in a number of ways.</pre>
+
+<p>The goal of this attempted alignment was an eventual merger between
+the NBNS and the DNS system. The NBT authors even predicted dynamic
+DNS update. With Windows 2000, Microsoft<idx>Microsoft</idx> did move
+CIFS naming services to Dynamic DNS, though the mechanism is not quite
+what was envisioned by the authors of the NBT RFCs.</p>
+
+<h2 id="NBT1.3.1.1">Encoding NetBIOS Names</h2><h2s>
+
+<p><idx start="c3-NetBIOS-name">NetBIOS<sidx>name</sidx></idx>RFCs
+1001 and 1002 reference RFC 883 when discussing domain name syntax
+rules. RFC 883 was later superseded by RFC 1035, but both give the
+same <em>preferred</em><fn dk:space="1pt">Note the use of the term
+"preferred." A close read of RFCs 883, 1034, 1035, and 2181 shows that
+the idea of using binary data in DNS records has been around for some
+time.</fn> syntax for domain names:</p>
+
+<pre><![CDATA[<domain>      ::= <subdomain> | " "
+<subdomain>   ::= <label> | <subdomain> "." <label>
+<label>       ::= <letter> [ [ <ldh-str> ] <let-dig> ]
+<ldh-str>     ::= <let-dig-hyp> | <let-dig-hyp> <ldh-str>
+<let-dig-hyp> ::= <let-dig> | "-"
+<let-dig>     ::= <letter> | <digit>
+<letter>      ::= any one of the 52 alphabetic characters A through 
+                  Z in upper case and a through z in lower case
+<digit>       ::= any one of the ten digits 0 through 9
+]]></pre>
+
+<p>This is the syntax that the NBT authors tried to match.
+Unfortunately, except for the 16-byte length restriction, there are
+few syntax rules for NetBIOS names. With a few notable exceptions
+just about any octet value may be used, so the NBT authors came up
+with a scheme to force NetBIOS names into compliance. Here's how it
+works:</p>
+
+<ul>
+<li><p>Names shorter than 16 bytes are padded on the right with
+spaces. Longer names are truncated.</p></li>
+
+<li><p>Each byte is divided into two nibbles (4 bits each,
+unsigned).<fn>Some call this a "half-ASCII"-ed encoding scheme.</fn>
+The result is a string of 32 integer values, each in the range
+0..15.</p></li>
+
+<li><p>The ASCII value of the letter &lsquo;A&rsquo; (65, or <code>0x41</code>) is added to
+each nibble and the result is taken as a character. This creates a
+string of 32 characters, each in the range &lsquo;A&rsquo;..&lsquo;P&rsquo;.</p></li>
+</ul>
+
+<p>This is called <em>First Level Encoding</em>, and is described in
+RFC 1001, <dk:nobr>Section 14.1.</dk:nobr></p>
+
+<p>Using First Level Encoding, the name "Neko"<idx>Neko</idx> would be converted
+<dk:nobr>as follows:</dk:nobr></p>
+
+<table colwidths="9* 9* 9* 10* 9* 9* 9* 9* 9* 9* 9*" dk:type="centered">
+<thead>
+<tr dk:border="after">
+<th><p>char</p></th>
+<th><p><!-- = --></p></th>
+<th><p>hex</p></th>
+<th><p><!-- arrows --></p></th>
+<th><p>split</p></th>
+<th><p><!-- + --></p></th>
+<th><p>+ &lsquo;A&rsquo;</p></th>
+<th><p><!-- = --></p></th>
+<th><p>hex</p></th>
+<th><p><!-- = --></p></th>
+<th><p>result</p></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td dk:display-align="center"><p><code>N</code></p></td>
+<td dk:display-align="center"><p>=</p></td>
+<td dk:display-align="center"><p>0x4E</p></td>
+<td><p padding-top="12pt"><split/></p></td>
+<td><p>0x04</p><p dk:indent="no">0x0E</p></td>
+<td><p>+</p><p dk:indent="no">+</p></td>
+<td><p>0x41</p><p dk:indent="no">0x41</p></td>
+<td><p>=</p><p dk:indent="no">=</p></td>
+<td><p>0x45</p><p dk:indent="no">0x4F</p></td>
+<td><p>=</p><p dk:indent="no">=</p></td>
+<td><p><code>E</code></p><p dk:indent="no"><code>O</code></p></td>
+</tr>
+<tr>
+<td dk:display-align="center"><p><code>e</code></p></td>
+<td dk:display-align="center"><p>=</p></td>
+<td dk:display-align="center"><p>0x65</p></td>
+<td><p padding-top="12pt"><split/></p></td>
+<td><p>0x06</p><p dk:indent="no">0x05</p></td>
+<td><p>+</p><p dk:indent="no">+</p></td>
+<td><p>0x41</p><p dk:indent="no">0x41</p></td>
+<td><p>=</p><p dk:indent="no">=</p></td>
+<td><p>0x47</p><p dk:indent="no">0x46</p></td>
+<td><p>=</p><p dk:indent="no">=</p></td>
+<td><p><code>G</code></p><p dk:indent="no"><code>F</code></p></td>
+</tr>
+<tr>
+<td dk:display-align="center"><p><code>k</code></p></td>
+<td dk:display-align="center"><p>=</p></td>
+<td dk:display-align="center"><p>0x6B</p></td>
+<td><p padding-top="12pt"><split/></p></td>
+<td><p>0x06</p><p dk:indent="no">0x0B</p></td>
+<td><p>+</p><p dk:indent="no">+</p></td>
+<td><p>0x41</p><p dk:indent="no">0x41</p></td>
+<td><p>=</p><p dk:indent="no">=</p></td>
+<td><p>0x47</p><p dk:indent="no">0x4C</p></td>
+<td><p>=</p><p dk:indent="no">=</p></td>
+<td><p><code>G</code></p><p dk:indent="no"><code>L</code></p></td>
+</tr>
+<tr>
+<td dk:display-align="center"><p><code>o</code></p></td>
+<td dk:display-align="center"><p>=</p></td>
+<td dk:display-align="center"><p>0x6F</p></td>
+<td><p padding-top="12pt"><split/></p></td>
+<td><p>0x06</p><p dk:indent="no">0x0F</p></td>
+<td><p>+</p><p dk:indent="no">+</p></td>
+<td><p>0x41</p><p dk:indent="no">0x41</p></td>
+<td><p>=</p><p dk:indent="no">=</p></td>
+<td><p>0x47</p><p dk:indent="no">0x50</p></td>
+<td><p>=</p><p dk:indent="no">=</p></td>
+<td><p><code>G</code></p><p dk:indent="no"><code>P</code></p></td>
+</tr>
+<tr>
+<td dk:display-align="center"><p><code>' '</code></p></td>
+<td dk:display-align="center"><p>=</p></td>
+<td dk:display-align="center"><p>0x20</p></td>
+<td><p padding-top="12pt"><split/></p></td>
+<td><p>0x02</p><p dk:indent="no">0x00</p></td>
+<td><p>+</p><p dk:indent="no">+</p></td>
+<td><p>0x41</p><p dk:indent="no">0x41</p></td>
+<td><p>=</p><p dk:indent="no">=</p></td>
+<td><p>0x43</p><p dk:indent="no">0x41</p></td>
+<td><p>=</p><p dk:indent="no">=</p></td>
+<td><p><code>C</code></p><p dk:indent="no"><code>A</code></p></td>
+</tr>
+<tr>
+<td dk:display-align="center"><p><code>' '</code></p></td>
+<td dk:display-align="center"><p>=</p></td>
+<td dk:display-align="center"><p>0x20</p></td>
+<td><p padding-top="12pt"><split/></p></td>
+<td><p>0x02</p><p dk:indent="no">0x00</p></td>
+<td><p>+</p><p dk:indent="no">+</p></td>
+<td><p>0x41</p><p dk:indent="no">0x41</p></td>
+<td><p>=</p><p dk:indent="no">=</p></td>
+<td><p>0x43</p><p dk:indent="no">0x41</p></td>
+<td><p>=</p><p dk:indent="no">=</p></td>
+<td><p><code>C</code></p><p dk:indent="no"><code>A</code></p></td>
+</tr>
+<tr>
+<td><p/></td>
+<td><p/></td>
+<td><p/></td>
+<td><p/></td>
+<td><p/></td>
+<td><p/></td>
+<td><p/></td>
+<td><p/></td>
+<td><p/></td>
+<td><p/></td>
+<td><p><line dk:padding-top="-8pt"><code>.</code></line><line dk:padding-top="-8pt"><code>.</code></line><line dk:padding-top="-8pt"><code>.</code></line></p></td>
+</tr>
+</tbody></table>
+
+<p>This results in the string:</p>
+
+<pre>EOGFGLGPCACACACACACACACACACACACA</pre> 
+
+<p>Lovely, isn't it?</p>
+
+<p>...and our first bit of code is in <ref refid="Listing1.1"/>.</p>
+
+<example id="Listing1.1">
+<caption>First Level Encoding</caption>
+<pre><![CDATA[#ifndef uchar
+#define uchar unsigned char
+#endif /* uchar */
+
+uchar *L1_Encode( uchar *dst, const uchar *name )
+  {
+  int i = 0;
+  int j = 0;
+
+  /* Encode the name. */
+  while( ('\0' != name[i]) && (i < 16) )
+    {
+    dst[j++] = 'A' + ((name[i] & 0xF0) >> 4);
+    dst[j++] = 'A' + (name[i++] & 0x0F);
+    }
+
+  /* Encode the padding bytes. */
+  while( j < 32 )
+    {
+    dst[j++] = 'C';
+    dst[j++] = 'A';
+    }
+
+  /* Terminate the string. */
+  dst[32] = '\0';
+
+  return( dst );
+  } /* L1_Encode */
+]]></pre>
+</example>
+
+<p dk:break="after">This function reads up to 16 characters from the
+input string <code>name</code> and converts each to the encoded
+format, stuffing the result into the target string
+<code>dst</code>. The space character (<code>0x20</code>) always
+converts to the two-character value <code>CA</code> so, if the source
+string is less than 16 bytes, we simply pad the target string with
+<code>CACA</code>.<idx>CACA</idx> Note that the target character array
+must be at least 33 bytes long - one extra byte to account for the nul
+terminator.<fn>Such considerations are important when programming in C
+and its ilk.</fn></p>
+
+<dk:example refid="Listing1.1"/>
+
+<alert type="Typo">
+<p>RFC 1001 provides an example of First Level Encoding in Section
+14.1. The string <dk:nobr>"The NetBIOS name"</dk:nobr> is encoded as:</p>
+
+<pre>FEGHGFCAEOGFHEECEJEPFDCAHEGBGNGF</pre>
+
+<p>Decoding this string, however, we get "Tge NetBIOS
+tame."  Perhaps it's a secret <dk:nobr>message.</dk:nobr></p>
+
+<p>The correct encoding would be:</p>
+
+<pre>FEG<u>I</u>GFCAEOGFHEECEJEPFDCA<u>GO</u>GBGNGF</pre>
+</alert>
+
+</h2s><h2 id="NBT1.3.1.2">Fully Qualified NBT Names</h2><h2s>
+
+<p>Now that we've managed to convert the NetBIOS
+name<idx>NBT<sidx>name</sidx></idx> into a DNS-aligned form, it is
+time to combine it with the NBT Scope ID.<idx>NBT<sidx>Scope
+ID</sidx></idx> The result will be a fully-qualified NBT address,
+which we will call the <gt>NBT name</gt>. To be pedantic, when the
+RFCs talk about First Level Encoding, this fully qualified form is
+what they really mean.</p>
+
+<p>As expected, the syntax of the Scope ID follows the DNS
+recommendations given in RFC 883 (and repeated in RFC 1035). That
+is, a Scope ID looks like a DNS name. So, if the Scope ID is
+<code>cat.org</code>, and the NetBIOS name is <code>Neko</code><idx>Neko</idx>, the
+resultant NBT name would be:</p>
+
+<pre>EOGFGLGPCACACACACACACACACACACACA.CAT.ORG</pre>
+
+<p>Imagine typing that into your web browser<idx>web
+browser</idx>. This is why the RFC 1001/1002 scheme for merging the
+NBNS<idx>NBNS</idx> with the DNS never took hold.</p>
+
+</h2s><h2 id="NBT1.3.1.3">Second Level Encoding</h2><h2s>
+
+<p>Now that we have an NBT name<idx>NBT<sidx>name</sidx></idx> in a
+nice familiar format, it is time to convert it into something
+else.</p>
+
+<p>DNS names (and, therefore, NBT names) are made up of labels
+separated by dots. Dividing the name above into its component
+labels gives us:</p>
+
+<table colwidths="30* 70*" dk:type="centered">
+<thead>
+<tr dk:border="after">
+<th><p>length</p></th>
+<th><p>label</p></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><p>32</p></td>
+<td><p><code>EOGFGLGPCACACACACACACACACACACACA</code></p></td>
+</tr>
+<tr>
+<td><p>3</p></td>
+<td><p><code>CAT</code></p></td>
+</tr>
+<tr>
+<td><p>3</p></td>
+<td><p><code>ORG</code></p></td>
+</tr>
+<tr>
+<td><p>0</p></td>
+<td><p>&lt;nul&gt;</p></td>
+</tr>
+</tbody>
+</table>
+
+<p>The Second Level Encoded NBT name is a concatenation of the
+lengths and the labels, as in:</p>
+
+<pre>'\x20' + "EOGFGLGPCACACACACACACACACACACACA" + '\x03' + "CAT"
++ '\x03' + "ORG" + '\0'</pre>
+
+<p>The empty label at the end is important. It is a label of zero
+length, and it represents the root of the DNS (and NBT)
+namespace<idx>NBT<sidx>namespace</sidx></idx>.  That means that the
+final nul byte is <em>part of the encoded NBT name</em>, and not a
+mere terminator. In&nbsp;practice, you can manipulate the encoded NBT
+name as if it were a <dk:nobr>nul-terminated</dk:nobr> string, but
+always keep in mind that it is really a series of
+<dk:nobr>length-delimited strings.</dk:nobr><fn>"Pedantic" is the
+politically correct way to say "anal retentive."</fn></p>
+
+<p>Our second bit of code in <ref refid="Listing1.2"/> will convert a
+NetBIOS name and Scope ID<idx>NBT<sidx>Scope ID</sidx></idx> into a
+Second Level Encoded string.</p>
+
+<example id="Listing1.2">
+<caption>Second Level Encoding</caption>
+<pre><![CDATA[int L2_Encode( uchar *dst, const uchar *name, const uchar *scope )
+  {
+  int lenpos;
+  int i;
+  int j;
+
+  /* First Level Encode the NetBIOS name.
+   * Prefix it with label length.
+   * (dec 32 == 0x20)
+   */
+  if( NULL == L1_Encode( &dst[1], name ) )
+    return( -1 );
+  dst[0] = 0x20;
+  lenpos = 33;
+
+  /* Copy each scope label to dst,
+   * adding the length byte as an afterthought.
+   */
+  if( '\0' != *scope )
+    {
+    do
+      {
+      for( i = 0, j = (lenpos + 1);
+           ('.' != scope[i]) && ('\0' != scope[i]);
+           i++, j++)
+        dst[j] = scope[i];
+
+      dst[lenpos] = (uchar)i;
+      lenpos     += i + 1;
+      scope      += i;
+      } while( '.' == *(scope++) );
+    dst[lenpos] = '\0';
+    }
+  return( lenpos + 1 );
+  } /* L2_Encode */
+]]></pre>
+</example>
+
+<p>Not the prettiest piece of code, but it does the job. We will run
+through the function quickly, just to familiarize you with the
+workings of this particular programmer's twisted little brain. If
+the code is fairly obvious to you, feel free to skip ahead to the
+next section.</p>
+
+<pre><![CDATA[if( NULL == L1_Encode( &dst[1], name ) )
+  return( -1 );
+dst[0] = 0x20;
+lenpos = 33;
+]]></pre>
+
+<p>Call <code>L1_Encode()</code><idx>L1_Encode()</idx> to convert the
+NetBIOS name into its First Level Encoded form, then prefix the
+encoded name with a length byte. This gives us the first label of the
+encoded NBT name.  Note that we check for a <code>NULL</code> return
+value. This is paranoia on the programmer's part since this version of
+<code>L1_Encode()</code> does not return <code>NULL</code>. (An
+improved version of <dk:nobr><code>L1_Encode()</code></dk:nobr> might
+return <code>NULL</code> if it detected an error.)</p>
+
+<p>The variable <code>lenpos</code> is set to the offset at which the
+next length byte will be written. The <code>L1_Encode()</code> function
+has already placed a nul byte at this location so, if the scope
+string is empty, the NBT name is already completely encoded.</p>
+
+<pre><![CDATA[if( '\0' != *scope )
+  {
+  do
+    {
+    :
+    } while( '.' == *(scope++) );
+  dst[lenpos] = '\0';
+  }
+]]></pre>
+
+<p>The processing of scope labels is contained within the
+<code>do..while</code> loop. If the scope is empty, we can skip
+this loop entirely. Note that the root label is added to the end of
+the target string, <code>dst</code>, following the scope labels.</p>
+
+<pre><![CDATA[for( i = 0, j = (lenpos + 1);
+     ('.' != scope[i]) && ('\0' != scope[i]);
+     i++, j++)
+  dst[j] = scope[i];
+]]></pre>
+
+<p>Run through the current label, copying it to the destination
+string. The variable <code>i</code> keeps track of the length of the
+label. A dot or a nul will mark the end of the current label.</p>
+
+<pre><![CDATA[dst[lenpos] = (uchar)i;
+lenpos     += i + 1;
+scope      += i;
+]]></pre>
+
+<p>Write the length byte for the current label, and then move on to
+the next by advancing <code>lenpos</code>. The variable <code>scope</code>
+is advanced by the length of the current label, which should leave
+it pointing to the dot or nul that terminated the label. It will be
+advanced one more byte within the <code>while</code> clause at the end
+of the loop.</p>
+
+<p>Hopefully that was a nice, short waste of time. As we progress, it
+will become necessary to move more quickly and provide less code and
+less analysis of the code. There is a lot of ground to cover.<idx
+end="c3-NetBIOS-name">NetBIOS<sidx>name</sidx></idx></p>
+
+</h2s><h2 id="NBT1.3.1.4">Name Service Packet Headers</h2><h2s>
+
+<p><idx start="c3-nservice">NBT<sidx>Name Service</sidx></idx>Once
+again, our attention is drawn to the ancient lore of RFC 883, which
+<dk:nobr>was written</dk:nobr> about four years ahead of RFC 1001/1002
+and was eventually replaced by RFC 1035. The comings and goings of the
+RFCs are a study <dk:nobr>unto themselves.</dk:nobr></p>
+
+<p>NBT Name Service packets are an intentional rip-off of DNS
+Messages. New flag field values, operation codes, and return codes
+were added but the design was in keeping with the goal of eventually
+merging NBNS services into the DNS.</p>
+
+<p>This, conceptually, is what a Name Service packet header looks
+like:</p>
+
+<table colwidths="6.25* 6.25* 6.25* 6.25* 6.25* 6.25* 6.25* 6.25* 6.25* 6.25* 6.25* 6.25* 6.25* 6.25* 6.25*" dk:type="centered" dk:borders="all">
+<tbody>
+<tr dk:border="after">
+<td dk:border="right"><p><code>0</code></p></td>
+<td dk:border="right"><p><code>1</code></p></td>
+<td dk:border="right"><p><code>2</code></p></td>
+<td dk:border="right"><p><code>3</code></p></td>
+<td dk:border="right"><p><code>4</code></p></td>
+<td dk:border="right"><p><code>5</code></p></td>
+<td dk:border="right"><p><code>6</code></p></td>
+<td dk:border="right"><p><code>7</code></p></td>
+<td dk:border="right"><p><code>8</code></p></td>
+<td dk:border="right"><p><code>9</code></p></td>
+<td dk:border="right"><p><code>10</code></p></td>
+<td dk:border="right"><p><code>11</code></p></td>
+<td dk:border="right"><p><code>12</code></p></td>
+<td dk:border="right"><p><code>13</code></p></td>
+<td dk:border="right"><p><code>14</code></p></td>
+<td><p><code>15</code></p></td>
+</tr>
+<tr dk:border="after">
+<td colspan="16"><p><code>NAME_TRN_ID</code><idx>NAME_TRN_ID</idx></p></td>
+</tr>
+<tr dk:border="after">
+<td dk:border="right"><p><code>R</code></p></td>
+<td colspan="4" dk:border="right"><p><code>OPCODE</code></p></td>
+<td colspan="7" dk:border="right"><p><code>NM_FLAGS</code></p></td>
+<td colspan="4"><p><code>RCODE</code></p></td>
+</tr>
+<tr dk:border="after">
+<td colspan="16"><p><code>QDCOUNT</code></p></td>
+</tr>
+<tr dk:border="after">
+<td colspan="16"><p><code>ANCOUNT</code></p></td>
+</tr>
+<tr dk:border="after">
+<td colspan="16"><p><code>NSCOUNT</code></p></td>
+</tr>
+<tr>
+<td colspan="16"><p><code>ARCOUNT</code></p></td>
+</tr>
+</tbody>
+</table>
+
+<p dk:indent="no">Here is a description of the fields:</p>
+
+<dl>
+<dt><code>NAME_TRN_ID</code><idx>NAME_TRN_ID</idx></dt>
+<dd>
+<p>A two-byte transaction identifier. Each time the NBT Name Service
+starts a new transaction it assigns an ID to it so that it can figure out
+which <dk:nobr>responses</dk:nobr> go with which requests. An obvious way to handle
+this is to start with zero and increment each time one is used,
+allowing rollover <dk:nobr>at <code>0xFFFF</code>.</dk:nobr></p>
+
+<p>For our purposes any number will do. So we will pick something
+semi-random for ourselves. How 'bout 1964?</p></dd>
+
+<dt><code>R</code></dt>
+<dd><p>This one-bit field indicates whether the packet is:</p>
+
+<p dk:displayed="yes"><line><code>0</code> == a <em>request</em>, or</line>
+<line><code>1</code> == a <em>response</em>.</line></p>
+
+<p dk:indent="no">Ours is a request. It initiates a transaction, so
+we will use 0.</p></dd>
+
+<dt><code>OPCODE</code></dt>
+<dd><p>Six operations are defined by the RFCs. These are:</p>
+
+<p dk:displayed="yes"><line><code>0x0</code> == Query<idx>name query</idx></line>
+<line><code>0x5</code> == Name Registration<idx>name registration</idx></line>
+<line><code>0x6</code> == Name Release<idx>name release</idx></line>
+<line><code>0x7</code> == WACK<idx>WACK</idx> (Wait for Acknowledgement)</line>
+<line><code>0x8</code> == Name Refresh<idx>Name Refresh</idx></line>
+<line><code>0x9</code> == Name Refresh (Alternate Opcode)</line></p>
+
+<p dk:indent="no">The <code>0x9</code> OpCode value is the result of
+a typo in RFC 1002. In Section&nbsp;4.2.1.1 a value of <code>0x8</code>
+is listed, but Section&nbsp;4.2.4 shows a value of <code>0x9</code>. A
+sensible implementation will handle either, though <code>0x8</code>
+is the <dk:nobr>preferred value.</dk:nobr></p>
+
+<p>One more OpCode was added after the RFCs were published:</p>
+
+<p dk:displayed="yes"><code>0xF</code> == Multi-Homed<idx>multi-homed host</idx> Name Registration<idx>name
+registration<sidx>multi-homed</sidx></idx></p>
+
+<p>Our immediate interest, of course, is with the Query operation -
+OpCode value <code>0x0</code>.</p></dd>
+
+<dt><code>NM_FLAGS</code></dt>
+<dd>
+<p>As the name suggests, this is a set of one-bit flags, as follows:</p>
+
+<table colwidths="15* 14* 14* 14* 14* 14* 15*" dk:type="centered" dk:borders="all">
+<tbody>
+<tr dk:border="after">
+<td dk:border="right"><p><code>0</code></p></td>
+<td dk:border="right"><p><code>1</code></p></td>
+<td dk:border="right"><p><code>2</code></p></td>
+<td dk:border="right"><p><code>3</code></p></td>
+<td dk:border="right"><p><code>4</code></p></td>
+<td dk:border="right"><p><code>5</code></p></td>
+<td><p><code>6</code></p></td>
+</tr>
+<tr>
+<td dk:border="right"><p><code>AA</code></p></td>
+<td dk:border="right"><p><code>TC</code></p></td>
+<td dk:border="right"><p><code>RD</code></p></td>
+<td dk:border="right"><p><code>RA</code></p></td>
+<td dk:border="right"><p><code>0</code></p></td>
+<td dk:border="right"><p><code>0</code></p></td>
+<td><p><code>B</code></p></td>
+</tr>
+</tbody>
+</table>
+
+<p>We will go into the details of this later on. For now, note that
+the <code>B</code> flag means "Broadcast" and that we are attempting
+to do a broadcast query, so we will want to turn this bit on. We
+will also set the <code>RD</code> flag. <code>RD</code> stands for
+"Recursion Desired"; for now, just take it on faith that this bit
+should be set. All others will be clear (zero).</p></dd>
+
+<dt><code>RCODE</code><idx>RCODE</idx></dt>
+<dd>
+<p>Return codes. This field is always <code>0x00</code> in request packets (those
+with an <code>R</code> value of zero). Each response packet type has
+its own set of possible <code>RCODE</code> values.</p></dd>
+
+<dt><code>QDCOUNT</code><idx>QDCOUNT</idx></dt>
+<dd><p>The number of names that follow in the query section. We will
+set this to <code>1</code> for our broadcast name query.</p></dd>
+
+<dt><code>ANCOUNT</code><idx>ANCOUNT</idx></dt> <dd><p>The number of
+answers in a <code>POSITIVE NAME QUERY RESPONSE</code>
+message<idx>NAME QUERY</idx>. This field will be used in the replies
+we get in response to our broadcast query.</p></dd>
+
+<dt><code>NSCOUNT</code>,<idx>NSCOUNT</idx> <code>ARCOUNT</code><idx>ARCOUNT</idx></dt> 
+<dd>
+<p>These are "Name Service Authority Count" and "Additional Record
+Count," respectively. These can be ignored for now.</p></dd>
+</dl>
+
+<p>So, for a broadcast <code>NAME QUERY REQUEST</code>, our header
+will look <dk:nobr>like this:</dk:nobr></p>
+
+<table colwidths="6.25* 6.25* 6.25* 6.25* 6.25* 6.25* 6.25* 6.25* 6.25* 6.25* 6.25* 6.25* 6.25* 6.25* 6.25* 6.25*" dk:type="centered" dk:borders="all">
+<tbody>
+<tr dk:border="after">
+<td dk:border="right"><p><code>0</code></p></td>
+<td dk:border="right"><p><code>1</code></p></td>
+<td dk:border="right"><p><code>2</code></p></td>
+<td dk:border="right"><p><code>3</code></p></td>
+<td dk:border="right"><p><code>4</code></p></td>
+<td dk:border="right"><p><code>5</code></p></td>
+<td dk:border="right"><p><code>6</code></p></td>
+<td dk:border="right"><p><code>7</code></p></td>
+<td dk:border="right"><p><code>8</code></p></td>
+<td dk:border="right"><p><code>9</code></p></td>
+<td dk:border="right"><p><code>10</code></p></td>
+<td dk:border="right"><p><code>11</code></p></td>
+<td dk:border="right"><p><code>12</code></p></td>
+<td dk:border="right"><p><code>13</code></p></td>
+<td dk:border="right"><p><code>14</code></p></td>
+<td><p><code>15</code></p></td>
+</tr>
+<tr dk:border="after">
+<td colspan="16"><p><code>1964</code></p></td>
+</tr>
+<tr dk:border="after">
+<td dk:border="right"><p><code>0</code></p></td>
+<td><p><code>0</code></p></td>
+<td><p><code>0</code></p></td>
+<td><p><code>0</code></p></td>
+<td dk:border="right"><p><code>0</code></p></td>
+<td><p><code>0</code></p></td>
+<td><p><code>0</code></p></td>
+<td><p><code>1</code></p></td>
+<td><p><code>0</code></p></td>
+<td><p><code>0</code></p></td>
+<td><p><code>0</code></p></td>
+<td dk:border="right"><p><code>1</code></p></td>
+<td><p><code>0</code></p></td>
+<td><p><code>0</code></p></td>
+<td><p><code>0</code></p></td>
+<td><p><code>0</code></p></td>
+</tr>
+<tr dk:border="after">
+<td colspan="16"><p><code>1</code></p></td>
+</tr>
+<tr dk:border="after">
+<td colspan="16"><p><code>0</code></p></td>
+</tr>
+<tr dk:border="after">
+<td colspan="16"><p><code>0</code></p></td>
+</tr>
+<tr>
+<td colspan="16"><p><code>0</code></p></td>
+</tr>
+</tbody></table>
+
+<p>To make it easier to write the code for the above query, we will
+hand-convert the header into a string of bytes. We could do this in
+code (in fact, that will be necessary for a real implementation),
+but dealing with such details at this point would be an unnecessary
+tangent. So...<idx end="c3-nservice">NBT<sidx>Name Service</sidx></idx></p>
+
+<pre>unsigned char header[] =
+  {
+  0x07, 0xAC, /* 1964 == 0x07AC.     */
+  0x01, 0x10, /* 0 000<b>0 001</b>0001 <b>0000</b> */
+  0x00, 0x01, /* One name query.     */
+  0x00, 0x00, /* Zero answers.       */
+  0x00, 0x00, /* Zero authorities.   */
+  0x00, 0x00  /* Zero additional.    */
+  };
+</pre>
+
+</h2s><h2 id="NBT1.3.1.5">The Query Entry</h2><h2s>
+
+<p>The query entries follow the header. A query entry consists of a
+Second Level Encoded NBT name<idx>NBT<sidx>name</sidx></idx> followed
+by two additional fields: the
+<code>QUESTION_TYPE</code><idx>QUESTION_TYPE</idx> and
+<code>QUESTION_CLASS</code><idx>QUESTION_CLASS</idx>. Once again, this
+is taken directly from the DNS query packet.</p>
+
+<p>Under NBT, the <code>QUESTION_TYPE</code> field is limited to two
+possible values, representing the two types of queries that are
+defined in the RFCs. These are:</p>
+
+<dl>
+<dt><code>NB == 0x0020</code><idx>NB</idx></dt>
+
+<dd><p>The <code>NAME QUERY REQUEST</code><idx>NAME QUERY</idx>, which
+we will use to perform our broadcast query.</p></dd>
+
+<dt><code>NBSTAT == 0x0021</code><idx>NBSTAT</idx></dt> 
+
+<dd><p>The <code>NODE STATUS REQUEST</code>,<idx>NODE STATUS</idx>
+also known as an "Adapter Status"<idx>adapter status</idx> query. The
+latter is a reference to the original NetBIOS
+API<idx>NetBIOS<sidx>API</sidx></idx> <dk:nobr>command
+name.</dk:nobr></p></dd>
+</dl>
+
+<p>Only one <code>QUESTION_CLASS</code> is defined for NBT, and that is
+the Internet Class: <code>0x0001</code>.</p>
+
+<p>So, our completed <code>NAME QUERY REQUEST</code> packet will
+consist of:</p>
+
+<ul>
+<li><p>the NBT header, as given above,</p></li>
+<li><p>the Second Level encoded NBT name,</p></li>
+<li><p>the unsigned short values <code>0x0020</code> and
+<code>0x0001</code>.</p></li>
+</ul>
+
+</h2s><h2 id="NBT1.3.1.6">Some Trouble Ahead</h2><h2s>
+
+<p><idx>DMB</idx>It would seem that it should now be easy to send a
+broadcast name query<idx start="c3-query">name query</idx>. Just put
+the pieces together and send them to UDP port 137<idx>137/UDP</idx> at
+the broadcast address. Yes that <em>should</em> be easy... except that
+we are now crossing the line between <i>theory</i> and
+<i>practice</i>, and that means trouble. Be brave.</p>
+
+<h5>Upper Case/lower case</h5>
+
+<p>RFCs 883 and 1035 state that DNS name lookups should be
+case-insensitive. That is, <code>CAT.ORG</code> is equivalent to
+<code>cat.org</code> and <code>Cat.Org</code>, etc. Case-insensitive
+comparison is not difficult, and First Level Encoding always produces
+a string of upper-case characters in the range
+&lsquo;A&rsquo;..&lsquo;P&rsquo;, so we should have no trouble
+comparing</p>
+
+<pre>EOGFGLGPCACACACACACACACACACACACA.CAT.ORG</pre> 
+
+<p dk:indent="no">against</p>
+
+<pre>EOGFGLGPCACACACACACACACACACACACA.cat.org</pre>
+
+<p dk:indent="no">...but what about the original NetBIOS
+name<idx>NetBIOS<sidx>name</sidx></idx>? The strings
+"Neko"<idx>Neko</idx> and "NEKO" translate, respectively, to</p>
+
+<pre>EO<u>GFGLGP</u>CACACACACACACACACACACACA</pre>
+
+<p dk:indent="no">and</p>
+
+<pre>EO<u>EFELEP</u>CACACACACACACACACACACACA</pre>
+
+<p dk:indent="no">These strings do not match, and so we seem to have
+a problem.  Are the two original names considered equivalent? If so,
+how should we handle them?</p>
+
+<p>RFC 1001 and 1002 do not provide answers to these questions, so
+we need to look to other sources. Of course, the ultimate source for
+Truth and Wisdom is empirical information.  That is, what actually
+happens on the wire? A little packet sniffing and a few simple tests
+will provide the answers we need.  Here's the plan:</p>
+
+<ol>
+<li><p>Use lower-case or mixed-case names when configuring your test
+hosts.</p></li>
+
+<li><p>Set up your sniffer to capture packets on UDP port 137.</p></li>
+
+<li><p>Start or restart your test hosts.</p></li>
+
+<li><p>After a few minutes, stop the capture.</p></li>
+</ol>
+
+<p>If your sniffer can decode the NetBIOS names (Ethereal<idx>Ethereal</idx> and
+NetMon<idx>NetMon</idx> can) then you will see that the NetBIOS names are all in
+upper case. This is normal behavior for NBT, even though it is not
+documented in the RFCs. Scope strings are also converted to upper
+case before on-the-wire use.</p>
+
+<p>Here is another interesting test that you can perform if you
+have Windows and Samba<idx>Samba</idx> systems (and/or others) on your
+network:</p>
+
+<ol>
+<li><p>Modify the NBT Name Query code (in <ref refid="Listing1.3"/>
+below) so that it converts the NetBIOS name to <em>lower case</em>
+rather than upper case. (That is, change <code>toupper</code> to
+<code>tolower</code>.)</p></li>
+
+<li><p>Recompile.</p></li>
+
+<li><p>Start your sniffer.</p></li>
+
+<li><p>Use the code to send some queries. Try group names<idx>group
+name</idx> in particular.</p></li>
+</ol>
+
+<p>In tests using Samba 2.0 and Windows, Samba servers respond to
+these lower-case queries while Windows systems do not. This suggests
+that Windows compares the encoded string, while Samba is decoding the
+string and performing a case-insensitive comparison on the result. One
+might argue that Samba's behavior is more robust, but comparing names
+without decoding them first is certainly faster.<fn>Samba's behavior
+may change if no reason can be found to compare the decoded
+names. Decoding costs a few cycles, which could be significant in an
+NBNS implementation.</fn></p>
+
+<h5>NetBIOS Name Syntax</h5>
+
+<p>We have specified a syntax for NBT
+names<idx>NBT<sidx>name</sidx></idx>. So far, however, we have said
+little about the syntax for the original NetBIOS name. RFC 1001 says
+only that the name may not begin with an asterisk
+(&lsquo;<code>*</code>&rsquo;), because the asterisk is used for
+"wildcard" queries.<idx>wildcard<sidx>query</sidx></idx></p>
+
+<p>At the low level there are few real rules for forming NetBIOS names
+other than the length limit. Applications, however, often place
+restrictions on the names that users may choose. Windows, for example,
+will only allow a specific set of printable characters for workstation
+names, yet Microsoft's<idx>Microsoft</idx>
+<code>nbtstat</code><idx>nbtstat</idx> program is much more
+accepting.</p>
+
+<p>For the implementor, this is a bit of a problem. You want to be
+sure that your code can handle any bizarre name that reaches it
+over the network, yet help the user avoid choosing names that might
+cause another system to choke. A good rule of thumb is to warn
+users against choosing any character that is not legal in a "best
+practices" DNS label.</p>
+
+<h5>Padding Permutations</h5>
+
+<p>The space character (<code>0x20</code>) is the designated padding character
+for NetBIOS names, but there are a few exceptions. One of these is
+associated with wildcard queries. When sending a wildcard query, the
+name is padded with nul bytes rather than spaces, giving:</p>
+
+<table colwidths="6.25* 6.25* 6.25* 6.25* 6.25* 6.25* 6.25* 6.25* 6.25* 6.25* 6.25* 6.25* 6.25* 6.25* 6.25* 6.25*" dk:type="centered" dk:borders="all">
+<tbody>
+<tr>
+<td dk:border="right"><p><code>'*'</code></p></td>
+<td dk:border="right"><p><code>0</code></p></td>
+<td dk:border="right"><p><code>0</code></p></td>
+<td dk:border="right"><p><code>0</code></p></td>
+<td dk:border="right"><p><code>0</code></p></td>
+<td dk:border="right"><p><code>0</code></p></td>
+<td dk:border="right"><p><code>0</code></p></td>
+<td dk:border="right"><p><code>0</code></p></td>
+<td dk:border="right"><p><code>0</code></p></td>
+<td dk:border="right"><p><code>0</code></p></td>
+<td dk:border="right"><p><code>0</code></p></td>
+<td dk:border="right"><p><code>0</code></p></td>
+<td dk:border="right"><p><code>0</code></p></td>
+<td dk:border="right"><p><code>0</code></p></td>
+<td dk:border="right"><p><code>0</code></p></td>
+<td><p><code>0</code></p></td>
+</tr>
+</tbody>
+</table>
+
+<p>Which translates to:
+<code>CKAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA</code><idx>CKAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA</idx>.</p>
+
+<p>Samba will respond to either space- or nul-padded wildcard
+queries<idx>wildcard<sidx>query</sidx></idx>, but Windows will only
+respond if the name is nul-padded.<fn>The lab in the basement is
+rather sparse, and not all versions of Microsoft Windows can be
+tested. The reported behavior was detected on those variants that were
+available. We leave it as an exercise for the reader to verify that
+the behavior is consistent. Please let us know of any contradictory
+results.</fn> Once again, this indicates that Samba decodes NBT names
+before comparison, but Windows <dk:nobr>does not.</dk:nobr></p>
+
+<p>Microsoft has added a few other non-space-padded names as well.
+These are special case names, used with particular applications.
+Still, they demonstrate the need for flexibility in our encoding and
+decoding functions.</p>
+
+<h5>Label Length Limits</h5>
+
+<p>We did not bother to mention earlier that the label length bytes
+placed before each label during Second Level Encoding are not 8-bit
+values. The uppermost two bits are used as flags, leaving only 6
+bits for the label length. Normally these flag bits are both zero
+(unset), so we can ignore them for now and (as with so many other
+little details) deal with them later on.</p>
+
+<p>With only 6 bits, the length of each label is limited to 63
+characters. The overall length of the Second Level Encoded string is
+further limited to <dk:nobr>255 bytes.</dk:nobr> Our example code does
+not have any checks to ensure that the Scope ID<idx>NBT<sidx>Scope
+ID</sidx></idx> has the correct syntax, though such tests would be
+required in any "real" <dk:nobr>implementation.</dk:nobr></p>
+
+<h5>The Fine Print at the End</h5>
+
+<p>The RFCs do not say so, but the last byte of the NetBIOS name is
+reserved.</p>
+
+<p>The practice probably goes back to the early days and IBM. The 16th
+byte of a NetBIOS name is used to designate the <em>purpose</em> of
+the name. This byte is known as the "suffix<idx>suffix byte</idx>" (or
+sometimes the "type byte"), and it contains a value which indicates
+the type of the service that registered the name. Some example suffix
+values include:</p>
+
+<p dk:displayed="yes"><line><code>0x00</code> == Workstation Service (aka Machine Name
+or Client Service)</line>
+<line><code>0x03</code> == Messenger Service</line>
+<line><code>0x20</code> == File Server Service<idx>SMB<sidx>Server Service</sidx></idx></line>
+<line><code>0x1B</code> == Domain Master Browser</line></p>
+
+<p>The care and feeding of suffix values is yet another topic to be
+covered in detail later on. A suffix value of <code>0x00</code> is
+fairly common, so we will use that in our broadcast query. Note
+that this changes the encoding of the NetBIOS name. Once again,
+using the name Neko<idx>Neko</idx>:</p>
+
+<p dk:displayed="yes"><line>instead of <code>EOEFELEPCACACACACACACACACACACA<u>CA</u></code>,</line>
+<line>you get <code>EOEFELEPCACACACACACACACACACACA<u>AA</u></code>.</line></p>
+
+<alert type="Shorthand">
+
+<p>When writing a NetBIOS name, the suffix value is often specified
+in hex, surrounded by angle brackets. So, the name <code>NEKO</code>
+with a suffix of <code>0x1D</code> would be written:</p>
+
+<pre><![CDATA[NEKO<1D>]]></pre>
+
+<p>It is also fairly common to use the "#" character to indicate
+the suffix:</p>
+
+<pre>NEKO#1D</pre>
+
+<p>We will use the angle bracket notation where appropriate.<idx
+end="c3-dns">DNS</idx></p>
+</alert>
+
+</h2s><h2 id="NBT1.3.1.7">Finally! A Simple Broadcast Name Query</h2><h2s>
+
+<p><idx>NBT<sidx>Name Service</sidx></idx>This next bit of code is
+full of shortcuts. The packet header is hard-coded, as are the
+<code>QUESTION_TYPE</code><idx>QUESTION_TYPE</idx> and
+<code>QUESTION_CLASS</code><idx>QUESTION_CLASS</idx>. No syntax
+checking is done on the scope string. Worst of all, the program sends
+the query but does not bother to listen for a reply. For that, we will
+use a sniffer.</p>
+
+<p>Tools such as the <code>nmblookup</code><idx>nmblookup</idx>
+utility that comes with Samba<idx>Samba</idx>, or
+<dk:nobr>Microsoft's</dk:nobr> <code>nbtstat</code><idx>nbtstat</idx>
+program, could also be used to send a name query. <dk:nobr>The
+goal,</dk:nobr> however, is to implement these tools on our own, and
+the next bit of code gives us a start.<fn>The program in <ref
+refid="Listing1.3"/> has been tested on Debian GNU/Linux<idx>Debian
+GNU/Linux</idx> and OpenBSD<idx>BSD</idx>. You may have to fiddle a
+bit to get it to work on other platforms. Under older versions of
+NetBSD, OpenBSD, Miami for Amiga, and possibly other BSD-derived TCP
+stacks, messages sent to the limited broadcast address
+(255.255.255.255<idx>255.255.255.255</idx>) may not actually be sent
+as Ethernet broadcasts. On these systems, it will be necessary to
+change the value of <code>NBT_BCAST_ADDR</code> to the directed
+broadcast address of the local subnet (the local subnet broadcast
+address). This bug has been fixed in both NetBSD and in OpenBSD. See
+the original NetBSD bug report (#7682) for more information.</fn></p>
+
+<example id="Listing1.3">
+<caption>Simple Broadcast Name Query</caption>
+<pre dk:break="after"><![CDATA[#include <stdio.h>
+#include <stdlib.h>
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+#include <unistd.h>
+#include <ctype.h>
+
+#define NBT_BCAST_ADDR "255.255.255.255"
+
+#ifndef uchar
+#define uchar unsigned char
+#endif /* uchar */
+
+uchar header[] =
+  {
+  0x07, 0xAC,  /* 1964 == 0x07AC.   */
+  0x01, 0x10,  /* Binary 0 0000 0010001 0000 */
+  0x00, 0x01,  /* One name query.   */
+  0x00, 0x00,  /* Zero answers.     */
+  0x00, 0x00,  /* Zero authorities. */
+  0x00, 0x00   /* Zero additional.  */
+  };
+
+uchar query_tail[] =
+  {
+  0x00, 0x20,
+  0x00, 0x01
+  };]]></pre>
+
+<pre dk:break="after"><![CDATA[uchar *L1_Encode( uchar       *dst,
+                  const uchar *name,
+                  const uchar  pad,
+                  const uchar  sfx )
+  {
+  int i = 0;
+  int j = 0;
+  int k = 0;
+
+  while( ('\0' != name[i]) && (i < 15) )
+    {
+    k = toupper( name[i++] );
+    dst[j++] = 'A' + ((k & 0xF0) >> 4);
+    dst[j++] = 'A' +  (k & 0x0F);
+    }
+
+  i = 'A' + ((pad & 0xF0) >> 4);
+  k = 'A' +  (pad & 0x0F);
+  while( j < 30 )
+    {
+    dst[j++] = i;
+    dst[j++] = k;
+    }
+
+  dst[30] = 'A' + ((sfx & 0xF0) >> 4);
+  dst[31] = 'A' +  (sfx & 0x0F);
+  dst[32] = '\0';
+
+  return( dst );
+  } /* L1_Encode */
+
+int L2_Encode( uchar       *dst,
+               const uchar *name,
+               const uchar  pad,
+               const uchar  sfx,
+               const uchar *scope )
+  {
+  int lenpos;
+  int i;
+  int j;
+
+  if( NULL == L1_Encode( &dst[1], name, pad, sfx ) )
+    return( -1 );
+  dst[0] = 0x20;
+  lenpos = 33;]]></pre>
+
+<pre dk:break="after"><idx>inet_aton()</idx><![CDATA[  if( '\0' != *scope )
+    {
+    do
+      {
+      for( i = 0, j = (lenpos + 1);
+           ('.' != scope[i]) && ('\0' != scope[i]);
+           i++, j++)
+        dst[j] = toupper( scope[i] );
+
+      dst[lenpos] = (uchar)i;
+      lenpos     += i + 1;
+      scope      += i;
+      } while( '.' == *(scope++) );
+    dst[lenpos] = '\0';
+    }
+
+  return( lenpos + 1 );
+  } /* L2_Encode */
+
+void Send_Nbtn_Bcast( uchar *msg, int msglen )
+  {
+  int                s;
+  int                true = 1;
+  struct sockaddr_in sox;
+
+  s = socket( PF_INET, SOCK_DGRAM, IPPROTO_UDP );
+  if( s < 0 )
+    {
+    perror( "Socket()" );
+    exit( 0 );
+    }
+
+  if( setsockopt( s, SOL_SOCKET, SO_BROADCAST,
+                  &true, sizeof(int) ) < 0 )
+    {
+    perror( "Setsockopt()" );
+    exit( 0 );
+    }
+
+  if( 0 == inet_aton( NBT_BCAST_ADDR, &(sox.sin_addr) ) )
+    {
+    printf( "Invalid IP address.\n" );
+    exit( 0 );
+    }
+  sox.sin_family = AF_INET;
+  sox.sin_port   = htons( 137 );]]></pre>
+
+<pre><![CDATA[  if( sendto( s,
+              (void *)msg,
+              msglen, 
+              0,
+              (struct sockaddr *)&sox,
+              sizeof(struct sockaddr_in) ) < 0 )
+    {
+    perror( "Sendto()" );
+    exit( 0 );
+    }
+
+  close( s );
+  } /* Send_Nbtn_Bcast */
+
+int main( int argc, char *argv[] )
+  {
+  uchar  bufr[512];
+  int    len;
+  int    total_len;
+  uchar *name;
+  uchar *scope;
+
+  if( argc > 1 )
+    name = (uchar *)argv[1];
+  else
+    exit( EXIT_FAILURE );
+
+  if( argc > 2 )
+    scope = (uchar *)argv[2];
+  else
+    scope = "";
+
+  (void)memcpy( bufr, header, (total_len = sizeof(header)) );
+
+  len = L2_Encode( &bufr[total_len], name, ' ', '\0', scope );
+  if( len < 0 )
+    return( EXIT_FAILURE );
+  total_len += len;
+
+  (void)memcpy( &bufr[total_len], query_tail, sizeof( query_tail ));
+  total_len += sizeof( query_tail );
+
+  Send_Nbtn_Bcast( bufr, total_len );
+
+  return( EXIT_SUCCESS );
+  } /* main */]]></pre>
+</example>
+
+<p>The updated <code>L1_Encode()</code><idx>L1_Encode()</idx> function
+takes two new parameters: <code>pad</code> and <code>sfx</code>. These
+allow us to specify the padding character and the suffix<idx>suffix
+byte</idx>, respectively. The
+<code>L2_Encode()</code><idx>L2_Encode()</idx> function also takes
+these additional parameters, so that it can pass them along to
+<code>L1_Encode()</code>, and both functions make use of
+<code>toupper()</code> to ensure that the NetBIOS
+name<idx>NetBIOS<sidx>name</sidx></idx> and Scope
+ID<idx>NBT<sidx>Scope ID</sidx></idx> are in upper case.</p>
+
+<p>The function <code>Send_Nbtn_Bcast()</code> does the job of
+transmitting a block of data via UDP. The destination is port
+UDP/137<idx>137/UDP</idx> at the universal broadcast address. The
+program mainline simply strings together the various pieces of the NBT
+query, taking the NetBIOS name and Scope ID from the command line.</p>
+
+<p>Compile the code and give the executable the name
+<code>namequery</code><idx>namequery</idx>. The program takes one or
+two arguments. The first is the NetBIOS name, and the second is the
+Scope ID (the Scope ID is optional). For example, on a Unix system the
+command line (including the <code>$</code> prompt) might be:</p>
+
+<pre>$ namequery neko cat.org</pre>
+
+<p>Start your sniffer with the filter set to capture only packets sent
+to/from UDP port 137. If you are using TCPDump<idx>TCPDump</idx> or
+Ethereal<idx>Ethereal</idx>, the filter string is: <code>udp port
+137</code>. Depending on your OS, you may need to have Root or
+Administrator privileges in order to run the sniffer.</p>
+
+<p>Run <code>namequery</code> with the input shown above, and then
+stop the capture. You should get something like this:</p>
+
+<pre><idx>NB</idx><![CDATA[+ Frame 1 (100 on wire, 100 captured)
++ Ethernet II
++ Internet Protocol
++ User Datagram Protocol
+- NetBIOS Name Service
+     Transaction ID: 0x07ac
+   + Flags: 0x0110 (Name query)
+     Questions: 1
+     Answer RRs: 0
+     Authority RRs: 0
+     Additional RRs: 0
+  - Queries
+     + NEKO           <00>.CAT.ORG: type NB, class inet
+]]></pre>
+
+
+<p>This example is copied from Ethereal output.</p>
+
+<p>Compare the parsed output provided by the sniffer against the
+hard-coded information in the program. They should match up. Next, try
+a query using a name on your own network and take a look at the
+response. If you use the name of a Workgroup<idx>Workgroup</idx> or NT
+Domain,<idx>NT Domain</idx> you may get responses from
+<dk:nobr>several systems.</dk:nobr></p>
+
+<p>Another way to get multiple replies is to use a wildcard query.  If
+all NBT nodes on your local LAN use the same Scope ID, and if they are
+not P nodes, then they will all respond to the wildcard name. To try
+this, you must first change the call to
+<code>L2_Encode()</code><idx>L2_Encode()</idx> within
+<code>main()</code> so that it passes <code>'\0'</code> as the padding
+character. That is:</p>
+
+<pre><![CDATA[total_len += L2_Encode( &bufr[total_len], name, ']]><b>\0</b><![CDATA[', '\0', scope );]]></pre>
+
+<p>Then recompile and give the asterisk as the NetBIOS name:</p>
+
+<pre>$ namequery "*"</pre>
+
+<p>Try using other tools such as <code>nbtstat</code><idx>nbtstat</idx> in Windows or
+Samba's <dk:nobr><code>nmblookup</code></dk:nobr> to generate queries,
+and spend a bit of time looking at the results of these captures. You
+can also simply let the sniffer run for a while. If your network is
+active you will see all sorts of NetBIOS packets fly by (particularly
+if you are on a shared rather than a switched LAN).<idx
+end="c3-query">name query</idx></p>
+
+</h2s></h1s><h1>Interlude</h1><h1s>
+
+<p>We now have method, madness, and a vague sense of the direction.
+We are ready to head out on the open code. Let us first take a
+moment to meditate on what we have covered so far. Start by
+considering this mental image...</p>
+
+<p>Imagine a cold, rainy autumn day. Still thinking of summer, you
+have forgotten to wear a jacket. The chill of the rain runs through
+your entire body as you hurry along the street. You try to keep your
+neck dry by pulling up your thin sweater and hunching your
+shoulders. Down the road you spot a caf&#233;. It looks warm and
+bright inside. You quicken your pace, then dash through the door as
+the drizzly rain becomes more enthusiastic and thunder rumbles in
+<dk:nobr>the distance.</dk:nobr></p>
+
+<p>The shop is cozy, but not too small. There are potted plants
+scattered about. Light jazz plays over well-hidden speakers. The
+clientele are trendy urban business types having quiet, serious
+discussions in pairs at small tables. Paintings by a local artist
+hang on the walls.</p>
+
+<p>You step up to the counter. A young woman with a dozen earrings and
+short-cut hair smiles and asks you what you would like. A nice, hot
+cup of tea<idx>tea</idx>. She reaches down behind the counter and
+grabs a large white mug. Then she opens a box and pulls out a tea bag
+that is at least three years old, drops it into the mug, and pours in
+hot water from the sink. "Three dollars" she says, <dk:nobr>still
+smiling.</dk:nobr></p>
+
+<p>If you are a coffee drinker, you probably don't understand.
+Replace <em>"opens a box and pulls out a tea bag"</em>
+with <em>"opens a jar and scoops out one spoonful of freeze-dried
+instant"</em> and you will get the point. The point is that details
+matter. Certainly, an old tea bag in warm water will make a cup of
+tea... but not one worth drinking.<fn>With a few notable exceptions,
+this is the way tea is prepared in American
+caf&#233;s. Ick.</fn></p>
+
+<p>Just so, our examples provide some working code but are far from
+satisfying. If we are going to write something truly enjoyable we
+need to dig into <dk:nobr>the details.</dk:nobr></p>
+
+<p>Let's get to it.</p>
+
+</h1s></chapter></oim>

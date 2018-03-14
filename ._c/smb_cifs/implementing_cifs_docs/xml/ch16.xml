@@ -1,0 +1,677 @@
+<?xml version="1.0" encoding="US-ASCII"?>
+<!DOCTYPE oim SYSTEM "oimxml.dtd" [
+  <!ENTITY nbsp  "&#160;">
+  <!ENTITY lsquo "&#8216;">
+  <!ENTITY rsquo "&#8217;">
+  <!ENTITY minus "&#8211;">
+  <!ENTITY mdash "&#8212;">
+  <!ENTITY times "&#xd7;">
+  <!ENTITY copy "&#xa9;">
+] >
+<oim xmlns:dk="http://www.kirsanov.com">
+<chapter id="SMB2.9">
+<chapopen><title>Building Your SMB Vocabulary</title>
+
+<epigraph dk:padding-top="36">
+<p><line>...they have weapons</line>
+<line>of mass confusion</line>
+<line>and aren't afraid to use them.</line></p>
+<attribution>iomud on Slashdot</attribution>
+</epigraph>
+
+</chapopen>
+
+<p>Looking back over our shoulders, we see that we have performed only
+two SMB exchanges so far: the <code>NEGOTIATE
+PROTOCOL</code><idx>NEGOTIATE PROTOCOL</idx> and the <code>SESSION
+SETUP</code><idx>SESSION SETUP</idx>. There may be a <code>TREE
+CONNECT</code> shoved into the packet with the <code>SESSION
+SETUP</code> as an AndX, but we haven't really described the
+<code>TREE CONNECT</code><idx>TREE CONNECT</idx> in detail.</p>
+
+<p>So, although we have covered a tremendous amount of material, our
+progress seems rather pathetic doesn't it? What if the rest of SMB is
+just as tedious, verbose, and difficult?</p>
+
+<p>Relax. It's not.</p>
+
+<p>Certainly there are other difficulties lying in wait, but the
+biggest ones have already been identified and we are carefully
+avoiding them. If you pursue your dream of creating a complete and
+competitive CIFS implementation then you may, some day, need to know
+how things like MS-RPC<idx>MS-RPC</idx> and Extended Security really work
+inside. Fortunately, you can do without them for now.</p>
+
+<p>Let's just be clear on this before we move along:</p>
+
+<blockquote><p>There is a lot you can do with CIFS without
+implementing any of the extended sub-protocols that SMB supports, but
+if you want to build a complete and competitive CIFS client/server
+implementation you will need to go well beyond the SMB protocol
+itself.</p></blockquote>
+
+<p>That's why it has taken the Samba
+Team<idx>Samba<sidx>Team</sidx></idx> (with help from hundreds if not
+thousands of people across the Internet) more than ten years to make
+Samba<idx>Samba</idx> the industrial-strength server system it is
+today.  Tridge<idx>Tridge</idx> worked out the basics of NBT and SMB
+in a couple of weeks back in 1991, but new things keep getting tacked
+on to the system.</p>
+
+<p>When implementing CIFS, the rule of thumb is this: <em>Implement as
+little as possible to do the job you need to do.</em></p>
+
+<p>The minute you cross the border into uncharted territory, you open
+up a whole new world to explore and discover. Sometimes, you just
+don't want to go there. Other times, you must.</p>
+
+<p>Anyway, in the spirit of keeping things simple we will cover only a
+few more SMB messages, and those in much less depth than we have done
+so far. There really is no need to study every message, longword, bit,
+and string. If you've come this far, you should know how to read
+packet captures and interpret the message definitions in the SNIA
+doc<idx>SNIA<sidx>CIFS Technical Reference</sidx></idx>. It is time to
+take the training wheels off and learn to <em>ride</em>. </p>
+
+<h1>That <code>TREE CONNECT</code> Thingy</h1><h1s>
+
+<p>We have talked a lot about the <code>TREE CONNECT ANDX
+REQUEST</code><idx>TREE CONNECT</idx> SMB. There was even an example way back in 
+<ref refid="SMB2.4.4"/>. The example looked like this:</p>
+
+<pre>SMB_PARAMETERS
+  {
+  WordCount       = 4
+  AndXCommand     = SMB_COM_NONE (0xFF)
+  AndXOffset      = 0
+  Flags           = 0x0000
+  PasswordLength  = 1
+  }
+SMB_DATA
+  {
+  ByteCount       = 22
+  Password        = ""
+  Path            = "\\SMEDLEY\HOME"
+  Service         = "?????"  (yes, really)
+  }</pre>
+
+<p>Notice that the <code>TREE CONNECT</code> includes a
+<code>Password</code> field, but that in this example the
+<code>Password</code> field is <em>almost</em> empty (it contains a
+nul byte). If the server negotiates Share Level security,<idx>Share
+Level Security</idx> then the password that would otherwise be in the
+<code>SESSION_SETUP_ANDX.CaseInsensitive<dk:hyphen/><dk:nobr>Password</dk:nobr></code>
+<idx>CaseInsensitivePassword</idx>field will show up in the
+<code>TREE_CONNECT_ANDX.Password</code> field instead. The password
+may be plaintext, or it may be one of the response values we
+calculated earlier.</p>
+
+<p>The <code>TREE_CONNECT_ANDX.Path</code> field is also worth
+mentioning. It contains the UNC<idx>UNC</idx> pathname of the share to
+which the client is trying to connect. In this example, the client is
+attempting to access the <code>HOME</code> share on node
+<code>SMEDLEY</code>. Note that the <code>Path</code> will be in
+Unicode<idx>Unicode</idx> if negotiated.</p>
+
+<p>Finally there is that weird quintuple question mark string in the
+<code>TREE_CONNECT_ANDX.Service</code> field. There are, as it turns
+out, five possible values for that field:</p>
+
+<table colwidths="10* 30* 60*">
+<thead>
+<tr dk:border="after">
+<th><p></p></th>
+<th><p>String</p></th>
+<th><p>Meaning</p></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><p></p></td>
+<td><p><code>A:</code></p></td>
+<td><p>A filesystem share</p></td>
+</tr>
+<tr>
+<td><p></p></td>
+<td><p><code>LPT1:</code></p></td>
+<td><p>A shared printer</p></td>
+</tr>
+<tr>
+<td><p></p></td>
+<td><p><code>IPC</code></p></td>
+<td><p>An interprocess communications named pipe</p></td>
+</tr>
+<tr>
+<td><p></p></td>
+<td><p><code>COMM</code></p></td>
+<td><p>A serial or other communications device</p></td>
+</tr>
+<tr>
+<td><p></p></td>
+<td><p><code>?????</code></p></td>
+<td><p>Wildcard</p></td>
+</tr>
+</tbody>
+</table>
+
+<p>It's annoying for the client to need to know the kind of share to
+which it is connecting, which is probably why the
+wildcard<idx>wildcard<sidx>service type string</sidx></idx> option is
+available. The server will return the service type in the
+<code>Service</code> field of the Response. <dk:nobr>Note that
+the</dk:nobr> <code>Service</code> strings are always in 8-bit ASCII
+characters - <dk:nobr>never Unicode.</dk:nobr></p>
+
+<p>The response (for LANMAN2.1 and above) looks like this:</p>
+
+<pre dk:break="after">SMB_PARAMETERS
+  {
+  WordCount        = 3
+  AndXCommand      = &lt;Next ANDX command&gt;
+  AndXOffset       = &lt;Next ANDX block offset&gt;
+  OptionalSupport  = &lt;A bitfield&gt;
+  }</pre>
+<pre>SMB_DATA
+  {
+  ByteCount        = &lt;variable&gt;
+  Service          = &lt;"A:" | "LPT1:" | "IPC" | "COMM"&gt;
+  NativeFileSystem = &lt;"" | "FAT" | "NTFS"&gt;
+  }
+</pre>
+
+<p>The example above shows the empty string,
+"<code>FAT</code>",<idx>FAT</idx> or
+"<code>NTFS</code>"<idx>NTFS</idx> as the valid values for the
+<code>NativeFileSystem</code> field. Other values are
+possible. (Samba<idx>Samba</idx>, for instance, has a configuration
+option that allows you to put in anything you like.) The empty string
+is used for the hidden <code>IPC$</code><idx>IPC$</idx> share.</p>
+
+<p>There are two bits defined in the <code>OptionalSupport</code>
+bitfield:</p>
+
+<table colwidths="33* 67*">
+<thead>
+<tr dk:border="after">
+<th><p>Bit</p></th>
+<th><p>Meaning</p></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><p><line><code
+dk:type="small">SMB_SUPPORT_SEARCH_BITS</code></line>
+<line><code>0x0001</code></line></p></td> <td><p>The meaning of this
+bit is explained in the LANMAN2.1 documentation. Basically, it
+indicates that the server knows how to perform directory searches that
+filter out some entries based on specific file attributes - for
+example, the DOS<idx>DOS</idx> archive bit, the directory attribute,
+etc. This is old stuff and all current implementations should support
+it.  </p></td>
+</tr>
+<tr>
+<td><p><line><code dk:type="small">SMB_SHARE_IS_IN_DFS</code></line>
+<line><code>0x0002</code></line></p></td>
+<td><p>This bit, if set, indicates that the UNC name is in the
+<b>D</b>istributed <b>F</b>ile <b>S</b>ystem (DFS<idx>DFS</idx>) namespace. DFS is
+yet to be covered.
+</p></td>
+</tr>
+</tbody>
+</table>
+
+<p>There is a note in the SNIA doc<idx>SNIA<sidx>CIFS Technical
+Reference</sidx></idx> that states that some servers will leave out
+the <code>OptionalSupport</code> field even if the LANMAN2.1 or later
+dialect is negotiated. It does not say whether
+<code>SMB_SUPPORT_SEARCH_BITS</code> should be assumed in such cases.
+</p>
+
+</h1s>
+
+<h1>SMB Echo</h1><h1s>
+
+<p>Here's a toy we can play with.</p>
+
+<p><code>ECHO</code> is really as simple as it sounds. It's sort of
+the SMB equivalent of <code>ping</code>. The client sends a packet
+with a data block full of bytes, and the server echoes the block back.
+Simple.</p>
+
+<p>...but this is CIFS we're talking about.</p>
+
+<p>Although the <code>ECHO</code> itself is simple, there are many
+quirks to be found in existing implementations. We will dig into this
+just a tiny bit to give you a taste of the kinds of problems you are
+likely to encounter. Let's start with a quick look at the <code>ECHO
+REQUEST</code> structure:</p>
+
+<pre>SMB_PARAMETERS
+  {
+  WordCount  = 1
+  EchoCount  = &lt;In theory, anything from 0 to 65535&gt;
+  }
+SMB_DATA
+  {
+  ByteCount  = &lt;Number of data bytes to follow&gt;
+  Bytes      = &lt;Your favorite soup recipe?&gt;
+  }
+</pre>
+
+<p>The <code>EchoCount</code> field is a multiplier. It tells the
+server to respond <code>EchoCount</code> times. If
+<code>EchoCount</code> is zero, you shouldn't get any reply at all. If
+<code>EchoCount</code> is 9,999, then you are likely to get nine
+thousand, nine hundred, and ninety-nine replies. We say
+<em>likely</em> because of the wide variety of weirdity that can be
+seen in testing.</p>
+
+<p>One bit of weirdation is that all of the systems that were tested
+would respond to an <code>ECHO REQUEST</code> even if no <code>SESSION
+SETUP</code><idx>SESSION SETUP</idx> had been sent and no
+authentication performed. This behavior is, in fact, per design, but
+it means that any client that can talk to your server from anywhere
+can ask for <code>EchoCount</code> replies to a single request. (It
+would probably be safer for the server to send a
+<code>ERRSRV/ERRnosupport</code> error message in response to an
+un-authenticated <code>ECHO REQUEST</code>.)</p>
+
+<p>Other strangisms of note:</p>
+
+<ul>
+<li><p>In testing, <b>Windows 9x</b> systems returned an "Invalid TID"
+error unless the <code>TID</code><idx>TID</idx> was set to 0xFFFF. Also, these
+systems sent back at most a single reply, handling
+<code>EchoCount</code> as if it were a boolean.</p></li>
+
+<li><p><b>Windows NT&nbsp;4.0</b> and <b>Windows 2000</b> would try to send as many
+replies as specified in <code>EchoCount</code>. If the data block
+(<code>SMB_DATA.Bytes</code>) was very large (4K was tested) and the
+<code>EchoCount</code> very high (e.g., 20,000), the server would
+eventually give up and reset the connection.</p></li>
+
+<li><p><b>Samba</b><idx>Samba</idx> has an upper limit of 100
+repetitions. Also, Samba sends the replies fast enough that multiple
+replies will be batched together in a single TCP<idx>TCP</idx>
+packet. (That's normal behavior for a TCP stream.)</p></li>
+
+<li><p>The <b>Windows NT&nbsp;4.0 (Service Pack 6)</b> system used in testing
+failed to respond if the payload was greater than 4323 bytes.
+<b>Windows 2000</b> seems to have an upper limit of 16611 bytes,
+above which it resets the <dk:nobr>TCP connection.</dk:nobr> </p>
+
+<email> 
+<pre>   From: Conrad Minshall, Apple Computer<idx>Minshall, Conrad</idx><idx>NEGOTIATE PROTOCOL</idx>
+     To: Chris Hertel
+     Cc: Samba Technical Mailing List<idx>Samba<sidx>technical mailing list</sidx></idx>
+Subject: Re: Bizarre limit alert.
+
+I saw the same "packet drop" with an overlong WRITE_ANDX.  The<idx>WRITE_ANDX</idx> 
+maximum buffer size an NT SP6 claims on the NEGOTIATE response 
+is 0x1104 (4356). This limit is not on the data, the limit 
+includes the SMB header (32 bytes) and the SMB command. Based 
+upon the size of an ECHO command I'd expect you could send 
+4319 bytes, not 4323, so on this topic you'll have to have the 
+last word... sorry.</pre>
+</email>
+
+<p>No apologies. This is CIFS we're talking about.</p>
+</li>
+</ul>
+
+<p>The <code>ECHO</code> SMB may be one of those things that get
+coded up just because they're in the documentation and they seem easy. It
+also appears as though <code>ECHO</code> hasn't been tested much.
+Certainly, the more it is stressed, the more variation can be
+seen. There is, however, something to note in the last example in the
+above list and in the message from Conrad: Once you know what you're
+looking at, you will find common themes that appear and reappear
+across a given implementation. These common themes are derived from
+common internals, and they can provide many clues about the inner
+workings of <dk:nobr>the implementation.</dk:nobr></p>
+
+<p>Another fine point highlighted by our quick look at the
+<code>ECHO</code> SMB is that TCP is designed to carry
+<em>streams</em> of data - not discrete packets. This can be seen in
+the results of the tests against Samba, in which multiple replies were
+contained in a single TCP packet. At the other extreme, several TCP
+packets are needed to transfer a single <code>ECHO</code> if it has a
+very large data payload. As a result, a single read operation may or
+may not return one and only one complete SMB message.</p>
+
+<alert type="Oversimplification">
+
+<p>The <code>RecvTimeout()</code> function (provided way back in <ref
+refid="Listing2.1"/>) makes the assumption that one complete SMB
+message will be returned per call to the <code>recv()</code><idx>recv()</idx>
+function. That's a weak assumption. It works well enough for the
+simple testing we have done so far, but it is not sufficient for a
+real SMB implementation.</p>
+
+<p>A better version of <code>RecvTimeout()</code> would verify the
+received data length against the NBT
+<code>SESSION_MESSAGE.LENGTH</code> field value to ensure that only
+one message is read at a time, and that the complete message is read
+before it <dk:nobr>is returned.</dk:nobr></p>
+
+</alert>
+</h1s>
+
+<h1>Readin', Writin', and 'Rithmatic</h1><h1s>
+
+<p>Here is a quick run-down on some of the basic essentials of
+SMB.</p>
+
+<dl>
+<dt><code>OPEN_ANDX</code></dt>
+
+<dd><p>This SMB is discussed in examples given throughout the SNIA
+doc<idx>SNIA<sidx>CIFS Technical Reference</sidx></idx>, but there is
+no actual writeup given there. That's because it was labeled as
+"obsolescent" in the Leach/Naik CIFS draft. The
+<dk:nobr><code>NT_CREATE_ANDX</code></dk:nobr> SMB is now considered
+the more fashionable choice. Servers must still support the
+<code>OPEN_ANDX</code><idx>OPEN_ANDX</idx> SMB, however, and
+there are certainly clients that still send it (even under the
+NT&#160;LM&#160;0.12<idx>NT LM 0.12</idx> dialect).</p>
+
+<p>It's times like these that the earlier documentation comes in
+<dk:nobr>really handy.</dk:nobr></p>
+
+<p>The <code>OPEN_ANDX</code> SMB is used to gain access to a file for
+further processing (reading, writing, that sort of thing). The open
+file is identified by a <code>FID</code><idx>FID</idx> (<b>F</b>ile
+<b>ID</b>). The <code>FID</code>, of course, is returned by a
+successful <code>OPEN_ANDX</code> call.</p>
+</dd>
+
+<dt><code>READ_ANDX</code></dt>
+
+<dd><p>It seems fairly obvious. This one lets you read blocks of data
+from a file (or device) on the server. The
+<code>READ_ANDX</code><idx>READ_ANDX</idx> request supports 64-bit
+file offsets if the <code>OffsetHigh</code> field is present (if it is
+present, the <dk:nobr><code>WordCount</code></dk:nobr> will be
+12).</p>
+
+<p>An oddity of the <code>READ_ANDX</code> is the
+<code>MaxCountHigh</code> field, which is only used if the
+<code>CAP_LARGE_READX</code> capability has been
+set. <dk:nobr><code>MaxCountHigh</code></dk:nobr> is an unsigned long
+(four bytes) that is supposed to hold the upper 16 bits (two bytes) of
+the unsigned short (two byte) <code>MaxCount</code> field. Two
+problems with this:</p>
+
+<ol>
+<li><p>Why use a 32-bit field to hold 16 bits worth of data?</p></li>
+
+<li><p>Even with <code>CAP_LARGE_READX</code> set, the maximum SMB large read
+is 64K. That should fit into the <code>MaxCount</code> field with no
+need <dk:nobr>for <code>MaxCountHigh</code>.</dk:nobr></p></li>
+</ol>
+
+<p>Play with it and see what happens. Should be interesting.</p>
+</dd>
+
+<dt><code>WRITE_ANDX</code><idx>WRITE_ANDX</idx></dt>
+
+<dd><p>Allows writing to a file or device. This SMB can also be
+extended by two words to include an <code>OffsetHigh</code> field,
+thus providing 64-bit offsets. There is also a
+<code>DataLengthHigh</code> field that is comparable to the
+<dk:nobr><code>MaxCountHigh</code></dk:nobr> from the
+<code>READ_ANDX</code>. In this case, though, the
+<dk:nobr><code>DataLengthHigh</code></dk:nobr> field is given as an
+unsigned short. That's only two bytes, which makes more
+sense.</p></dd>
+
+<dt><code>SEEK_ANDX</code></dt>
+
+<dd><p>This one may be considered deprecated. Newer clients probably
+don't need to send the <code>SEEK_ANDX</code>, but servers may need to
+support it just <dk:nobr>in case.</dk:nobr></p>
+
+<email> 
+<pre>From: Charles Caldarale<idx>Caldarale, Charles</idx>
+  To: jCIFS Mailing List
+
+SMB_COM_SEEK is a useless SMB, since all of the read and write
+functions require a file relative address. It's not surprising 
+it wasn't used; it would have been a waste of network bandwidth 
+if it had been sent.
+
+- Chuck</pre>
+</email>
+
+<p>See also the SNIA doc's<idx>SNIA<sidx>CIFS Technical
+Reference</sidx></idx> comments regarding this SMB.</p>
+</dd>
+
+<dt><code>FLUSH</code></dt>
+
+<dd><p>The <code>SMB_COM_FLUSH</code> has nothing to do with plumbing. It
+is sent by the client to ask the server to write all data and metadata
+for an open file (specified by its <code>FID</code>) to disk.  If a
+<code>FID</code> value of <code>0xFFFF</code> is given, the server is being asked
+to flush all open files relative to the <code>TID</code><idx>TID</idx>.</p></dd>
+
+<dt><code>NT_CREATE_ANDX</code></dt>
+
+<dd><p>This SMB is used to open, create, or overwrite a file or
+directory. It offers a myriad of options for file attributes, file
+sharing, security, etc. As the "NT" in the name implies, the
+<code>NT_CREATE_ANDX</code> SMB is closely tied to the feature set
+offered by Windows NT filesystem calls. Here's where you start
+needing to know more about Windows itself. </p>
+
+<p>One problem with complex calls such as this is that the number of
+permutations gets to be very high, and it quickly becomes very
+difficult to test them all.<fn>I vaguely remember a presentation given
+by David Korn, author of the Korn Shell (ksh), regarding AT&amp;T's
+UWIN project. At the end of the presentation there was some discussion
+regarding the differences between standard Posix APIs and Win32
+APIs. It was pointed out that there were hundreds or possibly
+thousands of permutations of parameter values that could be passed to
+the Posix <code>open()</code> function. The permutations for the
+equivalent Win32 function, it was reported, was on the order of
+millions. How the heck do you test all those possibilities?</fn> There
+are various reports describing combinations of values that can cause a
+Windows NT client or server to go BSOD<idx>BSOD</idx> (<b>B</b>lue
+<b>S</b>creen <b>O</b>f <b>D</b>eath). Have fun with your testing.</p>
+
+<p>There is yet another version of this SMB known as the
+<code>NT_TRANSACT_CREATE</code>, which is implemented as a sub-command
+of the <code>SMB_COM_NT_TRANSACTION</code> SMB. It is used to apply
+Extended Attributes (EAs<idx>EAs</idx>) or Security Descriptors (SDs) to a file or
+directory.</p>
+</dd>
+
+<dt><code>CLOSE</code></dt>
+
+<dd><p>All good things must come to an end. Close the file, say
+goodnight, sing one more song, and get some rest.</p></dd>
+</dl>
+
+<p>Remember earlier when we talked about SMB messages as if we were
+dissecting some strange, new species of multi-legged critter? Well,
+we've moved beyond Entomology, Invertebrate Zoology, Taxonomy, and
+such. We're now studying really complex stuff like Sociology,
+Psychology, and Numismatics, and we get to put the little critters
+into Skinner boxes and see how they react to various stimuli. It's
+important research, and there are all sorts of interesting things to
+discover.</p>
+
+<p>Consider, for example, the <code>SMB_COM_COPY</code> command. It's
+supposed to allow you to copy a file from one location on the server
+to another location. That saves the client from having to read the
+data over the wire and write it back again. A good idea, eh?
+Unfortunately, no one seems to be able to get it to work - at least,
+not against Windows servers. There has been some limited success in
+the laboratory...</p>
+
+<email> 
+<pre>   From: Greg McCain<idx>McCain, Greg</idx>
+     To: Chris Hertel
+Subject: CIFS and SMB_COPY
+
+Chris,
+
+I found that smb_copy will in fact copy a file iff:
+ - the src file is in the root of the share
+ - you do not specify the full path to the file src and dest files
+in the smb_copy command. Instead, just specify the names of the
+files (this is out of spec.).
+
+The resulting destination file will be named like the source
+file, minus the first character. It will NOT be named as specified
+in the dest parameter. Hence "smb_copy wanda -&gt; fred" results in
+a second file "anda" in the root of the share.
+
+This works on the .NET server RC1 and Windows 2000 servers
+that I've tried. Hope it helps.</pre>
+</email>
+
+<p>SMB is an old protocol, and it has gotten sloppy over the years.
+As you work your way through the SMB messages, implementing first the
+easy ones and then the more difficult ones, keep this thought in mind:
+<em>It's not your fault.</em></p>
+
+<p>Say it to yourself now: "It's not my fault."</p>
+
+<p>Very good.</p>
+
+<p>That will prevent you from getting frustrated and doubting your own
+skill. It's really not your fault. </p>
+
+</h1s><h1>Transaction SMBs</h1><h1s>
+
+<p>We are going to blast through this, so you'd better get your
+running shoes on.</p>
+
+<p>The purpose of the Transaction
+SMBs<idx>SMB<sidx>Transaction</sidx></idx> is to carry specialized
+sub-protocols. Examples include the <b>R</b>emote
+<b>A</b>dministration <b>P</b>rotocol (RAP<idx>RAP</idx>) and
+Microsoft's<idx>Microsoft</idx> implementation of
+DCE/RPC<idx>DCE/RPC</idx> (MS-RPC<idx>MS-RPC</idx>). There are other,
+more esoteric <dk:nobr>sets of calls as well.</dk:nobr> We will play
+with some of them when we get to the <dk:nobr>Browse
+Service.<idx>Browse Service</idx></dk:nobr></p>
+
+<p>Think of these sub-protocols as sets of function calls that are
+stretched across the network. As suggested in <ref
+refid="Figure2.18"/>, a function call is made on the client side and
+the parameters and data are packed up and shoved across the
+network. The call is then completed at the remote end and the results
+(if any) are packed up and shoved back. In CIFS jargon, that's called
+a <em>transaction</em>.</p>
+
+<fig id="Figure2.18">
+<img dk:width="200" loc="SMB18"/>
+<caption>Remote Procedure Call via transaction</caption>
+
+<subcaption>
+<ul>
+<li><p>Software on the client calls the function <code>fn()</code>.</p></li>
+
+<li><p>The parameters and pass-by-reference data are packed into an
+SMB Transaction and sent to the server.</p></li>
+
+<li><p>The server processes the function call.</p></li>
+
+<li><p>If results are expected, the server packs the return value(s)
+and any pass-by-reference data into a reply transaction.</p></li>
+</ul>
+</subcaption>
+</fig>
+
+<p>Transactions are designed to be able to transfer more data than the
+limit imposed by the negotiated buffer size. They do so by
+fragmenting<idx>fragmentation</idx> the payload. The protocol for
+sending large <b>P</b>rotocol <b>D</b>ata <b>U</b>nits (PDUs) is
+described in a variety of documents, but here is a quick run-down:</p>
+
+<ol>
+<li><p>A <em>primary</em> Transaction SMB is sent. It includes the
+total expected size of the transaction (so that the server can prepare
+to receive the data). It also contains as much of the data as will fit
+in a single SMB message. If everything fits, skip to step 4.</p></li>
+
+<li><p>The server sends back an interim response. If the interim
+response contains an error code then the transaction will be
+aborted. Otherwise, it is a signal telling the client to continue. The
+<code>WORDCOUNT</code> and <code>BYTECOUNT</code> fields are both zero
+in this message (it's a disembodied header).</p></li>
+
+<li><p>The client sends as many <em>secondary</em> Transaction SMBs as
+necessary to complete the transaction request.</p></li>
+
+<li><p>The server executes the called function.</p></li>
+
+<li><p>The server sends as many response messages as necessary to
+return the results. In some cases the request does not generate
+results, and no response is required.</p></li>
+</ol>
+
+<p>There are three primary Transaction SMBs:</p>
+
+<pre>SMB_COM_TRANSACTION  == 0x25
+SMB_COM_TRANSACTION2 == 0x32
+SMB_COM_NT_TRANSACT  == 0xA0</pre>
+
+<p>Those are really long names, so folks on the various mailing lists
+tend to shorten them to "SMBtrans,<idx>SMBtrans</idx>"
+"Trans2<idx>Trans2</idx>," and "NTtrans,"<idx>NTtrans</idx>
+respectively. Each of these also has a matching secondary:</p>
+
+<pre>SMB_COM_TRANSACTION_SECONDARY  == 0x26
+SMB_COM_TRANSACTION2_SECONDARY == 0x33
+SMB_COM_NT_TRANSACT_SECONDARY  == 0xA1</pre>
+
+<p>There is very little difference between these three transaction
+types, except that the NTtrans SMB has 32-bit fields where the other
+two have 16-bit fields. That means that NTtrans can handle a lot more
+data (that is, much larger transactions). Besides that, the real
+difference between these three is the set of functions that are
+traditionally carried over each.</p>
+
+<p>The SNIA doc<idx>SNIA<sidx>CIFS Technical Reference</sidx></idx>
+and the Leach/Naik CIFS draft provide examples of transactions that
+use Trans2 and NTtrans. Calls that use SMBtrans are documented
+elsewhere. Places to look include Luke's book (<cite>DCE/RPC over
+SMB</cite>), the Leach/Naik Browser and RAP Internet Drafts, and the
+X/Open documentation (particularly <cite>IPC Mechanisms for
+SMB</cite>). These (as you already know) are listed in the References
+section. </p>
+
+<h2 id="SMB2.9.4.1">Mailslots and Named Pipes</h2><h2s>
+
+<p>Just to simplify things even further, SMBtrans<idx>SMBtrans</idx>
+supports yet another layer <dk:nobr>of abstraction.</dk:nobr></p>
+
+<p>Mailslots<idx>mailslot</idx> and Named Pipes are used to access
+specific sets of remote functions. For example, the "LANMAN" pipe
+(which is identified as <code>\PIPE\LANMAN</code>) is always used for
+RAP<idx>RAP</idx> calls.</p>
+
+<p>Named Pipes are two-way inter-process communications channels.
+Once opened, they can be read from or written to as if they were
+files. In contrast, Mailslots are used for one-way, connectionless
+communications.</p>
+
+<p>...and this is where something unexpected happens. Mailslot
+messages are sent using SMBs transported via the <em>NBT Datagram
+Service</em><idx>NBT<sidx>Datagram Service</sidx></idx>. You'll have
+to see it to believe it, but that is easily arranged. All you need to
+do is grab a packet capture of port 138<idx>138/UDP</idx> on an active
+LAN, one with a few local servers that announce themselves to the
+working Network Neighborhood.<idx>Network Neighborhood</idx> If you
+don't like to wait, reboot something. A Windows 9x system that offers
+shares will <dk:nobr>do nicely.</dk:nobr></p>
+
+<p>This topic will be revisited in <ref refid="Browsing"/>. If you
+want to do some extra-curricular reading, the X/Open <cite>IPC Mechanisms
+for SMB</cite> document <dk:nobr>is recommended.</dk:nobr></p>
+
+</h2s></h1s></chapter>
+</oim>

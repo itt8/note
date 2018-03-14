@@ -1,0 +1,1287 @@
+<?xml version="1.0" encoding="US-ASCII"?>
+<!DOCTYPE oim SYSTEM "oimxml.dtd" [
+  <!ENTITY nbsp  "&#160;">
+  <!ENTITY lsquo "&#8216;">
+  <!ENTITY rsquo "&#8217;">
+  <!ENTITY minus "&#8211;">
+  <!ENTITY mdash "&#8212;">
+  <!ENTITY times "&#xd7;">
+  <!ENTITY copy "&#xa9;">
+] >
+<oim xmlns:dk="http://www.kirsanov.com">
+<chapter id="SMB2.4">
+<chapopen><title>SMB in Its Natural Habitat</title>
+
+<epigraph dk:padding-top="60">
+<p>I never metaphor I couldn't mix.</p>
+<attribution>Common pun</attribution>
+</epigraph>
+</chapopen>
+
+<p>We have spent a lot of time and effort preparing for this
+expedition, and we are finally ready to venture into SMB
+territory.<idx>SMB</idx> It can be a treacherous journey, though, so
+before we push ahead we should re-check our equipment.</p>
+
+<dl>
+<dt><checkmark/>Test Server</dt>
+
+<dd>
+<p>If you are going to start testing, you have to have something at
+which to fling packets. When choosing a test server, keep in mind that
+SMB has grown and changed and evolved and adapted and mutated over the
+years. You want a server that can be configured to meet your testing
+needs. Samba<idx>Samba</idx>, of course, is highly configurable. If
+you know your way around the Windows Registry, you may have luck with
+those systems as well. In particular, you probably want to avoid
+strong password encryption during the initial stages. Handling
+authentication is a big chunk of work, and it is best to try and
+reduce the number of simultaneous problems to a manageable few.</p>
+
+<alert type="Repetitive Terminology Redundancy Notification">
+
+<p>The SMB server software running on a file server node is known as
+the "File Server Service,"<idx>SMB<sidx>Server Service</sidx></idx> or
+just "Server Service."</p>
+
+<p>When running on top of NBT, the Server Service always registers a
+NetBIOS name<idx>NetBIOS<sidx>name</sidx></idx> composed of the
+Machine Name and, of course, a suffix value<idx>suffix byte</idx> of
+<code>0x20</code>. The Machine Name is typically - but not necessarily
+- the same as the DNS host name.<idx>DNS</idx></p>
+</alert>
+</dd>
+
+<dt><checkmark/>Test Client</dt>
+
+<dd>
+<p>The next thing you will want is a packet flinger - that is, a
+working client. You need this for testing and to compare behavior when
+debugging your own client. Samba offers the <code>smbclient</code><idx>smbclient</idx>
+utility, and jCIFS<idx>jCIFS</idx> comes with a variety of example
+programs.  Windows systems all have SMB support built-in. That's quite
+a selection from which to choose.</p>
+</dd>
+
+<dt><checkmark/>Sniffer</dt>
+
+<dd>
+<p>Always your best friend. A good packet analyzer - one with a lot of
+built-in knowledge of SMB - will be your trusted guide through the <dk:nobr>SMB
+jungle.</dk:nobr></p>
+</dd>
+
+<dt><checkmark/>Documentation</dt>
+
+<dd>
+<p>When exploring NBT we relied upon RFC 1001 and RFC 1002 as if they
+were ancient maps, drawn on cracked and drying parchment, handed down
+to us by those who had gone before. In the wilds of SMB territory, we
+will count on the <cite>SNIA CIFS Technical
+Reference</cite><idx>SNIA<sidx>CIFS Technical Reference</sidx></idx>
+as our primary resource. The old X/Open SMB specification<idx>X/Open
+SMB Documentation</idx> and the SMB/CIFS documentation available from
+Microsoft's<idx>Microsoft</idx> FTP server will also come in
+handy. For the sake of efficiency, from here on out we will be a bit
+less formal and refer to the SNIA doc as "the SNIA doc," and the
+X/Open doc as "the X/Open doc."</p>
+</dd>
+</dl>
+
+<alert type="Yet Another Tasty Terminology Treat">
+
+<p>As we have explained, "SMB" is the <b>S</b>erver <b>M</b>essage
+<b>B</b>lock protocol. It is also true that "<em>an</em> SMB" is a
+message. In order to implement SMB, one must learn to send and <dk:nobr>receive
+SMBs.</dk:nobr></p>
+
+<p>Got that?</p>
+</alert>
+
+<p>Keep in mind that the goal of our first trip into the wilds of
+SMB-land is to become familiar with the terrain and to study SMBs in
+their natural habitat, so we can learn about their anatomy and
+behavior. We are not ready yet for a detailed study of SMB innards.
+That will come later. </p>
+
+<h1 id="SMB2.4.1">Our Very First Live SMBs</h1><h1s>
+
+<p>We need to capture a few SMBs to see what they look like up
+close. That means it's time to take a look at the wire and see what's
+there to be seen. Fire up your protocol analyzer, and then your SMB
+client. If you can configure your test server to allow anonymous
+connections (no username, no password) it will simplify things at this
+stage. If you can't, then things won't run quite as they are shown
+below. Don't worry, it will be close enough.</p>
+
+<p>For this example, we will use the
+<code>Exists.java</code><idx>Exists.java</idx> program that comes with
+jCIFS<idx>jCIFS</idx>. It is a very simple utility that does nothing
+more than verify the existence of the object specified by the given
+SMB URL string, like so:</p>
+
+<screenshot type="unix">$ java Exists smb://smedley/home
+smb://smedley/home exists
+$</screenshot>
+
+<p>The above shows that we were able to access the <code>HOME</code>
+share on node <code>SMEDLEY</code>. A similar test can be performed
+using Samba's<idx>Samba</idx> <code>smbclient</code><idx>smbclient</idx>, or with the
+<code>NET USE</code> command under Windows:<fn>When working with the
+<code>NET USE</code> command, it is important to remember to close the
+connection to the server using the <code>/d</code> command-line
+option. Type <code>NET HELP</code> at the DOS
+prompt<idx>DOS<sidx>prompt</sidx></idx> for more information.</fn></p>
+
+<screenshot type="dos">C:\&gt; net use \\smedley\home
+The command was completed successfully.
+
+C:\&gt; net use /d \\smedley\home
+The command was completed successfully.
+
+C:\&gt;</screenshot>
+
+<p>These simple commands will generate the packets we want to capture
+and study. Stop your sniffer and take a look at the trace.  You should
+see a chain of events similar to the following:</p>
+
+<pre dk:keep="together">No. Source   Destination      Protocol Info
+--- -------  ---------------  -------- -----------------------------
+  1 Marika   255.255.255.255  NBNS     Name query
+  2 Smedley  Marika           NBNS     Name query response
+  3 Marika   Smedley          TCP      34102 &gt; netbios-ssn [SYN]
+  4 Smedley  Marika           TCP      netbios-ssn &gt; 34102 [SYN, ACK]
+  5 Marika   Smedley          TCP      34102 &gt; netbios-ssn [ACK]
+  6 Marika   Smedley          NBSS     Session request
+  7 Smedley  Marika           NBSS     Positive session response
+  8 Marika   Smedley          TCP      34102 &gt; netbios-ssn [ACK] 
+<b>  9 Marika   Smedley          SMB      Negotiate Protocol Request
+ 10 Smedley  Marika           SMB      Negotiate Protocol Response</b>
+ 11 Marika   Smedley          SMB      Session Setup AndX Request
+ 12 Smedley  Marika           SMB      Session Setup AndX Response
+ 13 Marika   Smedley          TCP      34102 &gt; netbios-ssn [FIN, ACK]
+ 14 Smedley  Marika           TCP      netbios-ssn &gt; 34102 [FIN, ACK]
+ 15 Marika   Smedley          TCP      34102 &gt; netbios-ssn [ACK]</pre>
+
+<p>The above is edited output from an Ethereal<idx>Ethereal</idx>
+capture.<fn>The original was much more detailed and interesting. It
+had to be edited so that it would fit on the page, and because all
+those details can be distracting.</fn> The packets were generated
+using the jCIFS<idx>jCIFS</idx> <code>Exists</code> utility, as
+described above. In this case jCIFS was talking to an old Windows 95
+system, but any SMB server should produce the same or similar
+results.</p>
+
+<p>The trace is reasonably simple. The first thing that node
+<code>MARIKA</code><idx>Marika</idx> does is send a broadcast NBT Name
+query<idx>name query</idx> to find node <code>SMEDLEY</code>, and
+<code>SMEDLEY</code> responds. Packets 3, 4, and 5 show the TCP<idx>TCP</idx>
+session being created. (Note that <code>netbios-ssn</code> is the
+descriptive name given to port 139.<idx>139/TCP</idx>) Packets 6 and 7
+are the NBT <code>SESSION REQUEST</code>/<code>SESSION RESPONSE</code>
+exchange, and packet 8 is an <code>ACK</code> message,<idx>ACK</idx>
+which is just TCP taking care of its business.</p>
+
+<p>Packets 9 and 10 are what we want. These are our first SMBs. </p>
+
+</h1s><h1 id="SMB2.4.2">SMB Message Structure</h1><h1s>
+
+<p><ref refid="Figure2.3"/> provides an overview of SMB gross
+anatomy. It shows that SMBs are composed of three basic parts:</p>
+
+<ul>
+<li><p>the Header,</p></li>
+<li><p>the Parameter Block, and</p></li>
+<li><p>the Data Block.</p></li>
+</ul>
+
+<p>Either or both of the latter two segments may be vestigial (size
+== 0) in some specimens.</p>
+
+<fig id="Figure2.3">
+<img dk:width="193" loc="SMB03"/>
+<caption>SMB gross anatomy</caption>
+<subcaption><p>SMB messages are composed of three basic parts:
+the header, the parameters, and the data.</p></subcaption>
+</fig>
+
+<h2 id="SMB2.4.2.1">SMB Message Header</h2><h2s>
+
+<p>Starting at the top, the SMB header is arranged like so:</p>
+
+<table colwidths="3.125* 3.125* 3.125* 3.125* 3.125* 3.125* 3.125* 3.125* 3.125* 3.125* 3.125* 3.125* 3.125* 3.125* 3.125* 3.125* 3.125* 3.125* 3.125* 3.125* 3.125* 3.125* 3.125* 3.125* 3.125* 3.125* 3.125* 3.125* 3.125* 3.125* 3.125* 3.125*" dk:type="centered" dk:borders="all">
+<tbody>
+<tr dk:border="after" dk:display-align="after">
+<td dk:border="right"><p><code>0</code></p></td>
+<td dk:border="right"><p><code>1</code></p></td>
+<td dk:border="right"><p><code>2</code></p></td>
+<td dk:border="right"><p><code>3</code></p></td>
+<td dk:border="right"><p><code>4</code></p></td>
+<td dk:border="right"><p><code>5</code></p></td>
+<td dk:border="right"><p><code>6</code></p></td>
+<td dk:border="right"><p><code>7</code></p></td>
+<td dk:border="right"><p><code>8</code></p></td>
+<td dk:border="right"><p><code>9</code></p></td>
+<td dk:border="right"><p><line><code>1</code></line>
+<line><code>0</code></line></p></td>
+<td dk:border="right"><p><line><code>1</code></line>
+<line><code>1</code></line></p></td>
+<td dk:border="right"><p><line><code>1</code></line>
+<line><code>2</code></line></p></td>
+<td dk:border="right"><p><line><code>1</code></line>
+<line><code>3</code></line></p></td>
+<td dk:border="right"><p><line><code>1</code></line>
+<line><code>4</code></line></p></td>
+<td dk:border="right"><p><line><code>1</code></line>
+<line><code>5</code></line></p></td>
+<td dk:border="right"><p><line><code>1</code></line>
+<line><code>6</code></line></p></td>
+<td dk:border="right"><p><line><code>1</code></line>
+<line><code>7</code></line></p></td>
+<td dk:border="right"><p><line><code>1</code></line>
+<line><code>8</code></line></p></td>
+<td dk:border="right"><p><line><code>1</code></line>
+<line><code>9</code></line></p></td>
+<td dk:border="right"><p><line><code>2</code></line>
+<line><code>0</code></line></p></td>
+<td dk:border="right"><p><line><code>2</code></line>
+<line><code>1</code></line></p></td>
+<td dk:border="right"><p><line><code>2</code></line>
+<line><code>2</code></line></p></td>
+<td dk:border="right"><p><line><code>2</code></line>
+<line><code>3</code></line></p></td>
+<td dk:border="right"><p><line><code>2</code></line>
+<line><code>4</code></line></p></td>
+<td dk:border="right"><p><line><code>2</code></line>
+<line><code>5</code></line></p></td>
+<td dk:border="right"><p><line><code>2</code></line>
+<line><code>6</code></line></p></td>
+<td dk:border="right"><p><line><code>2</code></line>
+<line><code>7</code></line></p></td>
+<td dk:border="right"><p><line><code>2</code></line>
+<line><code>8</code></line></p></td>
+<td dk:border="right"><p><line><code>2</code></line>
+<line><code>9</code></line></p></td>
+<td dk:border="right"><p><line><code>3</code></line>
+<line><code>0</code></line></p></td>
+<td><p><line><code>3</code></line>
+<line><code>1</code></line></p></td>
+</tr>
+<tr dk:border="after">
+<td colspan="8" dk:border="right"><p><code>0xff</code></p></td>
+<td colspan="8" dk:border="right"><p><code>'S'</code></p></td>
+<td colspan="8" dk:border="right"><p><code>'M'</code></p></td>
+<td colspan="8"><p><code>'B'</code></p></td>
+</tr>
+<tr dk:border="after">
+<td colspan="8" dk:border="right"><p><code>COMMAND</code></p></td>
+<td colspan="24"><p><code>STATUS...</code></p></td>
+</tr>
+<tr dk:border="after">
+<td colspan="8" dk:border="right"><p><code>...STATUS</code></p></td>
+<td colspan="8" dk:border="right"><p><code>FLAGS</code></p></td>
+<td colspan="16"><p><code>FLAGS2</code></p></td>
+</tr>
+<tr dk:border="after">
+<td colspan="32"><p>
+<line><code>EXTRA</code></line>
+<line><code>...</code></line>
+<line><code>...</code></line>
+</p></td>
+</tr>
+<tr dk:border="after">
+<td colspan="16" dk:border="right"><p><code>TID</code><idx>TID</idx></p></td>
+<td colspan="16"><p><code>PID</code><idx>PID</idx></p></td>
+</tr>
+<tr>
+<td colspan="16" dk:border="right"><p><code>UID</code><idx>UID</idx></p></td>
+<td colspan="16"><p><code>MID</code><idx>MID</idx></p></td>
+</tr>
+</tbody></table>
+
+<p>We can also dissect the header using the simple syntax presented
+<dk:nobr>previously:</dk:nobr></p>
+
+<pre>SMB_HEADER
+  {
+  PROTOCOL  = "\xffSMB"<idx>\xffSMB</idx>
+  COMMAND   = &lt;SMB Command code (one byte)&gt;
+  STATUS    = &lt;Status code&gt;
+  FLAGS     = &lt;Old flags&gt;
+  FLAGS2    = &lt;New flags&gt;
+  EXTRA     = &lt;Sometimes used for additional data&gt;
+  TID       = &lt;Tree ID&gt;
+  PID       = &lt;Process ID&gt;
+  UID       = &lt;User ID&gt;
+  MID       = &lt;Multiplex ID&gt;
+  }</pre>
+
+<p>We now have a pair of perspectives on the header structure. Time
+for some good, old-fashioned descriptive text.</p>
+
+<dl>
+<dt>The <code>PROTOCOL</code> and <code>COMMAND</code> fields</dt>
+
+<dd><p>The SMB header starts off easily enough. The first four bytes
+are the protocol identifier string, which always has the same value,
+<dk:nobr>"<code>\xffSMB</code>".</dk:nobr> It's not particularly
+clear<fn>...to me.</fn> why this is included in the SMBs but there it
+is, and it's in all of them.</p>
+
+<p>The next byte is the <code>COMMAND</code> field, which tells us
+what kind of SMB we are looking at. In the <code>NEGOTIATE
+PROTOCOL</code><idx>NEGOTIATE PROTOCOL</idx> messages captured above,
+the <code>COMMAND</code> field has a value of <code>0x72</code> (aka
+<code>SMB_COM_NEGOTIATE</code>). The SNIA doc<idx>SNIA<sidx>CIFS
+Technical Reference</sidx></idx> has a list of the available command
+codes. That list is probably complete, but this is SMB we are talking
+about, so you never know...</p>
+</dd>
+
+<dt>The <code>STATUS</code> field</dt>
+
+<dd><p>Now things start to get surreally interesting. </p>
+
+<p>DOS and OS/2<idx>OS/2</idx> use 16-bit error
+codes,<idx>DOS<sidx>error codes</sidx></idx> grouped into classes. To
+accommodate these codes, the <code>STATUS</code> field is subdivided
+like so:</p>
+
+<table colwidths="3.125* 3.125* 3.125* 3.125* 3.125* 3.125* 3.125* 3.125* 3.125* 3.125* 3.125* 3.125* 3.125* 3.125* 3.125* 3.125* 3.125* 3.125* 3.125* 3.125* 3.125* 3.125* 3.125* 3.125* 3.125* 3.125* 3.125* 3.125* 3.125* 3.125* 3.125* 3.125*" dk:type="centered" dk:borders="all">
+<tbody>
+<tr dk:border="after" dk:display-align="after">
+<td dk:border="right"><p><code>0</code></p></td>
+<td dk:border="right"><p><code>1</code></p></td>
+<td dk:border="right"><p><code>2</code></p></td>
+<td dk:border="right"><p><code>3</code></p></td>
+<td dk:border="right"><p><code>4</code></p></td>
+<td dk:border="right"><p><code>5</code></p></td>
+<td dk:border="right"><p><code>6</code></p></td>
+<td dk:border="right"><p><code>7</code></p></td>
+<td dk:border="right"><p><code>8</code></p></td>
+<td dk:border="right"><p><code>9</code></p></td>
+<td dk:border="right"><p><line><code>1</code></line>
+<line><code>0</code></line></p></td>
+<td dk:border="right"><p><line><code>1</code></line>
+<line><code>1</code></line></p></td>
+<td dk:border="right"><p><line><code>1</code></line>
+<line><code>2</code></line></p></td>
+<td dk:border="right"><p><line><code>1</code></line>
+<line><code>3</code></line></p></td>
+<td dk:border="right"><p><line><code>1</code></line>
+<line><code>4</code></line></p></td>
+<td dk:border="right"><p><line><code>1</code></line>
+<line><code>5</code></line></p></td>
+<td dk:border="right"><p><line><code>1</code></line>
+<line><code>6</code></line></p></td>
+<td dk:border="right"><p><line><code>1</code></line>
+<line><code>7</code></line></p></td>
+<td dk:border="right"><p><line><code>1</code></line>
+<line><code>8</code></line></p></td>
+<td dk:border="right"><p><line><code>1</code></line>
+<line><code>9</code></line></p></td>
+<td dk:border="right"><p><line><code>2</code></line>
+<line><code>0</code></line></p></td>
+<td dk:border="right"><p><line><code>2</code></line>
+<line><code>1</code></line></p></td>
+<td dk:border="right"><p><line><code>2</code></line>
+<line><code>2</code></line></p></td>
+<td dk:border="right"><p><line><code>2</code></line>
+<line><code>3</code></line></p></td>
+<td dk:border="right"><p><line><code>2</code></line>
+<line><code>4</code></line></p></td>
+<td dk:border="right"><p><line><code>2</code></line>
+<line><code>5</code></line></p></td>
+<td dk:border="right"><p><line><code>2</code></line>
+<line><code>6</code></line></p></td>
+<td dk:border="right"><p><line><code>2</code></line>
+<line><code>7</code></line></p></td>
+<td dk:border="right"><p><line><code>2</code></line>
+<line><code>8</code></line></p></td>
+<td dk:border="right"><p><line><code>2</code></line>
+<line><code>9</code></line></p></td>
+<td dk:border="right"><p><line><code>3</code></line>
+<line><code>0</code></line></p></td>
+<td><p><line><code>3</code></line>
+<line><code>1</code></line></p></td>
+</tr>
+<tr>
+<td colspan="8" dk:border="right"><p><code>ErrorClass</code></p></td>
+<td colspan="8" dk:border="right"><p>&lt;reserved&gt;</p></td>
+<td colspan="16"><p><code>ErrorCode</code></p></td>
+</tr>
+</tbody></table>
+
+<p>Windows NT introduced a new set of 32-bit error codes, known as
+NT_STATUS<idx>NT_STATUS</idx> codes. These use the entire status field to hold the
+<code>NT_Status</code> value:</p>
+
+<table colwidths="3.125* 3.125* 3.125* 3.125* 3.125* 3.125* 3.125* 3.125* 3.125* 3.125* 3.125* 3.125* 3.125* 3.125* 3.125* 3.125* 3.125* 3.125* 3.125* 3.125* 3.125* 3.125* 3.125* 3.125* 3.125* 3.125* 3.125* 3.125* 3.125* 3.125* 3.125* 3.125*" dk:type="centered" dk:borders="all">
+<tbody>
+<tr dk:border="after" dk:display-align="after">
+<td dk:border="right"><p><code>0</code></p></td>
+<td dk:border="right"><p><code>1</code></p></td>
+<td dk:border="right"><p><code>2</code></p></td>
+<td dk:border="right"><p><code>3</code></p></td>
+<td dk:border="right"><p><code>4</code></p></td>
+<td dk:border="right"><p><code>5</code></p></td>
+<td dk:border="right"><p><code>6</code></p></td>
+<td dk:border="right"><p><code>7</code></p></td>
+<td dk:border="right"><p><code>8</code></p></td>
+<td dk:border="right"><p><code>9</code></p></td>
+<td dk:border="right"><p><line><code>1</code></line>
+<line><code>0</code></line></p></td>
+<td dk:border="right"><p><line><code>1</code></line>
+<line><code>1</code></line></p></td>
+<td dk:border="right"><p><line><code>1</code></line>
+<line><code>2</code></line></p></td>
+<td dk:border="right"><p><line><code>1</code></line>
+<line><code>3</code></line></p></td>
+<td dk:border="right"><p><line><code>1</code></line>
+<line><code>4</code></line></p></td>
+<td dk:border="right"><p><line><code>1</code></line>
+<line><code>5</code></line></p></td>
+<td dk:border="right"><p><line><code>1</code></line>
+<line><code>6</code></line></p></td>
+<td dk:border="right"><p><line><code>1</code></line>
+<line><code>7</code></line></p></td>
+<td dk:border="right"><p><line><code>1</code></line>
+<line><code>8</code></line></p></td>
+<td dk:border="right"><p><line><code>1</code></line>
+<line><code>9</code></line></p></td>
+<td dk:border="right"><p><line><code>2</code></line>
+<line><code>0</code></line></p></td>
+<td dk:border="right"><p><line><code>2</code></line>
+<line><code>1</code></line></p></td>
+<td dk:border="right"><p><line><code>2</code></line>
+<line><code>2</code></line></p></td>
+<td dk:border="right"><p><line><code>2</code></line>
+<line><code>3</code></line></p></td>
+<td dk:border="right"><p><line><code>2</code></line>
+<line><code>4</code></line></p></td>
+<td dk:border="right"><p><line><code>2</code></line>
+<line><code>5</code></line></p></td>
+<td dk:border="right"><p><line><code>2</code></line>
+<line><code>6</code></line></p></td>
+<td dk:border="right"><p><line><code>2</code></line>
+<line><code>7</code></line></p></td>
+<td dk:border="right"><p><line><code>2</code></line>
+<line><code>8</code></line></p></td>
+<td dk:border="right"><p><line><code>2</code></line>
+<line><code>9</code></line></p></td>
+<td dk:border="right"><p><line><code>3</code></line>
+<line><code>0</code></line></p></td>
+<td><p><line><code>3</code></line>
+<line><code>1</code></line></p></td>
+</tr>
+<tr>
+<td colspan="32"><p><code>NT_Status</code></p></td>
+</tr>
+</tbody></table>
+
+<p>With two error code formats from which to choose, the client
+and server must confer to decide which set will be used. How that
+is done will be explained later on. Error code handling is a
+large-sized topic with extra sauce.</p></dd>
+
+<dt><code>FLAGS</code> and <code>FLAGS2</code><idx>FLAGS</idx><idx>FLAGS2</idx></dt>
+
+<dd>
+<p>Look around the Web for a copy of a document called
+<code>COREP.TXT</code><idx>COREP.TXT</idx>.<fn>The first place to look
+is Microsoft's CIFS FTP site:
+<url>ftp://ftp.microsoft.com/<dk:br/>developr/drg/CIFS/</url>. The
+<code>COREP.TXT</code> file is formatted for printing on an old-style
+dot-matrix printer, which makes it look a little goofy in places
+(e.g. bold font is accomplished by typing a character, then
+backspacing, then re-typing the same character). The same content is
+available in an alternate format in the file
+<code>SMB-CORE.PS</code>. See the References section.</fn> This is
+probably the earliest SMB documentation that is also easy to find.  In
+<code>COREP.TXT</code>, you can see that the original SMB header
+layout reserved fifteen bytes following the error code field. Those 15
+bytes have, over time, been carved up for a variety of uses.</p>
+
+<p>The first formerly-reserved byte is now known as the
+<code>FLAGS</code> field. The bits of the <code>FLAGS</code> field are
+used to modify the interpretation of the SMB. For example, the
+highest-order bit is used to indicate whether the SMB is a request (<code>0</code>)
+or a response (<code>1</code>).</p>
+
+<p>Following the <code>FLAGS</code> field is the two-byte
+<code>FLAGS2</code> field. This set of bits is used to indicate the
+use of newer features, such as the <dk:nobr>32-bit</dk:nobr> NT_STATUS
+error codes.</p>
+</dd>
+
+<dt>The <code>EXTRA</code> field</dt>
+
+<dd><p>The <code>EXTRA</code> field takes up most of the remaining
+formerly-reserved bytes. It contains two subfields, as shown below:</p>
+
+<table colwidths="3.125* 3.125* 3.125* 3.125* 3.125* 3.125* 3.125* 3.125* 3.125* 3.125* 3.125* 3.125* 3.125* 3.125* 3.125* 3.125* 3.125* 3.125* 3.125* 3.125* 3.125* 3.125* 3.125* 3.125* 3.125* 3.125* 3.125* 3.125* 3.125* 3.125* 3.125* 3.125*" dk:type="centered" dk:borders="all">
+<tbody>
+<tr dk:border="after" dk:display-align="after">
+<td dk:border="right"><p><code>0</code></p></td>
+<td dk:border="right"><p><code>1</code></p></td>
+<td dk:border="right"><p><code>2</code></p></td>
+<td dk:border="right"><p><code>3</code></p></td>
+<td dk:border="right"><p><code>4</code></p></td>
+<td dk:border="right"><p><code>5</code></p></td>
+<td dk:border="right"><p><code>6</code></p></td>
+<td dk:border="right"><p><code>7</code></p></td>
+<td dk:border="right"><p><code>8</code></p></td>
+<td dk:border="right"><p><code>9</code></p></td>
+<td dk:border="right"><p><line><code>1</code></line>
+<line><code>0</code></line></p></td>
+<td dk:border="right"><p><line><code>1</code></line>
+<line><code>1</code></line></p></td>
+<td dk:border="right"><p><line><code>1</code></line>
+<line><code>2</code></line></p></td>
+<td dk:border="right"><p><line><code>1</code></line>
+<line><code>3</code></line></p></td>
+<td dk:border="right"><p><line><code>1</code></line>
+<line><code>4</code></line></p></td>
+<td dk:border="right"><p><line><code>1</code></line>
+<line><code>5</code></line></p></td>
+<td dk:border="right"><p><line><code>1</code></line>
+<line><code>6</code></line></p></td>
+<td dk:border="right"><p><line><code>1</code></line>
+<line><code>7</code></line></p></td>
+<td dk:border="right"><p><line><code>1</code></line>
+<line><code>8</code></line></p></td>
+<td dk:border="right"><p><line><code>1</code></line>
+<line><code>9</code></line></p></td>
+<td dk:border="right"><p><line><code>2</code></line>
+<line><code>0</code></line></p></td>
+<td dk:border="right"><p><line><code>2</code></line>
+<line><code>1</code></line></p></td>
+<td dk:border="right"><p><line><code>2</code></line>
+<line><code>2</code></line></p></td>
+<td dk:border="right"><p><line><code>2</code></line>
+<line><code>3</code></line></p></td>
+<td dk:border="right"><p><line><code>2</code></line>
+<line><code>4</code></line></p></td>
+<td dk:border="right"><p><line><code>2</code></line>
+<line><code>5</code></line></p></td>
+<td dk:border="right"><p><line><code>2</code></line>
+<line><code>6</code></line></p></td>
+<td dk:border="right"><p><line><code>2</code></line>
+<line><code>7</code></line></p></td>
+<td dk:border="right"><p><line><code>2</code></line>
+<line><code>8</code></line></p></td>
+<td dk:border="right"><p><line><code>2</code></line>
+<line><code>9</code></line></p></td>
+<td dk:border="right"><p><line><code>3</code></line>
+<line><code>0</code></line></p></td>
+<td><p><line><code>3</code></line>
+<line><code>1</code></line></p></td>
+</tr>
+<tr dk:border="after">
+<td dk:border="right" colspan="16"><p><code>PidHigh</code></p></td>
+<td colspan="16"><p><code>Signature...</code></p></td>
+</tr>
+<tr dk:border="after">
+<td colspan="32"><p><code>...Signature...</code></p></td>
+</tr>
+<tr>
+<td dk:border="right" colspan="16"><p><code>...Signature</code></p></td>
+<td colspan="16"><p>&lt;unused&gt;</p></td>
+</tr>
+</tbody></table>
+
+<p>The <code>PidHigh</code> subfield is used to accommodate systems
+that have 32-bit Process IDs. The original SMB header format only had
+room for 16-bit PIDs (in the <code>PID</code> field, described further
+on).</p>
+
+<p>The 8-byte <code>Signature</code> subfield is for SMB message
+signing, which uses cryptography to protect against a variety of
+attacks that might be tried by badguys hoping to gain unauthorized
+access to SMB shares.</p>
+
+<p>When not in use, these fields must be filled with zeros.</p>
+</dd>
+
+<dt><code>TID</code>, <code>PID</code>, <code>UID</code>, and
+<code>MID</code></dt>
+
+<dd>
+<dl>
+<dt><code>TID</code><idx>TID</idx></dt>
+
+<dd><p>The "Tree ID."  In SMB, a share name typically represents a
+directory or subdirectory tree on the server. The SMB used to open a
+share is called a "Tree Connect" because it allows the client to
+connect to the shared [sub]directory tree. That's where the name comes
+from.  The <code>TID</code> field is used to identify connections to
+shares once they have been established.</p></dd>
+
+<dt><code>PID</code><idx>PID</idx></dt>
+
+<dd><p>The "Process ID."  This value is set by the client, and is
+intended as an identifier for the process sending the SMB request. The
+most important thing to note regarding the <code>PID</code> is that
+file locking and access modes are maintained relative to the value in
+this field.</p>
+
+<p>The <code>PID</code> is 16 bits wide, but it can be extended to
+32 bits using the <code>EXTRA.PidHigh</code> field described earlier.</p></dd>
+
+<dt><code>UID</code><idx>UID</idx></dt>
+
+<dd><p>The "User ID." This is also known as a <code>VUID</code>
+(<b>V</b>irtual <b>U</b>ser <b>ID</b>). It is assigned by the server
+after the user has authenticated and is valid until the user logs
+off. It does not need to be the user's actual User ID on the server
+system. Think of it as a session token assigned to a successful logon.</p></dd>
+
+<dt><code>MID</code><idx>MID</idx></dt>
+
+<dd><p>The "Multiplex ID."  This is used by the client to keep track
+of multiple outstanding requests. The server must echo back the
+<code>MID</code> and the <code>PID</code> provided in the client
+request. The client can use those values to make sure that the reply
+is matched up to the <dk:nobr>correct request.</dk:nobr></p>
+</dd></dl>
+
+<p>The <code>TID</code> and [<code>V</code>]<code>UID</code> are
+assigned and managed by the server, while the <code>PID</code> and
+<code>MID</code> are assigned by the client. It is important to note
+that the values in these fields do not necessarily have any meaning
+outside of the SMB connection. The <code>PID</code>, for example, does
+not need to be the actual ID of the client process. The client and
+server assign values to these fields in order to keep track of
+context, and that's all.</p>
+</dd>
+</dl>
+
+</h2s><h2>SMB Message Parameters</h2><h2s>
+
+<p>In the middle of the SMB message are two fields labeled
+<code>WordCount</code> and <code>Words[]</code>. For our purposes, we
+will identify these two fields as being the
+<code>SMB_PARAMETERS</code> block, which looks like this:</p>
+
+<table colwidths="4.165* 4.165* 4.165* 4.165* 4.165* 4.165* 4.165* 4.165* 4.165* 4.165* 4.165* 4.165* 4.16* 4.16* 4.16* 4.16* 4.16* 4.16* 4.16* 4.16* 4.16* 4.16* 4.16* 4.16*" dk:type="centered" dk:borders="all">
+<tbody>
+<tr dk:border="after" dk:display-align="after">
+<td dk:border="right"><p><code>0</code></p></td>
+<td dk:border="right"><p><code>1</code></p></td>
+<td dk:border="right"><p><code>2</code></p></td>
+<td dk:border="right"><p><code>3</code></p></td>
+<td dk:border="right"><p><code>4</code></p></td>
+<td dk:border="right"><p><code>5</code></p></td>
+<td dk:border="right"><p><code>6</code></p></td>
+<td dk:border="right"><p><code>7</code></p></td>
+<td dk:border="right"><p><code>8</code></p></td>
+<td dk:border="right"><p><code>9</code></p></td>
+<td dk:border="right"><p><line><code>1</code></line>
+<line><code>0</code></line></p></td>
+<td dk:border="right"><p><line><code>1</code></line>
+<line><code>1</code></line></p></td>
+<td dk:border="right"><p><line><code>1</code></line>
+<line><code>2</code></line></p></td>
+<td dk:border="right"><p><line><code>1</code></line>
+<line><code>3</code></line></p></td>
+<td dk:border="right"><p><line><code>1</code></line>
+<line><code>4</code></line></p></td>
+<td dk:border="right"><p><line><code>1</code></line>
+<line><code>5</code></line></p></td>
+<td dk:border="right"><p><line><code>1</code></line>
+<line><code>6</code></line></p></td>
+<td dk:border="right"><p><line><code>1</code></line>
+<line><code>7</code></line></p></td>
+<td dk:border="right"><p><line><code>1</code></line>
+<line><code>8</code></line></p></td>
+<td dk:border="right"><p><line><code>1</code></line>
+<line><code>9</code></line></p></td>
+<td dk:border="right"><p><line><code>2</code></line>
+<line><code>0</code></line></p></td>
+<td dk:border="right"><p><code>.</code></p></td>
+<td dk:border="right"><p><code>.</code></p></td>
+<td><p><code>.</code></p></td>
+</tr>
+<tr>
+<td dk:border="right" colspan="8"><p><code>WordCount</code></p></td>
+<td colspan="16"><p><code>Words...</code></p></td>
+</tr>
+</tbody></table>
+
+<pre>SMB_PARAMETERS
+  {
+  WordCount         = &lt;Number of words in the Words array&gt;
+  Words[WordCount]  = &lt;SMB parameters; varies with SMB command&gt;
+  }</pre>
+
+<p>The <code>Words</code> field is simply a block of data that is
+2&#160;&times;&#160;<code>WordCount</code> bytes in length. Perhaps at
+one time the intention was that it would contain only two-byte values
+(a quick look at <code>COREP.TXT</code><idx>COREP.TXT</idx> suggests
+that this is the case). In practice, all sorts of stuff is thrown in
+there.</p>
+
+<p>Each SMB message type (species?) has a different record structure
+that is carried in the <code>Words</code> block. Think of that
+structure as representing the parameters passed to a function (the
+function identified by the SMB command code listed in the
+header).</p>
+
+</h2s><h2>SMB Message Data</h2><h2s>
+
+<p>Following the <code>SMB_PARAMETERS</code> is another block of data,
+the content of which also varies in structure on a per-SMB basis:</p>
+
+<table colwidths="4.165* 4.165* 4.165* 4.165* 4.165* 4.165* 4.165* 4.165* 4.165* 4.165* 4.165* 4.165* 4.16* 4.16* 4.16* 4.16* 4.16* 4.16* 4.16* 4.16* 4.16* 4.16* 4.16* 4.16*" dk:type="centered" dk:borders="all">
+<tbody>
+<tr dk:border="after" dk:display-align="after">
+<td dk:border="right"><p><code>0</code></p></td>
+<td dk:border="right"><p><code>1</code></p></td>
+<td dk:border="right"><p><code>2</code></p></td>
+<td dk:border="right"><p><code>3</code></p></td>
+<td dk:border="right"><p><code>4</code></p></td>
+<td dk:border="right"><p><code>5</code></p></td>
+<td dk:border="right"><p><code>6</code></p></td>
+<td dk:border="right"><p><code>7</code></p></td>
+<td dk:border="right"><p><code>8</code></p></td>
+<td dk:border="right"><p><code>9</code></p></td>
+<td dk:border="right"><p><line><code>1</code></line>
+<line><code>0</code></line></p></td>
+<td dk:border="right"><p><line><code>1</code></line>
+<line><code>1</code></line></p></td>
+<td dk:border="right"><p><line><code>1</code></line>
+<line><code>2</code></line></p></td>
+<td dk:border="right"><p><line><code>1</code></line>
+<line><code>3</code></line></p></td>
+<td dk:border="right"><p><line><code>1</code></line>
+<line><code>4</code></line></p></td>
+<td dk:border="right"><p><line><code>1</code></line>
+<line><code>5</code></line></p></td>
+<td dk:border="right"><p><line><code>1</code></line>
+<line><code>6</code></line></p></td>
+<td dk:border="right"><p><line><code>1</code></line>
+<line><code>7</code></line></p></td>
+<td dk:border="right"><p><line><code>1</code></line>
+<line><code>8</code></line></p></td>
+<td dk:border="right"><p><line><code>1</code></line>
+<line><code>9</code></line></p></td>
+<td dk:border="right"><p><line><code>2</code></line>
+<line><code>0</code></line></p></td>
+<td dk:border="right"><p><code>.</code></p></td>
+<td dk:border="right"><p><code>.</code></p></td>
+<td><p><code>.</code></p></td>
+</tr>
+<tr>
+<td dk:border="right" colspan="16"><p><code>ByteCount</code></p></td>
+<td colspan="8"><p><code>Bytes...</code></p></td>
+</tr>
+</tbody></table>
+
+<pre>SMB_DATA
+  {
+  ByteCount        = &lt;Number of bytes in the Bytes field&gt;
+  Bytes[ByteCount] = &lt;Contents varies with SMB command&gt;
+  }
+</pre>
+
+<p>The <code>Bytes</code> field holds the data to be manipulated. For
+example, it may contain the data retrieved in response to a
+<code>READ</code> operation, or the data to be written by a
+<code>WRITE</code> operation. In many cases, though, the
+<code>SMB_DATA</code> block is just another record structure with
+several subfields. Through time, SMB has evolved lazily and any
+functional distinction that may have separated the Parameter and Data
+blocks has been blurred.</p>
+
+<p>Note that the <code>SMB_DATA.ByteCount</code> field is an unsigned
+short, while the <code>SMB_PARAMETERS.WordCount</code> field is an
+unsigned byte. That means that the <code>SMB_PARAMETERS.Words</code>
+block is limited in length to 510 bytes (2&#160;&times;&#160;255),
+while <code>SMB_DATA.Bytes</code> may be as much as 65535 bytes in
+length. If you add all that up, and then add in the
+<code>SMB_PARAMETERS.WordCount</code> field, the
+<code>SMB_DATA.ByteCount</code> field, and the size of the header, you
+will find that the whole thing fits easily into the
+2<sup>17</sup>&nbsp;&minus;&nbsp;1 bytes made available in the NBT
+<code>SESSION MESSAGE</code> header. </p>
+
+</h2s></h1s><h1 id="SMB2.4.3">Case in Point: <code>NEGOTIATE PROTOCOL</code></h1><h1s>
+
+<p dk:break="after"><idx>NEGOTIATE PROTOCOL</idx>Now that we have an
+overview of the structure of SMB messages, we can take a closer look
+at our live specimen. Remember packets 9 and 10 from the capture we
+made earlier? They show a <code>NEGOTIATE PROTOCOL</code>
+exchange. Let's get out the tweezers, the pocket knife, and dad's
+hammer and see what's inside.</p>
+
+<pre>NEGOTIATE_PROTOCOL_REQUEST
+  {
+  SMB_HEADER
+    {
+    PROTOCOL  = "\xffSMB"<idx>\xffSMB</idx>
+    COMMAND   = SMB_COM_NEGOTIATE (0x72)
+    STATUS
+      {
+      ErrorClass = 0x00   (Success)
+      ErrorCode  = 0x0000 (No Error)
+      }
+    FLAGS     = 0x18 (Pathnames are case-insensitive)
+    FLAGS2    = 0x8001 (Unicode and long filename support)
+    EXTRA
+      {
+      PidHigh    = 0x0000
+      Signature  = 0 (all bytes zero filled)
+      }
+    TID       = 0 (Not yet known)
+    PID       = &lt;Client Process ID&gt;
+    UID       = 0 (Not yet known)
+    MID       = 2 (often 0 or 1, but varies per OS)
+    }
+  SMB_PARAMETERS
+    {
+    WordCount = 0
+    Words     = &lt;empty&gt;
+    }
+  SMB_DATA
+    {
+    ByteCount = 12
+    Bytes
+      {
+      BufferFormat = 0x02 (Dialect)<idx>dialect</idx>
+      Name         = "NT LM 0.12" (nul terminated)
+      }
+    }
+  }</pre>
+
+<p>The breakdown of packet 9 shows the SMB <code>NEGOTIATE PROTOCOL
+REQUEST</code> as sent by the jCIFS<idx>jCIFS</idx>
+<code>Exists</code><idx>Exists.java</idx> utility. Other clients will
+use slightly different values, but they are all variations on the same
+theme. Some features worth noting:</p>
+
+<ul>
+
+<li><p>The <code>COMMAND</code> field has a value of <code>0x72</code>
+(<code>SMB_COM_NEGOTIATE</code>). That's how we know that this is a
+<code>NEGOTIATE PROTOCOL</code> message. We also know that it is a
+<code>REQUEST</code> rather than a <code>RESPONSE</code> because the
+highest-order bit in the <code>FLAGS</code><idx>FLAGS</idx> field has a value of zero
+(<code>0</code>).</p></li>
+
+<li><p>The <code>STATUS</code> field is all zeros at this point
+because we haven't yet done anything to cause an error. Also, the
+error messages are presented in the older DOS
+format.<idx>DOS<sidx>error codes</sidx></idx> This is because jCIFS is
+indicating, via a bit in the <code>FLAGS2</code><idx>FLAGS2</idx>
+field, that it is using the DOS format. We'll dig into those bits
+later on.</p></li>
+
+<li><p>Several fields (the <code>EXTRA.Signature</code>, the
+<code>TID</code><idx>TID</idx>, and the
+<code>UID</code><idx>UID</idx>, to name a few) contain zeros. The
+content of these fields has not yet been determined, and they may or
+may not be filled in later on. It all depends upon the types of SMB
+requests that are issued. Stay tuned.</p></li>
+
+<li><p>In this particular SMB the Parameter block is empty and all of
+the useful information is being carried in the Data block. In
+contrast, the response packet from the server (packet 10) makes use of
+both the Parameter and Data blocks (assuming that there are no
+errors). See for yourself by looking at the <code>NEGOTIATE PROTOCOL
+RESPONSE</code> in your capture.
+
+<p>The Data block in the request contains the list of protocols that
+the client is able to speak. jCIFS only knows one dialect, so only one
+name is listed in the message above. As you can see, jCIFS implements
+the "NT&#160;LM&#160;0.12"<idx>NT LM 0.12</idx> dialect (the most
+recent and widely supported as of this writing). Other clients, such
+as Samba's<idx>Samba</idx> <code>smbclient</code><idx>smbclient</idx>, support a longer
+list of dialects.</p> </p></li>
+</ul>
+
+</h1s><h1 id="SMB2.4.4">The AndX Mutation</h1><h1s>
+
+<p>In the trace given above, Ethereal<idx>Ethereal</idx> has
+identified packets 11 and 12 as being a <code>SESSION SETUP
+ANDX</code><idx>SESSION SETUP</idx> exchange.<fn>Ethereal
+version&nbsp;0.9.3 will report the name of the last
+AndX Command in the chain, rather than the first. This
+was fixed somewhere between 0.9.3 and 0.9.6. The trick with Ethereal
+is to update early and often.</fn> The term
+"<code>ANDX</code>"<idx>ANDX</idx> at the end of the names indicates
+that these messages belong to a curious class of creatures known as
+"AndX messages." SMB AndX messages are actually several SMBs
+<dk:nobr>combined into a single symbiotic packet</dk:nobr> as shown in
+<ref refid="Figure2.4"/>. It is an <dk:nobr>efficient
+mutation.</dk:nobr>
+</p>
+
+<fig id="Figure2.4">
+<img dk:width="180" loc="SMB04"/>
+<caption>AndX SMBs</caption>
+<subcaption><p>AndX SMBs combine several SMB messages into one.
+Only one header is used, but each parameter block contains
+information identifying the next AndX body segment.</p></subcaption>
+</fig>
+
+<p>AndX messages work something like a linked list. Each Parameter
+block in an AndX message begins with the following structure:</p>
+
+<table colwidths="3.125* 3.125* 3.125* 3.125* 3.125* 3.125* 3.125* 3.125* 3.125* 3.125* 3.125* 3.125* 3.125* 3.125* 3.125* 3.125* 3.125* 3.125* 3.125* 3.125* 3.125* 3.125* 3.125* 3.125* 3.125* 3.125* 3.125* 3.125* 3.125* 3.125* 3.125* 3.125*" dk:type="centered" dk:borders="all">
+<tbody>
+<tr dk:border="after" dk:display-align="after">
+<td dk:border="right"><p><code>0</code></p></td>
+<td dk:border="right"><p><code>1</code></p></td>
+<td dk:border="right"><p><code>2</code></p></td>
+<td dk:border="right"><p><code>3</code></p></td>
+<td dk:border="right"><p><code>4</code></p></td>
+<td dk:border="right"><p><code>5</code></p></td>
+<td dk:border="right"><p><code>6</code></p></td>
+<td dk:border="right"><p><code>7</code></p></td>
+<td dk:border="right"><p><code>8</code></p></td>
+<td dk:border="right"><p><code>9</code></p></td>
+<td dk:border="right"><p><line><code>1</code></line>
+<line><code>0</code></line></p></td>
+<td dk:border="right"><p><line><code>1</code></line>
+<line><code>1</code></line></p></td>
+<td dk:border="right"><p><line><code>1</code></line>
+<line><code>2</code></line></p></td>
+<td dk:border="right"><p><line><code>1</code></line>
+<line><code>3</code></line></p></td>
+<td dk:border="right"><p><line><code>1</code></line>
+<line><code>4</code></line></p></td>
+<td dk:border="right"><p><line><code>1</code></line>
+<line><code>5</code></line></p></td>
+<td dk:border="right"><p><line><code>1</code></line>
+<line><code>6</code></line></p></td>
+<td dk:border="right"><p><line><code>1</code></line>
+<line><code>7</code></line></p></td>
+<td dk:border="right"><p><line><code>1</code></line>
+<line><code>8</code></line></p></td>
+<td dk:border="right"><p><line><code>1</code></line>
+<line><code>9</code></line></p></td>
+<td dk:border="right"><p><line><code>2</code></line>
+<line><code>0</code></line></p></td>
+<td dk:border="right"><p><line><code>2</code></line>
+<line><code>1</code></line></p></td>
+<td dk:border="right"><p><line><code>2</code></line>
+<line><code>2</code></line></p></td>
+<td dk:border="right"><p><line><code>2</code></line>
+<line><code>3</code></line></p></td>
+<td dk:border="right"><p><line><code>2</code></line>
+<line><code>4</code></line></p></td>
+<td dk:border="right"><p><line><code>2</code></line>
+<line><code>5</code></line></p></td>
+<td dk:border="right"><p><line><code>2</code></line>
+<line><code>6</code></line></p></td>
+<td dk:border="right"><p><line><code>2</code></line>
+<line><code>7</code></line></p></td>
+<td dk:border="right"><p><line><code>2</code></line>
+<line><code>8</code></line></p></td>
+<td dk:border="right"><p><line><code>2</code></line>
+<line><code>9</code></line></p></td>
+<td dk:border="right"><p><line><code>3</code></line>
+<line><code>0</code></line></p></td>
+<td><p><line><code>3</code></line>
+<line><code>1</code></line></p></td>
+</tr>
+<tr>
+<td dk:border="right" colspan="8"><p><code>AndXCommand</code></p></td>
+<td dk:border="right" colspan="8"><p>&lt;reserved&gt;</p></td>
+<td colspan="16"><p><code>AndXOffset</code></p></td>
+</tr>
+</tbody></table>
+
+<p>The <code>AndXCommand</code> field provides the SMB command code
+for the <em>next</em> AndX block in the list (<em>not</em> the current
+one). The <code>AndXOffset</code> contains the byte index, relative to
+the start of the SMB header, of that next AndX block - think of it as
+a pointer. Since the <code>AndXOffset</code> value is independent of
+the <code>SMB_PARAMETERS.WordCount</code> and
+<code>SMB_DATA.ByteCount</code> values, it is possible to provide
+padding between the AndX blocks as shown <dk:nobr>in <ref refid="Figure2.5"/>.</dk:nobr></p>
+
+<fig id="Figure2.5">
+<img dk:width="280" loc="SMB05"/>
+<caption>AndX SMB chaining</caption>
+<subcaption><p>The <code>AndXOffset</code> value in each AndX parameter
+block gives the offset (relative to the start of the SMB) of the next
+AndX block.  The <code>AndXOffset</code> of the last AndX block has a
+value of zero (<code>0</code>).</p></subcaption>
+</fig>
+
+<p>Now that we have a general idea of what an SMB AndX message
+looks like we are ready to dissect packet 11. It looks like
+this:</p>
+
+<pre>SESSION_SETUP_ANDX_REQUEST
+  {
+  SMB_HEADER
+    {
+    PROTOCOL  = "\xffSMB"<idx>\xffSMB</idx>
+    COMMAND   = SMB_COM_SESSION_SETUP_ANDX (0x73)
+    STATUS
+      {
+      ErrorClass = 0x00   (Success)
+      ErrorCode  = 0x0000 (No Error)
+      }
+    FLAGS     = 0x18 (Pathnames are case-insensitive)
+    FLAGS2    = 0x0001 (Long filename support)
+    EXTRA
+      {
+      PidHigh    = 0x0000
+      Signature  = 0 (all bytes zero filled)
+      }
+    TID       = 0 (Not yet known)
+    PID       = &lt;Client Process ID&gt;
+    UID       = 0 (Not yet known)
+    MID       = 2 (often 0 or 1, but varies per OS)
+    }
+  ANDX_BLOCK[0] (Session Setup AndX Request)
+    {
+    SMB_PARAMETERS
+      {
+      WordCount     = 13
+      AndXCommand   = SMB_COM_TREE_CONNECT_ANDX (0x75)
+      AndXOffset    = 79
+      MaxBufferSize = 1300
+      MaxMpxCount   = 2
+      VcNumber      = 1
+      SessionKey    = 0
+      CaseInsensitivePasswordLength = 0<idx>CaseInsensitivePassword</idx>
+      CaseSensitivePasswordLength   = 0<idx>CaseSensitivePassword</idx>
+      Capabilities  = 0x00000014
+      }
+    SMB_DATA
+      {
+      ByteCount     = 20
+      AccountName   = "GUEST"
+      PrimaryDomain = "?"
+      NativeOS      = "Linux"
+      NativeLanMan  = "jCIFS"
+      }
+    }
+  ANDX_BLOCK[1] (Tree Connect AndX Request)
+    {
+    SMB_PARAMETERS
+      {
+      WordCount       = 4
+      AndXCommand     = SMB_COM_NONE (0xFF)
+      AndXOffset      = 0
+      Flags           = 0x0000
+      PasswordLength  = 1
+      }
+    SMB_DATA
+      {
+      ByteCount       = 22
+      Password        = ""
+      Path            = "\\SMEDLEY\HOME"
+      Service         = "?????"  (yes, really)
+      }
+    }
+  }</pre>
+
+<p>There is a lot of information in that message, but we are not yet
+ready to dig into the details. There is just too much to cover all of
+it at once. Our goals right now are simply to highlight the workings
+of the AndX blocks, and to provide a glimpse inside the <code>SESSION
+SETUP ANDX</code> and <code>TREE CONNECT ANDX</code><idx>TREE
+CONNECT</idx> sub-messages so that we will have something to talk
+about later on.</p>
+
+<p>The block labeled <code>ANDX_BLOCK[0]</code> is the body of the
+<code>SESSION SETUP REQUEST</code>, and <code>ANDX_BLOCK[1]</code>
+contains the <code>TREE CONNECT REQUEST</code>. Note that the
+<code>AndXCommand</code> field in the final AndX block is given a
+value of <code>0xFF</code>. This, in addition to the zero offset in
+the <code>AndXOffset</code> field, indicates the end of the AndX
+list. </p>
+
+</h1s><h1 id="SMB2.4.5">The Flow of Conversation</h1><h1s>
+
+<p>SMB conversations start after the session has been established via
+the transport layer. As a rule, the client always speaks first.
+Clients send requests, servers respond, and that's the way SMB is
+supposed to work. This is a hard-and-fast rule which means, of course,
+that there is an exception. Fortunately, we can (and will) put off
+talking about that exception until we talk about Opportunistic Locks
+(OpLocks<idx>OpLocks</idx>).</p>
+
+<p>The <code>NEGOTIATE PROTOCOL
+REQUEST</code>/<code>RESPONSE</code><idx>NEGOTIATE PROTOCOL</idx> is
+always the first SMB exchange in the conversation. The client and
+server need to know what language to speak before they can say
+anything else. This is also a hard-and-fast rule, but there are no
+exceptions (which is an exception to the rule that all hard-and-fast
+rules have exceptions).</p>
+
+<p>Once the dialect has been selected, the next formality is to
+establish an SMB session using the SMB <code>SESSION SETUP
+REQUEST</code><idx>SESSION SETUP</idx> message. We keep running into
+terminology twists, and here we have yet another. The SMB
+<code>SESSION SETUP</code> exchange sets up an SMB session within the
+NBT or naked TCP session.</p>
+
+<p>Huh?</p>
+
+<p>Well, yes, that's confusing. The problem is that we are talking
+about two different kinds of sessions here.</p>
+
+<ul>
+<li><p>There is the network session built at layer 5 of the OSI model,
+on top of the transport layer.</p></li>
+
+<li><p>There is the user logon session.</p></li>
+</ul>
+
+<p>Ah, there's a clue! The <code>SESSION SETUP</code> is used to
+perform authentication<idx>authentication</idx> and establish a
+<em>user</em> session with the server.<fn>We are dealing with a vague
+definition here. According to the SNIA doc<idx>SNIA<sidx>CIFS
+Technical Reference</sidx></idx>, the <code>SESSION SETUP</code> is
+meant to "set up" the session created by the <code>NEGOTIATE
+PROTOCOL</code>, which also makes some sort of sense. Thing is, there
+may be multiple <code>SESSION SETUP</code> exchanges following the
+<code>NEGOTIATE PROTOCOL</code>, meaning multiple SMB user sessions
+per NBT or naked TCP transport session. The waters are muddy.</fn> A
+quick look at the <code>SESSION SETUP ANDX REQUEST</code> block in the
+packet above shows that the <code>Exists</code><idx>Exists.java</idx>
+utility did in fact send a username - the name "<code>GUEST</code>",
+passed via the <dk:nobr><code>AccountName</code></dk:nobr> field - to
+the server.</p>
+
+<p>Once the user session is established, the client may try to connect
+to a share<idx>Share Level Security</idx> using a <code>TREE
+CONNECT</code> SMB. It is a hard-and-fast rule that <code>TREE
+CONNECT</code> SMBs must follow the <code>SESSION SETUP</code>. There
+is an exception to this as well, which we will cover when we get to
+share-mode vs. <dk:nobr>user-mode authentication.</dk:nobr></p>
+
+<fig dk:pos="top" id="Figure2.6">
+<img dk:width="180" loc="SMB06"/>
+<caption>A simple SMB conversation</caption>
+
+<subcaption><p>The client makes requests (some of which may be batched
+in AndX messages) and the server responds. The jCIFS
+<code>Exists</code> utility sends a <code>NEGOTIATE PROTOCOL
+REQUEST</code> followed by batched <code>SESSION SETUP</code> plus
+<code>TREE CONNECT</code><idx>TREE CONNECT</idx> AndX requests. The
+<code>TREE DISCONNECT</code> exchange at the end is optional. When the
+client closes the session at the transport layer, all resources are
+released.</p></subcaption>
+</fig>
+
+<p><ref refid="Figure2.6"/> shows the right way to start an SMB
+conversation.  Combining the <code>SESSION SETUP ANDX</code> and
+<code>TREE CONNECT ANDX</code> SMBs into a single AndX<idx>ANDX</idx>
+message is optional (jCIFS' <code>Exists</code> does, but
+Samba's<idx>Samba</idx> <dk:nobr><code>smbclient</code><idx>smbclient</idx></dk:nobr>
+doesn't). Once the conversation has been initiated using the above
+sequence, the client is free to improvise. </p>
+
+</h1s><h1 id="SMB2.4.6">A Little More Code</h1><h1s>
+
+<p>There is another small detail you may have noticed while studying
+the captured SMB packets - or perhaps you remember this from one of
+the <i>Alert</i> boxes in the NBT section: SMBs are written using
+little-endian byte order.<idx>byte order</idx> If your target platform
+is big-endian, or if you want your code to be portable to big-endian
+systems, you will need to be able to handle the conversion between
+host and SMB byte order.</p>
+
+<p>The <code>htonl()</code>,<idx>htonl()</idx>
+<code>htons()</code>,<idx>htons()</idx>
+<code>ntohl()</code>,<idx>ntohl()</idx> and
+<code>ntohs()</code><idx>ntohs()</idx> functions won't help us
+here. They convert between host and network byte order. We need to be
+able to convert between host and SMB order (and SMB order is
+definitely not the same as network order).</p>
+
+<p>So, to solve the problem, we need a little bit of code, which is
+presented here mostly to get it out of the way so that we won't have
+to bother with it when we are dealing with more complex issues. The
+functions in <ref refid="Listing2.2"/> read short and long integer values directly
+from incoming message buffers and write them directly to outgoing
+message buffers.</p>
+
+<example id="Listing2.2">
+<caption>Reading and writing integer values</caption>
+<pre dk:type="smaller"><![CDATA[ushort smb_GetShort( uchar *src, int offset )
+  /* ---------------------------------------------------- **
+   * Read a short integer converting it to host byte 
+   * order from a byte array in SMB byte order.
+   * ---------------------------------------------------- **
+   */
+  {
+  ushort tmp;
+
+  /* Low order byte is first in the buffer. */
+  tmp  = (ushort)(src[offset]);
+
+  /* High order byte is next in the buffer. */
+  tmp |= ( (ushort)(src[offset+1]) << 8 );
+
+  return( tmp );
+  } /* smb_GetShort */
+
+void smb_SetShort( uchar *dst, int offset, ushort val )
+  /* ---------------------------------------------------- **
+   * Write a short integer in host byte order to the
+   * buffer in SMB byte order.
+   * ---------------------------------------------------- **
+   */
+  {
+  /* Low order byte first. */
+  dst[offset]   = (uchar)(val & 0xFF);
+
+  /* High order byte next. */
+  dst[offset+1] = (uchar)((val >> 8) & 0xFF);
+  } /* smb_SetShort */
+
+ulong smb_GetLong( uchar *src, int offset )
+  /* ---------------------------------------------------- **
+   * Read a long integer converting it to host byte order
+   * from a byte array in SMB byte order.
+   * ---------------------------------------------------- **
+   */
+  {
+  ulong tmp;
+
+  tmp  = (ulong)(src[offset]);
+  tmp |= ( (ulong)(src[offset+1]) << 8 );
+  tmp |= ( (ulong)(src[offset+2]) << 16 );
+  tmp |= ( (ulong)(src[offset+3]) << 24 );
+  return( tmp );
+  } /* smb_GetLong */
+
+void smb_SetLong( uchar *dst, int offset, ulong val )
+  /* ---------------------------------------------------- **
+   * Write a long integer in host byte order to the
+   * buffer in SMB byte order.
+   * ---------------------------------------------------- **
+   */
+  {
+  dst[offset]   = (uchar)(val & 0xFF);
+  dst[offset+1] = (uchar)((val >> 8) & 0xFF);
+  dst[offset+2] = (uchar)((val >> 16) & 0xFF);
+  dst[offset+3] = (uchar)((val >> 24) & 0xFF);
+  } /* smb_SetLong */]]></pre>
+</example>
+
+</h1s><h1 id="SMB2.4.7">Take a Break</h1><h1s>
+
+<p>Our field trip into SMB territory is now over. We have covered a
+lot of ground, collected samples, and taken a look at SMBs in the
+wild. Our next step will be doing the lab work - studying our specimens
+under a microscope. It is time to take a break, relax, and reflect on
+what we have learned so far.</p>
+
+<p>Time for a cup of tea<idx>tea</idx>.</p>
+
+<p>In the next section we will go back over the SMB header in a lot
+more detail with the goal of explaining some of the key concepts that
+we have only touched on so far. You will probably want to be well
+rested and in a good mood for that.</p>
+
+</h1s></chapter>
+</oim>

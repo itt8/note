@@ -1,0 +1,202 @@
+<?xml version="1.0" encoding="US-ASCII"?>
+<!DOCTYPE oim SYSTEM "oimxml.dtd" [
+  <!ENTITY nbsp  "&#160;">
+  <!ENTITY lsquo "&#8216;">
+  <!ENTITY rsquo "&#8217;">
+  <!ENTITY minus "&#8211;">
+  <!ENTITY mdash "&#8212;">
+  <!ENTITY times "&#xd7;">
+  <!ENTITY copy "&#xa9;">
+] >
+<oim xmlns:dk="http://www.kirsanov.com">
+<chapter id="Browsing3.7">
+<chapopen><title>It Can&#8217;t Happen Here</title>
+<epigraph>
+<p><line>Debugging browsing</line>
+<line>problems is difficult</line>
+<line>to say the least...</line></p>
+<attribution><line>Benjamin Carter<idx>Carter, Benjamin</idx></line>
+<line>in an e'mail message</line>
+<line>to the Samba-Technical</line>
+<line>mailing list</line></attribution>
+</epigraph>
+</chapopen>
+
+<p>Trouble in the Network Neighborhood? What could possibly happen
+to disrupt the peace and prosperity of such a stable, well run, and
+deliberately <dk:nobr>happy place?</dk:nobr></p>
+
+<p>Well, any society that puts presentation ahead of principle is
+bound to suffer. The Network Neighborhood<idx>Network
+Neighborhood</idx> is far from being an exception. Many things, most
+of them trivial, can throw a monkey-wrench into the works. To its
+credit, the Browse Service is fairly resilient and recovers quickly
+once the problem has been rectified. It also helps that it's a
+non-critical system. Still, fixing the problems generally requires
+intervention by a qualified expert. Unfortunatly, there aren't many of
+those around so trained professionals wind up with the job, poor
+dears. Let's see what we can do to help them... </p>
+
+<h1 id="Browsing3.7.1">Misconfigured Hosts</h1><h1s>
+
+<p><idx start="c25-dmb">DMB</idx>One of the most common and obvious
+problems, once you know what to look for, is a misconfigured
+host. Things that can go wrong include:</p>
+
+<dl>
+<dt>The wrong workgroup<idx>Workgroup</idx> name in the
+configuration</dt>
+
+<dd><p>Perhaps you entered "<code>WROKGROPE</code>" when you meant to type
+in "<code>WEIMARANER</code>".</p></dd>
+
+<dt>Browser services disabled</dt>
+
+<dd><p>There are Windows restistry settings and Samba<idx
+start="c25-samba">Samba</idx> configuration settings that can prevent
+a node from becomming a Potential Browser.<idx>Potential Browser</idx>
+If there are no browser nodes on the LAN, then the Network
+Neighborhood<idx>Network Neighborhood</idx> will fade away like
+Brigadoon.</p></dd>
+
+<dt>Browser services over-enabled</dt>
+
+<dd><p>A node with its OS level or other criteria set too high can win
+elections<idx>election</idx> over a node that is a better
+choice.</p></dd>
+
+<dt>A misconfigured or missing NBNS<idx>NBNS</idx> server address</dt>
+
+<dd><p>Local browsing will work fine without an NBNS, but cross-subnet
+browsing will fail. Proper NBNS (WINS<idx>WINS</idx>) configuration is
+required for cross-subnet browsing.</p></dd>
+
+<dt>P mode</dt>
+
+<dd><p>In P mode, the Consumer<idx>Browse
+Service<sidx>Consumer</sidx></idx> <em>must</em> deal directly with
+the Domain Master Browser. That only works if there is a
+DMB, and the NBNS is configured correctly. In many
+cases, the Consumer node should really be running in H or M
+mode.<idx>P</idx><idx>H</idx><idx>M</idx></p></dd>
+
+<dt>User not authenticated</dt>
+
+<dd><p>Some client systems require that the user be logged on before
+they start SMB services. Also, some Browse Servers require
+authentication<idx>authentication</idx> before they permit access to
+the <code>NetServerEnum2</code><idx>NetServerEnum2</idx>
+call.</p></dd>
+
+<dt>Prolific protocol bindings</dt>
+
+<dd><p>This is the biggie. </p>
+
+<p>In the old IBM/Sytec<idx>Sytec</idx> days<idx>IBM</idx> there were
+these things called LANAs<idx>LANA</idx> (<b>LAN</b>
+<b>A</b>dapters). We would call them NICs (<b>N</b>etwork
+<b>I</b>nterface <b>C</b>ards) today. The original
+NetBIOS<idx>NetBIOS</idx> software spoke directly to the LANAs so,
+logically, when you build an emulated NetBIOS LAN you also have
+virtual LANAs.<idx>NBT<sidx>vLAN</sidx></idx></p>
+
+<p>On some systems, such as Windows, you can "bind" the NetBIOS layer
+to several different protocols. We have focused on NetBIOS over
+TCP/UDP/IP, but Windows can also bind NetBIOS to
+NetBEUI<idx>NetBEUI</idx> and to something called NWLink (which is
+Microsoft's<idx>Microsoft</idx> implementation of Novell's
+IPX/SPX). Each binding represents another virtual LANA.  That means
+that a Windows system with NetBIOS bound to multiple transport
+protocols is a multi-homed<idx>multi-homed host</idx> host, as shown in
+<ref refid="Figure3.11"/>.</p>
+
+<fig id="Figure3.11">
+<img dk:width="220" loc="BRO11"/> 
+<caption>Multiple virtual networks</caption>
+<subcaption><p>A node with NetBIOS bound to two transport protocols is
+logically connected to two separate virtual NetBIOS LANs.</p>
+
+<p>Consider what happens when node <code>STEFFOND</code> wins the
+Browser Election on the IP LAN, after which node <code>CONRAD</code>
+calls for an election on the NetBEUI<idx>NetBEUI</idx> LAN and
+wins. The two nodes are not on the same (virtual) LAN, so they do not
+know that they are competing.</p></subcaption>
+</fig>
+
+<p>One potential result of this configuration is an election storm, in
+which the <code>RequestElection</code><idx>RequestElection</idx>
+frames keep getting sent out (via both virtual LANAs, in some cases)
+but there is never any clear winner, so the elections have to start
+all over again. The Leach/Naik Browser draft addresses this issue by
+warning that a broswer node <em>must</em> be aware of the separate
+virtual LANs to which it is connected.<fn>Do election storms really
+happen? I have heard reports of them, but never seen one
+<dk:nobr>first-hand.</dk:nobr></fn></p></dd>
+</dl>
+
+</h1s><h1 id="Browsing3.7.2">Misconfigured Networks</h1><h1s>
+
+<p><idx>node type</idx>Network configuration errors can also upset the teacart.</p>
+
+<dl>
+<dt>No DMB</dt>
+
+<dd><p>If there's no Domain Master Browser, then cross-subnet browsing
+won't work (<em>unless</em> you set up Samba's extensions
+correctly).</p></dd>
+
+<dt>Separated namespaces</dt>
+
+<dd><p>Namespace manglement is a big deal in the CIFS world, in part
+because it is so easy to mess it up. The NBT
+namespace<idx>NBT<sidx>namespace</sidx></idx> can be fractured if
+multiple, unsychronized NBNS servers are used or if P, B, and M/H
+nodes are mixed in the same
+environment.<idx>B</idx><idx>P</idx><idx>M</idx><idx>H</idx></p>
+
+<p>The Browse Service relies heavily on the NBT Name
+Service<idx>NBT<sidx>Name Service</sidx></idx>, so it is important to
+make sure that the NBT namespace is consistent.  Otherwise, the
+Browsers, Providers,<idx>Browse Service<sidx>Provider</sidx></idx> and
+Consumers<idx>Browse Service<sidx>Consumer</sidx></idx> won't be able
+to find <dk:nobr>one another.</dk:nobr></p></dd>
+
+<dt>Isolated workgroups<idx>Workgroup</idx></dt>
+
+<dd><p><ref refid="Figure3.10"/> showed what this problem looks
+like. Unless workgroups are physically mixed on the same LAN, the
+LMBs<idx start="c25-lmb">LMB</idx> won't find one another and won't
+exchange <code>DomainAnnouncement</code><idx>DomainAnnouncement</idx>
+frames. That means that the workgroups will remain isolated.</p></dd>
+</dl>
+
+</h1s><h1 id="Browsing3.7.3">Implementation Bugs</h1><h1s>
+
+<p>This is unverified,<fn>...mostly because I don't have enough
+equipment to really test it.</fn> but reliable sources report that
+Windows 9x systems running as Local Master Browsers do not bother to
+synchronize properly with the Domain Master Browser. If true, it would
+cause a bit of a problem with cross-subnet browsing. The common
+solution is to grab an old, outdated PC and load an Open Source OS on
+it. Then install Samba and configure it to <dk:nobr>win elections.<idx>election</idx></dk:nobr> </p>
+
+</h1s><h1 id="Browsing3.7.4">Troublemakers</h1><h1s>
+
+<p>Back several years, there was a bug in a release of Samba
+(somewhere in the 1.9.16 series) that would cause a Samba server to
+register the <code>&lt;1B&gt;</code> DMB name instead of the
+<code>&lt;1D&gt;</code> when it won a local
+election<idx>election</idx> and became an LMB.  This bug caused all
+sorts of trouble, particularly with regard to the Primary Domain
+Conroller<idx>PDC</idx> which, due to the rules of NetBIOS
+naming,<idx>NetBIOS<sidx>name</sidx></idx> was unable to
+<dk:nobr>register itself.</dk:nobr><idx end="c25-dmb">DMB</idx><idx
+end="c25-lmb">LMB</idx><idx end="c25-samba">Samba</idx></p>
+
+</h1s><h1 id="Browsing3.7.5">Design Flaws</h1><h1s>
+
+<p>Now that you know how it works, you can decide for yourself. </p>
+
+</h1s>
+</chapter>
+</oim>

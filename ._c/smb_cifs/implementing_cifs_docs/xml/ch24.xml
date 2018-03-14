@@ -1,0 +1,230 @@
+<?xml version="1.0" encoding="US-ASCII"?>
+<!DOCTYPE oim SYSTEM "oimxml.dtd" [
+  <!ENTITY nbsp  "&#160;">
+  <!ENTITY lsquo "&#8216;">
+  <!ENTITY rsquo "&#8217;">
+  <!ENTITY minus "&#8211;">
+  <!ENTITY mdash "&#8212;">
+  <!ENTITY times "&#xd7;">
+  <!ENTITY copy "&#xa9;">
+] >
+<oim xmlns:dk="http://www.kirsanov.com">
+<chapter id="Browsing3.6">
+<chapopen><title>Samba Browse Service Enhancements</title>
+<epigraph dk:padding-top="48">
+<p>
+<line>If you want something done right</line>
+<line>you have to do it yourself.</line>
+</p>
+<attribution>Well-known axiom</attribution>
+</epigraph>
+</chapopen>
+
+<p>Sit back and think about it for a minute... There are a lot of ways
+to fiddle with the Browse Service. That could be good, or it could be
+bad. (Now would be a good time to check your firewall
+configuration.)</p>
+
+<p>Samba<idx start="c24-samba">Samba</idx> takes advantage of the fiddlability of the
+Browse Protocol to improve the workings of the Network
+Neighborhood.<idx>Network Neighborhood</idx> It may break a few rules,
+but it gets the job done... sort of like Chicago.<fn>Don't argue. I
+used to live there.</fn></p>
+
+<p>Samba's Browse Service<idx>Browse Service</idx> enhancements are
+worth a bit of study, because knowing how to gracefully break the
+rules can provide a better insight on the proper workings of the
+system. </p>
+
+<h1 id="Browsing3.6.1">Automatic LANMAN</h1><h1s>
+
+<p>There may still be systems out there that run the old LAN Manager
+style browsing. Things like that don't die, they fade away... but,
+just when you think they've finally faded entirely they reach a
+skeletal hand up through the damp earth and grab your ankle. It's best
+to be prepared for such events, and Samba offers a very simple clove
+of garlic.</p>
+
+<p>Samba's <code>smb.conf</code> configuration file provides the
+<code>LM ANNOUNCE</code><idx>LM ANNOUNCE</idx> parameter, which is
+used to enable or disable the transmission of LAN Manager Browse
+Service announcements. This parameter has three possible values:
+<code>TRUE</code>, <code>FALSE</code>, or <code>AUTO</code>. The third
+option is the interesting one.</p>
+
+<p>In <code>LM ANNOUNCE = AUTO</code> mode, Samba will not send any
+LAN Manager-style announcements until (and unless) it hears a LAN
+Manager Browse Service message from another system. If it hears such a
+message, it knows that LAN Manager style browsing is being used on the
+local wire and will start participating. This mode is the default for
+Samba, and it means that System Administrators don't ever need to
+think about configuring LAN Manager style browsing. It's automagical!
+</p>
+
+</h1s><h1 id="Browsing3.6.2">UnBrowsable</h1><h1s>
+
+<p>The <code>BROWSABLE</code> parameter can be used to completely hide
+a share. Share names ending with a dollar sign (&lsquo;$&rsquo;) are
+supposed to be hidden, but it is up to the client to decide whether or
+not to display these names. They are included in the reply to the
+<code>NetShareEnum</code><idx>NetShareEnum</idx> RAP<idx>RAP</idx>
+call, so the client can do as it pleases with them.</p>
+
+<p>Samba can be told not to include a share in the
+<code>NetShareEnum</code> reply message simply by setting
+<code>BROWSABLE&#160;=&#160;NO</code> in the share declaration. This
+moves control to the server side and allows a System Administrator to
+really truly hide a share. </p>
+
+</h1s><h1 id="Browsing3.6.3">NBNS Wildcard DMB Queries and Enhanced Browsing</h1><h1s>
+
+<p><idx start="c24-dmb">DMB</idx>Samba's implementation of the
+NBNS<idx>NBNS</idx> supports a non-standard wildcard Domain Master
+Browser query<idx>wildcard<sidx>Domain Master Browser query</sidx></idx>. You
+can send a query for the name "<code>*&lt;1B&gt;</code>" (that's an
+asterisk, followed by 14 bytes of <em>either</em> space or nul
+padding, with a suffix byte<idx>suffix byte</idx> value of
+<code>0x1B</code>), and Samba's NBNS will return a list of all of the
+IP addresses of all Domain Master Browsers that have registered with
+it. In other words, all of the IP addresses for all of the
+<code>&lt;1B&gt;</code> names in its database.</p>
+
+<p>If the <code>ENHANCED BROWSING</code> parameter is set to
+<code>TRUE</code> (the default), a Samba DMB will periodically send a
+query for "<code>*&lt;1B&gt;</code>" to the NBNS to get the list of
+DMB IPs. The Samba DMB will then go through the list of IPs and send a
+<code>NODE STATUS REQUEST</code> message to any IP address that it
+doesn't already recognize. The reply will contain the registered
+<em>workgroup</em><code>&lt;1B&gt;</code><idx
+type="1B">workgroup</idx> name of the "foreign" DMB.</p>
+
+<p>This trick is used by Samba to short-cut the building of the
+workgroup<idx>Workgroup</idx> list. The normal mechanism relies on Local Master
+Browsers<idx start="c24-lmb">LMB</idx> to discover foreign workgroups
+on their own subnet and report them back to the DMB. That process is
+slow and, as shown in <ref refid="Figure3.10"/>, workgroups can be
+isolated on separate subnets where they will never see or be seen by
+foreigners. By querying the NBNS for the list of DMBs, Samba does a
+better job of ensuring that all of the workgroups within the NBT
+namespace<idx>NBT<sidx>namespace</sidx></idx> know about one
+another.</p>
+
+<fig id="Figure3.10">
+<img dk:width="340" loc="BRO10"/>
+<caption>Hidden workgroups</caption>
+<subcaption><p>The <code>ARTHROPODS</code> and <code>MAMMALS</code>
+workgroups are isolated because there is no subnet on which they both
+have a Local or Domain Master Browser. Workgroups normally find one
+another by broadcasting <code>DomainAnnouncement</code> messages on
+the local LAN. Samba can query the NBNS to find Domain Master Browsers
+on remote subnets, and synchronize with them to merge isolated Browse
+Lists.<idx>Browse List</idx></p></subcaption>
+</fig>
+
+<p>...but it's not perfect. There might be workgroups out there
+that don't have a DMB, in which case querying the NBNS for DMB
+names won't help much. With Enhanced Browsing enabled, a Samba DMB
+will try to find lost workgroups by periodically querying other
+DMBs to see if they know about them. The Samba DMB then adds any
+missing workgroups to its internal list.</p>
+
+<p>There is a downside to this second trick, which is that bogus or
+expired workgroup names, once added to the Browse List, may never
+disappear. Samba DMBs may wind up sending the bogus names back and
+forth like an urban legend. This is known as the "Dead Workgroup"
+problem. The comments under <code>ENHANCED BROWSING</code> in the
+<code>smb.conf</code> manual page suggest disabling this feature if
+empty workgroups won't go away.</p>
+
+<p>Note that Windows also has a work-around for this problem. You can
+specify foreign DMBs in the <code>LMHOSTS</code><idx>LMHOSTS</idx>
+file on a known DMB, and the DMB will include the foreign names in its
+Browse List and try to synchronize <dk:nobr>with them.</dk:nobr> </p>
+
+</h1s><h1 id="Browsing3.6.4">Remote Announce</h1><h1s>
+
+<p>The Remote Announce feature allows a Samba server to announce
+itself to Local and Domain Master Browsers anywhere across the
+internetwork. The format of the <code>REMOTE ANNOUNCE</code> parameter
+is:</p>
+
+<pre>remote announce = [<em>IP</em>[/<em>workgroup</em>]{"&#160;"<em>IP</em>[/<em>workgroup</em>]}]</pre>
+
+<p>That is, a list of zero or more entries, separated by spaces, in
+which each entry consists of an IP address and an optional
+workgroup<idx>Workgroup</idx> name. The IP <dk:nobr>and
+workgroup</dk:nobr> are separated by a slash. The Samba server will
+send <code><dk:nobr>HostAnnouncement</dk:nobr> Browser
+Frames</code><idx>HostAnnouncement</idx> to the specified IP address
+(which could be either a host or a broadcast address). If the
+workgroup name is specified, the Samba server will announce itself as
+a member of that workgroup, otherwise it will use the name specified
+by the <code>smb.conf WORKGROUP</code>
+<dk:nobr>parameter.</dk:nobr></p>
+
+<p>As a result of using this feature...</p>
+
+<ul>
+<li><p>An isolated server can send a directed broadcast to a subnet,
+where an LMB might pick it up.</p></li>
+
+<li><p>An isolated server can announce itself directly to the
+DMB.</p></li>
+
+<li><p>A single server can show up as a member of many
+workgroups.</p></li>
+</ul>
+
+<p>Be careful, though, a misconfiguration can really mess things
+up. </p>
+
+</h1s><h1 id="Browsing3.6.5">Remote Browse Sync</h1><h1s>
+
+<p>Samba servers running as Local Master Browsers can be configured to
+synchronize with one another directly, without the need for a DMB. The
+notes in the <code>smb.conf</code> manual page explain that this is
+done in a Samba-specific way. The trick is fairly simple,
+though. Samba unicasts a <code>MasterAnnouncement Browser
+Frame</code><idx>MasterAnnouncement</idx> to the remote IP
+address.</p>
+
+<p>You may recall that <code>MasterAnnouncement</code> messages are
+supposed to be sent to DMBs. An LMB sends them to let the DMB know
+that the LMB exists. The DMB then sends a
+<code>NetServerEnum2</code><idx>NetServerEnum2</idx> request to the
+LMB to collect the Browse List<idx>Browse List</idx> and merge it with
+the master list... but you knew that.</p>
+
+<p>Samba's extension is that a Samba LMB will also respond to a
+<dk:nobr><code>MasterAnnouncement</code></dk:nobr> message and synchronize with the
+sender.</p>
+
+<p>It is suggested, in the <code>smb.conf</code> docs, that the
+destination addresses be specified as subnet broadcast addresses.
+Current network best practices recommend against allowing directed
+broadcasts, however, so on most networks you won't be able to send a
+broadcast message to a remote subnet. To really make this feature
+work, you will need to know the IP address of the Local Master Browser
+on the remote subnet. One way to do this is to ensure that a specific
+Samba server on that remote LAN always wins the LMB
+election.<idx>election</idx><idx end="c24-lmb">LMB</idx></p>
+
+<p>You can fiddle the <code>PREFERRED MASTER</code> and <code>OS
+LEVEL</code> parameters in such a way that Samba will always win the election.
+</p>
+
+</h1s><h1 id="Browsing3.6.6">DMB != PDC</h1><h1s>
+
+<p>A Windows system cannot offer DMB services unless it is also the
+PDC.<idx>PDC</idx></p>
+
+<p>Samba can.</p>
+
+<p>Note that it doesn't work the other way 'round. If Samba is
+configured to be a PDC then, like Windows, it must also be the DMB
+for the NT Domain it serves.<idx
+end="c24-dmb">DMB</idx><idx end="c24-samba">Samba</idx></p>
+
+</h1s>
+</chapter>
+</oim>

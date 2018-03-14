@@ -1,0 +1,769 @@
+<?xml version="1.0" encoding="US-ASCII"?>
+
+<!DOCTYPE oim SYSTEM "oimxml.dtd" [
+  <!ENTITY nbsp "&#160;">
+  <!ENTITY lsquo "&#8216;">
+  <!ENTITY rsquo "&#8217;">
+  <!ENTITY times "&#xd7;">
+] >
+
+<oim xmlns:dk="http://www.kirsanov.com">
+<chapter id="NBT1.5">
+<chapopen><title>The Datagram Service in Detail</title>
+
+<epigraph dk:padding-top="68">
+<p><line>If a tree falls in the forest,</line>
+<line>and no one is there to hear it...</line></p>
+</epigraph>
+</chapopen>
+
+<p>Let's drill home this key concept one more time:</p>
+
+<blockquote>
+<p>NBT provides a set of services which combine to create a virtual
+NetBIOS LAN<idx start="c5-vlan">NBT<sidx>vLAN</sidx></idx> over
+TCP/UPD/IP transport.</p>
+</blockquote>
+
+<p><idx start="c45-datagram">NBT<sidx>Datagram Service</sidx></idx>This
+would be a senseless thing to do <em>except</em> for the fact that
+lots of software uses (or used to use) the NetBIOS
+API<idx>NetBIOS<sidx>API</sidx></idx>. The whole point is to maintain
+the form and function of the API while completely replacing the guts
+and machinery which lie beneath. This point gets lost, however, when
+we deal with systems that are not derived from MS-DOS<idx>DOS</idx>
+and have no use for NetBIOS<idx>NetBIOS</idx> itself. On these systems
+we work directly with the guts of NBT and, therefore, are easily
+confused by the odd behavior of the machinery.</p>
+
+<p>So, to provide a little context, here are the four NetBIOS API
+functions which the Datagram Service was designed to support:</p>
+
+<ul>
+<li><p><code>Send Specific Datagram</code></p></li>
+<li><p><code>Receive Specific Datagram</code></p></li>
+<li><p><code>Send Broadcast Datagram</code></p></li>
+<li><p><code>Receive Broadcast Datagram</code></p></li>
+</ul>
+
+<p>Let's start by looking at the two <code>Send Datagram</code>
+functions. These two API calls provide us with three transmission
+options: unicast, multicast, and broadcast. Here's how they
+work:</p>
+
+<dl>
+<dt><code>Send Specific Datagram</code></dt>
+<dd><p>This function requires a NetBIOS name<idx>NetBIOS<sidx>name</sidx></idx> as a parameter.</p>
+<ul>
+<li><p>If the name is unique<idx>unique name</idx>, the datagram is
+<em>unicast</em>.</p></li> <li><p>If the name is a group name<idx
+start="c5-group">group name</idx>, then the datagram is
+<em>multicast</em>.</p></li>
+</ul>
+</dd>
+
+<dt><code>Send Broadcast Datagram</code></dt>
+<dd><p>This function does not accept a NetBIOS name.  Broadcast
+datagrams are sent the length and breadth of the NetBIOS LAN, and
+picked up by any node that is listening.</p></dd>
+</dl>
+
+<p>That was easy. Now let's look at what happens when we map those
+functions onto UDP/IP at the NBT layer...</p>
+
+<dl>
+<dt><code>Send Specific Datagram</code></dt>
+
+<dd><p>A <code>NAME QUERY REQUEST</code><idx start="c5-QUERY">NAME
+QUERY</idx> is issued to discover whether the destination name is a
+unique or group name.</p>
+
+<ul>
+<li><p>If it is a unique name, then the message can be encapsulated
+in a UDP packet and sent to the IP address given in the <code>NAME
+QUERY RESPONSE</code>. In NBT terminology, this is a <code>DIRECT
+UNIQUE DATAGRAM</code>.</p></li>
+
+<li><p>If it is a group name...</p>
+<ul>
+<li><p>If the sender is operating in B mode,<idx start="c5-b">B</idx> it will
+broadcast the packet on the local IP subnet so that all group members
+can receive it.</p></li>
+
+<li><p>If the sender is <em>not</em> operating in B mode, then the
+datagram is forwarded to the <b>N</b>et<b>B</b>IOS <b>D</b>atagram
+<b>D</b>istribution Server (NBDD<idx start="c5-NBDD">NBDD</idx>).</p></li>
+</ul>
+
+<p dk:indent="no">In NBT terminology, a multicast datagram is known as a
+<code>DIRECT GROUP DATAGRAM</code>.</p></li>
+</ul>
+</dd>
+
+<dt><code>Send Broadcast Datagram</code><idx>node type</idx></dt>
+
+<dd><p>The wildcard name<idx>wildcard<sidx>NetBIOS name</sidx></idx>
+(with the sender's Scope ID<idx>NBT<sidx>Scope ID</sidx></idx>
+appended) is used as the destination name.</p>
+
+<ul>
+<li><p>If the sender is operating in B mode, it will broadcast the
+packet on the local IP subnet. All NBT nodes within the same
+scope<idx>NBT<sidx>scope</sidx></idx> will be able to receive the
+message.</p></li>
+
+<li><p>If the sender is <em>not</em> operating in B mode, then the
+datagram is forwarded to the NBDD<!--<b>N</b>et<b>B</b>IOS <b>D</b>atagram
+<b>D</b>istribution Server (NBDD)-->.</p></li>
+</ul>
+</dd>
+</dl>
+
+<p>As you can see from the description, unicast datagrams are easy, B
+mode is easy, but handling multicast or
+broadcast in P,<idx start="c5-p">P</idx> or M,<idx
+start="c5-m">M</idx> or H mode<idx start="c5-h">H</idx> is a bit more
+complicated. We'll give that topic a section heading all its own, just
+to show that it is a fairly hefty chunk of tofu.</p>
+
+<h1 id="NBT1.5.1">Datagram Distribution over Routed IP Internetworks</h1><h1s>
+
+<p>The <b>N</b>et<b>B</b>IOS <b>D</b>atagram <b>D</b>istribution
+Server (NBDD) compliments the NBNS<idx start="c5-NBNS">NBNS</idx>. It
+assists in extending the virtual NetBIOS LAN across a routed IP
+internetwork by relaying multicast and broadcast NetBIOS datagrams to
+nodes on remote subnets. The NBDD's job is to make sure that the
+datagrams get to where they're supposed to go. It works something like
+a lawn sprinkler - one input leads to a spray of outputs. Here's what
+happens:</p>
+
+<ul>
+<li><p>A P (or M or H) node sends a datagram to the NBDD.</p></li>
+
+<li><p>The NBDD consults the NBNS database and gathers the IP
+addresses of all intended recipients.</p></li>
+
+<li><p>The NBDD then sends a copy of the message, via unicast
+UDP<idx>UDP</idx> datagrams, to each of the IP addresses in the
+list.</p></li>
+</ul>
+
+<fig dk:pos="top" id="NBT12">
+<img dk:width="245" loc="NBT12"/>
+<caption>The Datagram Distribution Server</caption>
+
+<subcaption>Node <code>MICK</code> wants to send a message to all
+members of group <code>LINDISFARNE</code>, but the NetBIOS LAN is
+distributed across a routed IP internetwork. <code>MICK</code> sends
+the datagram to the NBDD which relays the message to all group
+members.</subcaption>
+</fig>
+
+<p>That seems simple enough, but we claimed earlier that the
+Datagram Service is the second least well understood aspect of NBT.
+What are we missing?</p>
+
+<p>A closer inspection reveals an obvious problem. If the number of
+destination nodes is large, a whole bigbunch of traffic will be
+generated - possibly enough to bring the NBT virtual LAN to its
+knees (which might really, really annoy people). The NBDD design
+will work well enough for small, trusted networks but it simply does
+not scale.</p>
+
+<p>Another problem is that RFC 1001 offers a loophole for
+implementors: the NBDD is permitted to silently ignore requests to
+relay datagrams. If, for any reason (including laziness on the
+implementor's part) the NBDD will not or can not relay a datagram,
+it simply discards the message without sending any sort of error
+message back to the originating node.</p>
+
+<p>This loophole might make the NBDD so unreliable as to be useless,
+except that the Datagram Service also supports a query operation
+that allows the client to ask the NBDD whether or not it will relay
+a message. If the NBDD answers the query with a "yes," then the
+client can send the datagram with the assurance that it will be
+relayed to all intended recipients. A negative reply means that the
+NBDD will not relay the message.</p>
+
+<alert type="Reminder">
+<p>Datagrams are not considered reliable. As with the
+UDP<idx>UDP</idx> service in an IP network, it is expected that
+<em>some</em> NetBIOS datagrams may be lost.</p>
+
+<p>By allowing the NBDD to silently discard datagrams, however, the
+lack of reliability is amplified well beyond what would be
+expected from simple network packet loss.</p>
+</alert>
+
+<p>One more monkey-wrench to throw into the works... Given a multicast
+(not broadcast) datagram, if the NBDD will not relay the message, the
+<dk:nobr>client can give</dk:nobr> it another shot. The client has already performed a
+Name <dk:nobr>Service <code>NAME QUERY REQUEST</code></dk:nobr> operation, and received a
+<code>NAME QUERY <dk:nobr>RESPONSE</dk:nobr></code> from the NBNS. It
+did this to determine that the destination <dk:nobr>name was, in fact, a group</dk:nobr>
+name rather than a unique name<idx>unique name</idx>. If the NBNS is
+<dk:nobr>RFC-compliant,</dk:nobr> then the <code>NAME QUERY
+RESPONSE</code> will contain <dk:nobr>a list of all</dk:nobr> the IP addresses of the
+group members. If the NBDD won't relay the message, then the client
+can unicast the datagram to each entry in the list.</p>
+
+<p>To summarize:</p>
+
+<ul>
+<li><p>Unicast datagrams are simply sent to the intended
+recipient.</p></li>
+
+<li><p>In B mode,<idx end="c5-b">B</idx> multicast/broadcast datagrams are broadcast on the
+local LAN.</p></li>
+
+<li><p>For multicast/broadcast datagrams in P,<idx end="c5-p">P</idx>
+H,<idx end="c5-h">H</idx> and M modes<idx end="c5-m">M</idx> the NBDD
+should be queried to see if will relay the datagram.</p>
+
+<ul>
+<li><p>If a positive response is received, then send the datagram to
+the NBDD for distribution.</p></li>
+
+<li><p>Else:</p>
+<ul>
+<li><p>If the datagram is multicast and the Name Server returned a
+complete IP list, then send the message via unicast datagrams to
+each IP in the list.</p></li>
+
+<li><p>Else, broadcast the datagram on the local subnet and hope that
+some nodes will receive it.</p></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+<p>Confused? Don't be surprised if you are. It isn't a pretty
+system... and it gets worse. Because of the potential network
+problems and the awkwardness of the design, very few implementations
+even try to match the RFC specification.  Unfortunately, no one has
+come up with a better solution... which means that what actually
+exists in the wild is worse than what was just described.</p>
+
+</h1s><h1 id="NBT1.5.2">The NBDD and the Damage Done</h1><h1s>
+
+<p>To be blunt, Microsoft<idx>Microsoft</idx> messed up the Datagram
+Service. Their NBNS implementation (WINS<idx>WINS</idx>) does not
+report all of the IP addresses associated with a group name. Instead,
+group names are mapped to a single IP address - the limited broadcast
+address: 255.255.255.255.<idx>255.255.255.255</idx> This is contrary
+to the RFCs, and it causes a few problems.</p>
+
+<p>Without a list of IPs for each group name, the NBDD cannot be
+implemented at all. With no NBDD and no IP list, there is no way to
+ensure that multicast and broadcast datagrams will be sent to all
+group members. This breaks the continuity of the NetBIOS virtual
+LAN. On a "real" NetBIOS LAN, a message sent to a group name would
+actually reach all members of that group. That is what should happen
+under NBT as well, but it doesn't. The best that can be done is to
+broadcast on the local subnet, in which case <em>some</em> members
+of the group <em>may</em> get the message.</p>
+
+<p>Microsoft must have realized their mistake, because they later
+created what they call "Internet Group" names (also called "Special
+Group" names). For names in this category, WINS comes close to
+behaving like a proper NBNS; it will store up to 25 IP addresses per
+name, deleting the oldest entry to make room if necessary. For these
+names, a <code>POSITIVE NAME QUERY RESPONSE</code> from a WINS server
+will list up to 25 valid IP addresses.</p>
+
+<p>Internet Group names are identified by their suffix<idx>suffix
+byte</idx>. Originally only group names with the <code>0x1C</code>
+suffix were given special treatment, but more recently (with W2K?)
+group names with a suffix value of <code>0x20</code> can be defined as
+having Internet Group status. Note that unique names<idx>unique
+name</idx> may also have these suffixes but, since they are not group
+names, no special handling is required.</p>
+
+<p>Sadly, most non-Microsoft implementations (including
+Samba<idx>Samba</idx>) follow Microsoft's example. They map group
+names to the 255.255.255.255 IP address, store only 25 IPs for Special
+Group names, and fail to implement the NBDD.<fn>Network Telesystems,
+which has since been acquired by Efficient Networks, used to have an
+NBNS implementation that handled group names correctly and worked
+quite well with IBM's OS/2<idx>OS/2</idx>. Brian Landy<idx>Landy,
+Brian</idx> has also written a set of patches for Samba's nmbd daemon
+which provide more complete NBDD support. See
+<url>http://www.landy.cx/</url>.</fn> This can cause trouble for some
+clients (OS/2, for example) which expect RFC behavior.<idx
+end="c5-NBNS">NBNS</idx><idx end="c5-group">group name</idx><idx
+end="c5-QUERY">NAME QUERY</idx></p>
+
+<p>Sigh.</p>
+
+</h1s><h1 id="NBT1.5.3">Implementing a Workable Datagram Service</h1><h1s>
+
+<p>That last section was a bit of a rant. Sorry. Time to pick up the
+pieces and move on. Let's talk about how the parts that work
+actually work.</p>
+
+<p><idx>NBT<sidx>name</sidx></idx>As with the Name
+Service<idx>NBT<sidx>Name Service</sidx></idx>, each Datagram Service
+packet has a header. The datagram header is 10 bytes long, arranged as
+follows:</p>
+
+<table colwidths="6.25* 6.25* 6.25* 6.25* 6.25* 6.25* 6.25* 6.25* 6.25* 6.25* 6.25* 6.25* 6.25* 6.25* 6.25* 6.25*" dk:type="centered" dk:borders="all">
+<tbody>
+<tr dk:border="after">
+<td dk:border="right"><p><code>0</code></p></td>
+<td dk:border="right"><p><code>1</code></p></td>
+<td dk:border="right"><p><code>2</code></p></td>
+<td dk:border="right"><p><code>3</code></p></td>
+<td dk:border="right"><p><code>4</code></p></td>
+<td dk:border="right"><p><code>5</code></p></td>
+<td dk:border="right"><p><code>6</code></p></td>
+<td dk:border="right"><p><code>7</code></p></td>
+<td dk:border="right"><p><code>8</code></p></td>
+<td dk:border="right"><p><code>9</code></p></td>
+<td dk:border="right"><p><code>10</code></p></td>
+<td dk:border="right"><p><code>11</code></p></td>
+<td dk:border="right"><p><code>12</code></p></td>
+<td dk:border="right"><p><code>13</code></p></td>
+<td dk:border="right"><p><code>14</code></p></td>
+<td><p><code>15</code></p></td>
+</tr>
+<tr dk:border="after">
+<td colspan="8" dk:border="right"><p><code>MSG_TYPE</code></p></td>
+<td colspan="8"><p><code>FLAGS</code></p></td>
+</tr>
+<tr dk:border="after">
+<td colspan="16"><p><code>DGM_ID</code></p></td>
+</tr>
+<tr dk:border="after">
+<td colspan="16"><p dk:displayed="yes"><code>SOURCE_IP</code></p></td>
+</tr>
+<tr>
+<td colspan="16"><p><code>SOURCE_PORT</code></p></td>
+</tr>
+</tbody></table>
+
+<p>Here is a quick rundown of the fields:</p>
+
+<dl>
+<dt><code>MSG_TYPE</code> (1 byte)</dt>
+
+<dd><p>This field is something like the <code>OPCODE</code> field in
+the Name Service header. It indicates which type of Datagram Service
+message is being sent. It has the following possible values:</p>
+
+<p dk:displayed="yes"><line><code>0x10</code> == <code>DIRECT_UNIQUE DATAGRAM</code></line>
+<line><code>0x11</code> == <code>DIRECT_GROUP DATAGRAM</code></line>
+<line><code>0x12</code> == <code>BROADCAST DATAGRAM</code></line>
+<line><code>0x13</code> == <code>DATAGRAM ERROR</code></line>
+<line><code>0x14</code> == <code>DATAGRAM QUERY REQUEST</code></line>
+<line><code>0x15</code> == <code>DATAGRAM POSITIVE QUERY RESPONSE</code></line>
+<line><code>0x16</code> == <code>DATAGRAM NEGATIVE QUERY RESPONSE</code></line></p>
+
+<p>The first three of these represent unicast, multicast, and
+broadcast datagrams, respectively. The <code>DATAGRAM ERROR</code>
+packet is used to report errors within the Datagram Service. (There
+are only three errors defined in the RFCs.) The final three types
+are used in the query mechanism described earlier.</p></dd>
+
+<dt><code>FLAGS</code> (1 byte)</dt>
+<dd><p>This field breaks down into a set of bitwise subfields:</p>
+
+<table colwidths="12.5* 12.5* 12.5* 12.5* 12.5* 12.5* 12.5* 12.5*" dk:type="centered" dk:borders="all">
+<tbody>
+<tr dk:border="after">
+<td dk:border="right"><p><code>0</code></p></td>
+<td dk:border="right"><p><code>1</code></p></td>
+<td dk:border="right"><p><code>2</code></p></td>
+<td dk:border="right"><p><code>3</code></p></td>
+<td dk:border="right"><p><code>4</code></p></td>
+<td dk:border="right"><p><code>5</code></p></td>
+<td dk:border="right"><p><code>6</code></p></td>
+<td><p><code>7</code></p></td>
+</tr>
+<tr>
+<td colspan="4" dk:border="right"><p><code>UNUSED</code></p></td>
+<td colspan="2" dk:border="right"><p><code>SNT</code></p></td>
+<td dk:border="right"><p><code>F</code></p></td>
+<td><p><code>M</code></p></td>
+</tr>
+</tbody></table>
+
+<dl>
+<dt><code>SNT</code>: <b>S</b>ending <b>N</b>ode <b>T</b>ype</dt>
+<dd><p dk:break="after">This subfield has the following set of possible values (in binary):</p>
+
+<p dk:displayed="yes"><line><code>00</code> == B node<idx>B</idx></line>
+<line><code>01</code> == P node<idx>P</idx></line>
+<line><code>10</code> == M node<idx>M</idx></line>
+<line><code>11</code> == NBDD</line></p>
+
+<p>Microsoft<idx>Microsoft</idx> did not implement the NBDD. They did,
+however, introduce H mode<idx>H</idx>. In practice the value
+<code>11</code> is used to indicate that the sending node is an H
+node.</p>
+</dd>
+
+<dt><code>F</code>: <code>FIRST</code> flag</dt>
+<dd><p>Indicates that this is the first (and possibly only) packet in a
+<dk:nobr>fragmented series.</dk:nobr></p></dd>
+
+<dt><code>M</code>: <code>MORE</code> flag</dt>
+<dd><p>Indicates that the message is fragmented, and that the next
+fragment should follow.</p></dd>
+</dl>
+
+<p>The <code>F</code> and <code>M</code> flags are used to manage
+fragmented messages, which will be described in more detail real
+soon now.</p>
+</dd>
+
+<dt><code>DGM_ID</code> (2 bytes)</dt> <dd><p>The Datagram ID is
+similar in purpose to the
+<code>NAME_TRN_ID</code><idx>NAME_TRN_ID</idx> field in Name Service
+headers. There should be a unique <code>DGM_ID</code> for each
+(conceptual) call to the NetBIOS <code>Send Specific Datagram</code>
+or <code>Send Broadcast Datagram</code> functions. More about this
+when we discuss fragmented messages.</p></dd>
+
+<dt><code>SOURCE_IP</code> (4 bytes)</dt>
+<dd><p>The IP address of the <em>originating</em> node. If the datagram is
+being relayed via the NBDD, then the IP header (at the IP layer of
+the stack, rather than the NBT layer) will contain the IP address
+of the NBDD. The <code>SOURCE_IP</code> field keeps track of the IP
+address of the node that actually composed the datagram.</p></dd>
+
+<dt><code>SOURCE_PORT</code> (2 bytes)</dt>
+
+<dd><p>As with the <code>SOURCE_IP</code> field, this field indicates
+the UDP<idx start="c5-udp">UDP</idx> port used by the originating node.</p></dd>
+</dl>
+
+<p>The above fields are common to all Datagram Service
+messages. RFC&nbsp; 1002 includes two more fields in its header
+layout: the <code>DGM_LENGTH</code> and
+<dk:nobr><code>PACKET_OFFSET</code></dk:nobr> fields. It is kind of
+silly to have those fields in the header, as they are specific to the
+messages which actually carry a data payload: <dk:nobr>the
+<code>DIRECT_UNIQUE</code>,</dk:nobr> <code>DIRECT_GROUP</code>, and
+<code>BROADCAST DATAGRAM</code> <dk:nobr>message types.</dk:nobr></p>
+
+<p>Since the <code>DGM_LENGTH</code> and <code>PACKET_OFFSET</code>
+fields are associated with the datagram transport messages, we will
+break with tradition and put those fields together with the message
+structure. Here is a record layout:</p>
+
+<table colwidths="6.25* 6.25* 6.25* 6.25* 6.25* 6.25* 6.25* 6.25* 6.25* 6.25* 6.25* 6.25* 6.25* 6.25* 6.25* 6.25*" dk:type="centered" dk:borders="all">
+<tbody>
+<tr dk:border="after">
+<td dk:border="right"><p><code>0</code></p></td>
+<td dk:border="right"><p><code>1</code></p></td>
+<td dk:border="right"><p><code>2</code></p></td>
+<td dk:border="right"><p><code>3</code></p></td>
+<td dk:border="right"><p><code>4</code></p></td>
+<td dk:border="right"><p><code>5</code></p></td>
+<td dk:border="right"><p><code>6</code></p></td>
+<td dk:border="right"><p><code>7</code></p></td>
+<td dk:border="right"><p><code>8</code></p></td>
+<td dk:border="right"><p><code>9</code></p></td>
+<td dk:border="right"><p><code>10</code></p></td>
+<td dk:border="right"><p><code>11</code></p></td>
+<td dk:border="right"><p><code>12</code></p></td>
+<td dk:border="right"><p><code>13</code></p></td>
+<td dk:border="right"><p><code>14</code></p></td>
+<td><p><code>15</code></p></td>
+</tr>
+<tr dk:border="after">
+<td colspan="16"><p><code>DGM_LENGTH</code></p></td>
+</tr>
+<tr dk:border="after">
+<td colspan="16"><p><code>PACKET_OFFSET</code></p></td>
+</tr>
+<tr dk:border="after">
+<td colspan="16"><p><code>SOURCE_NAME</code></p></td>
+</tr>
+<tr dk:border="after">
+<td colspan="16"><p><code>DESTINATION_NAME</code></p></td>
+</tr>
+<tr>
+<td colspan="16"><p><code>USER_DATA</code></p></td>
+</tr>
+</tbody></table>
+
+<dl>
+<dt><code>DGM_LENGTH</code> (2 bytes)</dt>
+<dd><p>The formula given for calculating the value of the
+<code>DGM_LENGTH</code> field is:</p>
+
+<pre><![CDATA[DGM_LENGTH = length( SOURCE_NAME )
+           + length( DESTINATION_NAME )
+           + length( USER_DATA )]]></pre>
+
+<p>That is, the number of bytes following the
+<code>PACKET_OFFSET</code> field.<fn>This field is probably not even
+used by most implementations. For a long time, Samba miscalculated
+the <code>DGM_LENGTH</code> field by including the length of the 14-byte RFC
+header. This bug (fixed as of 2.2.4) did not seem to cause
+any trouble.</fn></p></dd>
+
+<dt><code>PACKET_OFFSET</code> (2 bytes)</dt>
+<dd><p>Used in conjunction with the <code>F</code> and <code>M</code> flags in
+the header to allow reconstruction of fragmented NetBIOS
+datagrams.<idx>fragmentation</idx></p></dd>
+
+<dt><code>SOURCE_NAME</code> (34..255 bytes)</dt>
+<dd><p>The encoded NBT name of the sending application. Recall that NBT
+names are communication endpoints in much the same way that a UDP
+or TCP port is an endpoint. The correct <code>SOURCE_NAME</code> must
+be supplied to identify the service or application that sent the
+datagram.</p></dd>
+
+<dt><code>DESTINATION_NAME</code> (34..255 bytes)</dt> <dd><p>The
+encoded NBT name of the destination application or service.  For
+broadcast datagrams, the <code>DESTINATION_NAME</code> will be the
+wildcard <idx>wildcard<sidx>NetBIOS name</sidx></idx>name - an asterisk (&lsquo;<code>*</code>&rsquo;) followed by
+fifteen nul bytes. The NBT name must include the Scope
+ID<idx>NBT<sidx>Scope ID</sidx></idx> (even if it is the default empty
+scope, <code>""</code>).</p></dd>
+
+<dt><code>USER_DATA</code> (0..512 bytes)</dt>
+<dd><p>The actual data to be transmitted.</p></dd>
+</dl>
+
+<p>That's basically all there is to it, with the exception of
+fragmentation. The example packet below describes an unfragmented
+message.</p>
+
+<pre><![CDATA[DATAGRAM_HEADER (unfragmented)
+  {
+  MSG_TYPE = <10 = unicast, 11 = multicast, 12 = broadcast>
+  FLAGS
+    {
+    SNT = <Node type, as shown above>
+    F   = TRUE   (This is the first in the series)
+    M   = FALSE  (No additional fragments follow)
+    }
+  DGM_ID      = <Datagram identifier>
+  SOURCE_IP   = <IP address of the originating node>
+  SOURCE_PORT = <Originating UDP port>
+  }
+DATAGRAM_DATA
+  {
+  DGM_LENGTH       = <Name lengths plus USER_DATA length>
+  PACKET_OFFSET    = 0
+  SOURCE_NAME      = <Fully encoded NBT name of the sender>
+  DESTINATION_NAME = <Fully encoded NBT name of the receiver>
+  USER_DATA        = <Datagram payload>
+  }]]></pre>
+
+<p>Some quick notes:</p>
+
+<ul>
+<li><p>The <code>DGM_ID</code> should be unique with respect to other
+active datagrams originating from the same source. With 64K values
+from which to choose, this should not be difficult.</p></li>
+
+<li><p>Once again, the <code>SOURCE_IP</code>,
+<code>SOURCE_PORT</code>, and <code>SOURCE_NAME</code> are all
+relative to the originator of the datagram. An NBDD does not alter
+these fields when it relays a message.</p></li>
+
+<li><p>NBT datagrams are sent <em>within</em>
+scope<idx>NBT<sidx>scope</sidx></idx>. The Scope ID must be present in
+the <code>SOURCE_NAME</code> and <code>DESTINATION_NAME</code> fields,
+even if it is the empty scope (<code>""</code>).<idx
+end="c5-NBDD">NBDD</idx></p></li>
+</ul>
+
+<h2 id="NBT1.5.3.1">Fragmenting Datagrams</h2><h2s>
+
+<p><idx start="c5-fragmentation">fragmentation</idx>A little way back,
+we mentioned the NetBIOS<idx>NetBIOS</idx>
+API<idx>NetBIOS<sidx>API</sidx></idx> <code>Send Specific
+Datagram</code> and <code>Send Broadcast Datagram</code>
+functions. These functions each accept up to 512 bytes of data on
+input. Given that number, the maximum on-the-wire size of an NBT
+datagram is:</p>
+
+<pre><![CDATA[   10 bytes (Header)
++   2 bytes (DGM_LENGTH)
++   2 bytes (PACKET_OFFSET)
++ 255 bytes (maximum size of SOURCE_NAME)
++ 255 bytes (maximum size of DESTINATION_NAME)
++ 512 bytes (maximum size of USER_DATA)
+-----
+ 1036 bytes]]></pre>
+
+<p dk:indent="no">and that, of course, does not include the UDP
+and IP headers.  The whole thing is fairly chunky - easily more than
+double the size of the data actually <dk:nobr>being sent.</dk:nobr></p>
+
+<p>The RFC authors were concerned that the UDP transport might not
+carry datagrams that big, so they provided a mechanism for breaking
+the <dk:nobr><code>USER_DATA</code></dk:nobr> into smaller fragments, like so:</p>
+
+<dl>
+<dt>first fragment</dt>
+
+<dd>
+<pre>FLAGS.F       = TRUE (This is the first fragment)
+FLAGS.M       = TRUE (Additional fragments follow)
+PACKET_OFFSET = 0</pre>
+</dd>
+
+<dt>middle fragments</dt>
+
+<dd>
+<pre><![CDATA[FLAGS.F       = FALSE (This is the ]]><em>not</em><![CDATA[ the first fragment)
+FLAGS.M       = TRUE  (Additional fragments follow)
+PACKET_OFFSET = <Data offset of fragment>]]></pre>
+</dd>
+
+<dt>final fragment</dt>
+
+<dd>
+<pre><![CDATA[FLAGS.F       = FALSE (This is ]]><em>not</em><![CDATA[ the first fragment)
+FLAGS.M       = FALSE (No more fragments follow)
+PACKET_OFFSET = <Data offset of fragment>]]></pre>
+</dd>
+</dl>
+
+<p>The value of the <code>PACKET_OFFSET</code> field is the sum of
+the lengths of all previous fragments. This value is included in the
+message so that the receiver can keep the fragments in sync as it
+rebuilds the original <code>USER_DATA</code>. This is necessary,
+because datagrams do not always arrive in the order in which they
+were sent.</p>
+
+<p>Now that you have learned all of that, you can forget most of
+it. As is typical for the Datagram Service, the fragmentation
+feature is rarely - if ever - used. The IP layer has its own
+mechanism for handling large packets so NBT datagram fragmentation
+is redundant.</p>
+
+<p>It is possible that someone, somewhere, has implemented
+fragmentation, so an NBT implementation should be prepared to deal
+with it. One simple option is to discard fragments. This can be
+considered valid because the Datagram Service is considered
+"unreliable."</p>
+
+<p>Something else to keep in mind: The 512-byte maximum size for the
+<code>USER_DATA</code> field is required at the NetBIOS layer, but not
+the NBT layer. Since the NetBIOS API is not required for implementing
+NBT, you mustn't expect that the datagrams you receive will fit within
+the limit. Code defensively.<idx
+end="c5-fragmentation">fragmentation</idx><idx
+end="c45-datagram">NBT<sidx>Datagram Service</sidx></idx></p>
+
+</h2s><h2 id="NBT1.5.3.2">Receiving Datagrams</h2><h2s>
+
+<p><idx>NBT<sidx>name</sidx></idx>NBT receives datagram messages on
+UDP port 138,<idx>138/UDP</idx> so clients must listen on that port at
+the UDP<idx end="c5-udp">UDP</idx> level. When a message datagram is
+received (<code>MSG_TYPE</code> is one of <code>0x10</code>,
+<code>0x11</code>, or <code>0x12</code>) the
+<code>DESTINATION_NAME</code> is checked against the local name
+table. If the name is not found, the client should reply with a
+<code>DATAGRAM ERROR MESSAGE</code>. The available error codes
+are:</p>
+
+<p dk:displayed="yes"><line><code>0x82</code> == <code>DESTINATION NAME NOT PRESENT</code></line>
+<line><code>0x83</code> == <code>INVALID SOURCE NAME FORMAT</code></line>
+<line><code>0x84</code> == <code>INVALID DESTINATION NAME FORMAT</code></line></p>
+
+<p>The first value is used whenever the
+<code>DESTINATION_NAME</code> is not in the local name table at the
+receiving end. The other two codes are sent whenever the source or
+destination NBT names, respectively, cannot be parsed.</p>
+
+<p>If the name is found in the local table, then the datagram may be
+passed to any application or service that is listening for the given
+<code>DESTINATION_NAME</code>. The NetBIOS
+API<idx>NetBIOS<sidx>API</sidx></idx> provides the <code>Receive
+<dk:nobr>Specific</dk:nobr> Datagram</code> and <code>Receive
+Broadcast Datagram</code> calls for this purpose. If there are no
+<code>Receive Datagram</code> requests waiting, the datagram is
+<dk:nobr>quietly discarded.</dk:nobr></p>
+
+<p>NBDD<idx start="c5-NBDD-2">NBDD</idx> processing (for those bold
+enough to want to implement an NBDD) is similar. When the NBDD
+receives a datagram it will search the NBNS<idx>NBNS</idx> database
+instead of the local name table. Error messages are returned as above
+for missing or malformed names.</p>
+
+<p>One more note: As a safety precaution, the receiving node should
+probably verify that the <code>SOURCE_IP</code> field in the
+datagram header matches either the source address in the IP header,
+or the NBDD address (if there is one).</p>
+
+</h2s><h2 id="NBT1.5.3.3">Querying the NBDD</h2><h2s>
+
+<p><idx start="c5-datagram-2">NBT<sidx>Datagram
+Service</sidx></idx>The NBDD query message is simply an NBT Datagram
+Service header with the <code>DESTINATION_NAME</code> appended:</p>
+
+<pre><![CDATA[DATAGRAM_HEADER
+  {
+  MSG_TYPE = 0x14 (DATAGRAM QUERY REQUEST)
+  FLAGS
+    {
+    SNT = <Node type>
+    F   = TRUE
+    M   = FALSE
+    }
+  DGM_ID      = <Datagram identifier>
+  SOURCE_IP   = <IP address of the originating node>
+  SOURCE_PORT = <Originating UDP port>
+  }
+DATAGRAM_DATA
+  {
+  DESTINATION_NAME = <Encoded NBT name of the intended receiver>
+  }]]></pre>
+
+<p>If there is an NBDD, and if it can relay the request, it will
+change the <code>MSG_TYPE</code> field to <code>0x15</code>
+(<code>POSITIVE QUERY RESPONSE</code>) and echo the packet back to
+the sender. If the NBDD is unwilling or unable to relay the message
+it will set <code>MSG_TYPE</code> to <code>0x16</code>
+(<code>NEGATIVE QUERY RESPONSE</code>) before sending the reply.</p>
+
+</h2s><h2 id="NBT1.5.3.4">The Second Least Well Understood Aspect of NBT</h2><h2s>
+
+<p>It really should have been much simpler, but given the design
+flaws and implementation errors it is no wonder people have trouble
+with the Datagram Service. Our hope is that this section has cleared
+things up a bit, and explained the problems well enough to make them
+easier to solve.</p>
+
+<p>Just to finish up, here are a few tips:</p>
+
+<ul>
+<li><p>The NBDD should never relay datagrams to itself. If the NBDD
+host is also an NBT end node, then it must deliver datagrams to
+itself <em>and then pass them along to the NBDD</em>. There is no
+way to know if a received datagram is intended for the end node or
+the NBDD.</p></li>
+
+<li><p>Likewise, if a host is acting as both end node and NBDD, the
+end node processing should <em>not</em> generate <code>DESTINATION
+NAME NOT PRESENT</code> (<code>0x82</code>) errors. The datagram
+should be passed along to the <dk:nobr>NBDD instead.</dk:nobr></p></li>
+
+<li><p>The NBNS<idx>NBNS</idx> should store all IP addresses
+associated with a group name. If necessary, it can return the local
+broadcast IP address (255.255.255.255<idx>255.255.255.255</idx>) in
+response to name queries, thus maintaining compatibly with
+Microsoft's<idx>Microsoft</idx> WINS<idx>WINS</idx>. Storing all group
+name IP addresses is necessary for NBDD
+<dk:nobr>implementation.</dk:nobr><idx
+end="c5-NBDD-2">NBDD</idx></p></li>
+
+<li><p>Set a limit on the size of the IP list to which an NBDD will
+relay messages.</p></li>
+
+<li><p>Don't worry about it. If you get the basics right, your system
+will work well enough. Very few systems expect a complete and proper
+NBT Datagram Service implementation.<idx
+end="c5-datagram-2">NBT<sidx>Datagram Service</sidx></idx></p></li>
+</ul>
+
+</h2s></h1s></chapter></oim>

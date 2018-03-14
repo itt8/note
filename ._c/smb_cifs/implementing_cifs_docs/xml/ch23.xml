@@ -1,0 +1,402 @@
+<?xml version="1.0" encoding="US-ASCII"?>
+<!DOCTYPE oim SYSTEM "oimxml.dtd" [
+  <!ENTITY nbsp  "&#160;">
+  <!ENTITY lsquo "&#8216;">
+  <!ENTITY rsquo "&#8217;">
+  <!ENTITY minus "&#8211;">
+  <!ENTITY mdash "&#8212;">
+  <!ENTITY times "&#xd7;">
+  <!ENTITY copy "&#xa9;">
+] >
+<oim xmlns:dk="http://www.kirsanov.com">
+<chapter id="Browsing3.5">
+<chapopen><title>The Better Browser Bureau</title>
+<epigraph dk:padding-top="12">
+<p>
+<line>There is a finite amount of clue</line>
+<line>in the Universe...</line>
+<line>and the Universe is expanding.</line>
+</p>
+<attribution><line>Unknown</line>
+<line>(thanks to John Ladwig<idx>Ladwig, John</idx></line>
+<line>and Marcus Ranum<idx>Ranum, Marcus</idx>)</line></attribution>
+</epigraph>
+</chapopen>
+
+<p>Hold on to your hoopskirts everyone, we're not
+there yet. We have a few more things to learn about the Network
+Neighborhood.<idx>Network Neighborhood</idx></p>
+
+<h1 id="Browsing3.5.1">Running an Election</h1><h1s>
+
+<p><idx start="c23-dmb">DMB</idx>Elections<idx
+start="c23-election">election</idx> may be called whenever a
+Consumer<idx>Browse Service<sidx>Consumer</sidx></idx> is unable to
+find a Local Master Browser, or when a jealous rival (known as a
+Preferred Master Browser<idx>Preferred Master Browser</idx>) shows
+up. An election can also be forced by sending a zero-filled
+<code>RequestElection</code><idx>RequestElection</idx> frame.</p>
+
+<p>When a <code>RequestElection</code> frame is received by a
+Potential Browser<idx>Potential Browser</idx> (including Backup
+Browsers, the LMB<idx start="c23-lmb">LMB</idx>, and the DMB), the
+Potential Browser switches into election mode. The browser stays in
+election mode until a winner declares itself by sending a
+<code>LocalMasterAnnouncement</code><idx>LocalMasterAnnouncement</idx>
+frame.</p>
+
+<p>While in election mode, the browser sends and receives
+<code>Request<dk:hyphen/><dk:nobr>Election</dk:nobr></code> frames. If
+another browser's credentials are better, then the browser knows that
+it has lost the election and will politely shut up, not participating
+further in the current election. </p>
+
+<h2 id="Browsing3.5.1.1">Voting</h2><h2s>
+
+<p>There is a bit of timing involved in the election process. If all
+Potential Browsers<idx>Potential Browser</idx> were to respond at
+once, things could get a little noisy.<fn>It is possible that the
+reason behind this is that some older IP implementations would
+overflow their buffers if too many UDP<idx>UDP</idx> packets all
+arrived at once. There is anecdotal evidence that such a problem did,
+at one time, exist.</fn> So, as with the
+<dk:nobr><code>AnnouncementRequest</code><idx>AnnouncementRequest</idx></dk:nobr>
+frame, when a browser receives a
+<code>Request<dk:hyphen/><dk:nobr>Election</dk:nobr><idx>RequestElection</idx></code>
+frame it will wait a random amount of time before sending its
+response. The amount of time to wait varies by the status of the node,
+however. A Potential Browser that is more likely to win the election
+will send its response to the <code>RequestElection</code> frame
+sooner than one that is less likely.</p>
+
+<p>It's supposed to work like this:</p>
+
+<table colwidths="10* 40* 50*">
+<caption>Browser election timings</caption>
+<thead>
+<tr dk:border="after">
+<th><p></p></th>
+<th><p>Response Delay</p></th>
+<th><p>Node Credentials</p></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><p></p></td>
+<td><p>0-100 ms</p></td>
+<td><p>Local and Domain Master Browsers</p></td>
+</tr>
+<tr>
+<td><p></p></td>
+<td><p>200-600 ms</p></td>
+<td><p>Backup Browsers<idx>Backup Browser</idx></p></td>
+</tr>
+<tr>
+<td><p></p></td>
+<td><p>800-3000 ms</p></td>
+<td><p>All others</p></td>
+</tr>
+</tbody>
+</table>
+
+<p>The goal here is to cut down on network broadcast traffic. If the
+likely candidate votes first, the chances are good that the others
+won't have to <dk:nobr>vote at all.</dk:nobr></p>
+
+<p>After sending a <code>RequestElection</code> frame, a candidate
+should wait two or three seconds to be sure that all other candidates
+have voted. After that, if the candidate has won the round it can send
+another <code>RequestElection</code> frame. This marks the start of
+another round. The election runs four rounds, after which the browser
+still standing (there should be only one) declares itself the winner
+by sending a
+<code>LocalMasterAnnouncement</code><idx>LocalMasterAnnouncement</idx>
+frame.</p>
+
+<p>The timings above are provided in the Leach/Naik Browser draft.
+Whether existing implementations follow these guidelines or not is a
+question for <dk:nobr>further study.</dk:nobr> </p>
+
+</h2s><h2 id="Browsing3.5.1.2">The Ballot</h2><h2s>
+
+<p>The ballot<idx>ballot</idx> is contained within the
+<code>RequestElection</code><idx>RequestElection</idx> frame which,
+just to review, looks like this:</p>
+
+<pre>struct
+  {
+  uchar  Opcode;
+  uchar  Version;
+  ulong  Criteria;
+  ulong  UpTime;
+  ulong  Reserved;
+  uchar *ServerName;
+  } RequestElection;
+</pre>
+
+<p>The <code>Opcode</code> and <code>Reserved</code> fields can be ignored.
+The rest comprise the election ballot. The winner of the election
+is determined by comparing the ballots using a somewhat arcane
+formula. Here, plain and simple, is how <dk:nobr>it works:</dk:nobr></p>
+
+<dl>
+<dt>Test 1</dt>
+
+<dd><p>The higher <code>Version</code> wins. If they are the same,
+continue.  The only values for <code>Version</code> seen on the wire
+are 0 and 1.  Zero is only used when
+initiating an election by sending a zero-filled election
+request.</p></dd>
+
+<dt>Test 2</dt>
+
+<dd><p>Compare the <code>Criteria</code>. The
+higher value wins. If they are equal, continue.
+The contents of the <code>Criteria</code> field still need to be
+analyzed.</p></dd>
+
+<dt>Test 3</dt>
+
+<dd><p>The station that has the greatest <code>UpTime</code> wins. If
+they are equal, continue.  The <code>UpTime</code> is measured in
+milliseconds,<fn>The maximum <code>UpTime</code> is a little less than 50 days,
+after which the 32-bit counter will wrap around to zero again.</fn> so
+there is very little chance that two ballots will have the same
+value.</p></dd>
+
+<dt>Test 4</dt>
+
+<dd><p>Compare the <code>ServerName</code> strings. The first, in
+comparison order, wins (e.g., "EARTH" would win over "OIL").</p></dd>
+</dl>
+
+<p>There is one more test suggested in the Leach/Naik Browser
+draft. It might be "Test 0" in the list above. Test 0 says,
+essentially, that a browser that has recently lost an election is
+still a loser and should remain a loser until several seconds have
+passed.</p>
+
+<p>Let's rip apart that <code>Criteria</code> field, shall we?</p>
+
+<p>The <code>Criteria</code> field is handled like an unsigned long
+integer, but it can also be divided into four subfields, like
+so:</p>
+
+<pre>struct
+  {
+  uchar  OSlevel;
+  uchar  BroMajorVers;
+  uchar  BroMinorVers;
+  uchar  Role;
+  } Criteria;
+</pre>
+
+<p>The <code>OSlevel</code> is the highest order byte and, therefore,
+has the most impact when <code>Criteria</code> values are compared as
+unsigned longs. There are some known, predefined values, as
+shown:</p>
+
+<p dk:displayed="yes">
+<line><code>0x01</code> = Windows for Workgroups and Windows 9x</line>
+<line><code>0x10</code> = Windows NT Workstation</line>
+<line><code>0x14</code> = Samba default</line>
+<line><code>0x20</code> = Windows NT Server</line></p>
+
+<p>The higher you crank the <code>OSlevel</code>, the better your
+chances of winning an election.</p>
+
+<p>Moving along, the next subfields are the major and minor Browser
+Protocol Version numbers. In theory, they should have the values 15
+and 1, <dk:nobr>respectively,</dk:nobr> but Windows 9x systems use 21 and 4
+instead.</p>
+
+<p>The final subfield is known as the <code>Role</code> field. It is a
+bitflag field. There seems to be some disagreement regarding the bits,
+though. Different sources provide different interpretations.
+<idx>node type</idx>The table below provides reasonable
+<dk:nobr>approximations.</dk:nobr></p>
+
+
+<table colwidths="10* 90*">
+<caption>Browser roles</caption>
+<thead>
+<tr dk:border="after">
+<th><p>Bit</p></th>
+<th><p>Description</p></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><p><code>0x80</code></p></td>
+<td><p>Set by the Primary Domain Controller (PDC<idx>PDC</idx>).</p></td>
+</tr>
+<tr>
+<td><p><code>0x20</code></p></td> <td><p>The node is an NBNS client (a
+P, M, or H node<idx>P</idx><idx>M</idx><idx>H</idx>).</p></td>
+</tr>
+<tr>
+<td><p><code>0x08</code></p></td>
+<td><p>This is the "Preferred Master" bit.<idx>Preferred Master Browser</idx>
+It can be enabled manually in Windows via a registry setting, and
+in Samba<idx>Samba</idx> by using the <code>PREFERRED MASTER</code> option in the
+<code>smb.conf</code> file.</p></td>
+</tr>
+<tr>
+<td><p><code>0x04</code></p></td>
+<td><p>Set by the current Local Master Browser.</p></td>
+</tr>
+<tr>
+<td><p><code>0x02</code></p></td>
+
+<td><p>Set by a Backup Browser<idx>Backup Browser</idx> that was until
+recently the Local Master, but which has been downgraded after losing
+an election.<fn>Chances are good that this node is still
+bitter.</fn></p></td>
+</tr>
+<tr>
+<td><p><code>0x01</code></p></td>
+<td><p>Set by Backup Browsers.</p></td>
+</tr>
+</tbody>
+</table>
+
+<p>It was stated earlier that the LMB election can be rigged so that a
+specific node always wins. For example, it is necessary that the DMB
+become the LMB for the LAN.</p>
+
+<dl>
+<dt>Higher OS level</dt>
+
+<dd><p>In the Windows world, only an NT or W2K server can become a PDC
+and, therefore, only these can be DMBs. These systems will set the
+highest defined OS level which, as shown above, is <code>0x20</code>. Thus, in a
+purely Windows environment, the only competition will be from other
+NT and W2K servers.</p></dd>
+
+<dt>Preferred Master<idx>Preferred Master Browser</idx></dt>
+
+<dd><p>To further bias the LMB election, the "Preferred Master"
+<code>Role</code> bit may be set. This provides an edge over otherwise
+identical servers. Preferred Master Browsers also force an election
+whenever they join a LAN.</p></dd>
+
+<dt>NBNS<idx>NBNS</idx> Clients</dt>
+
+<dd><p>The NBNS client bit is higher order than the Preferred Master
+bit. Setting this helps because only an NBNS client can contact a
+remote Domain Master browser to synchronize lists. Thus, an NBNS
+client is a better choice as an LMB than a B mode node (even a
+preferred master).</p></dd>
+
+<dt>The DMB</dt>
+
+<dd><p>The PDC bit is set to ensure that a PDC will win over any other
+NT or W2K server on the LAN. From a Windows perspective, the PDC must
+also be the DMB so setting this bit <em>should</em> ensure that the
+DMB will win the Local Master Browser election.</p></dd>
+</dl>
+
+<p>The thing is, there is no guarantee that a third-party browse
+server will obey the criteria conventions used in Windows. For
+example, a Samba server can be configured to have an OS level of 255
+which would cause it to win the election over the Domain
+Master. Ouch. </p>
+
+</h2s></h1s><h1 id="Browsing3.5.2">Timing Is Everything</h1><h1s>
+
+<p>Several different Microsoft<idx>Microsoft</idx> documents provide
+Browse Service timing information, much of which has already been
+presented. For the sake of clarity, the Browse Service<idx>Browse
+Service</idx> timings are collected in the table below. These values
+may be verified against the Microsoft article <cite>Browsing and
+Windows 95 Networking</cite> as well as the Leach/Naik draft.</p>
+
+<table colwidths="17* 83*">
+<caption>Browser Service timings</caption>
+<thead>
+<tr dk:border="after">
+<th><p>Period</p></th>
+<th><p>Operation</p></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><p>15 minutes</p></td>
+
+<td><p><b>Backup Browser<idx>Backup Browser</idx> Sync.</b> The Backup
+Browser performs a
+<code>NetServerEnum2</code><idx>NetServerEnum2</idx> operation with
+the Local Master Browser.</p></td>
+</tr>
+<tr>
+<td><p>15 minutes</p></td>
+
+<td><p><b>Local Master Browser Sync.</b> The Domain Master Browser
+performs a <code>NetServerEnum2</code> operation with a Local Master
+Browser when it receives a
+<code>MasterAnnouncement</code><idx>MasterAnnouncement</idx> from the
+LMB, and then repeats the sync every 15 minutes.</p></td>
+</tr>
+<tr>
+<td><p>15 minutes</p></td>
+
+<td><p><b>Domain Master Browser Sync.</b> Local Master Browsers will
+contact their Domain Master Browser and perform a
+<code>NetServerEnum2</code> operation to retrieve the merged Browse
+List.</p></td>
+</tr>
+<tr>
+<td><p>1 minute, increasing to&nbsp;12</p></td>
+
+<td><p><b>Host and Local Master Announcements.</b> These announcements
+are sent one minute apart at first. The period typically increases in
+the following sequence: 1, 2, 4, 8, 12, 12, 12...</p></td>
+</tr>
+<tr>
+<td><p>1 minute, increasing to&nbsp;15</p></td>
+
+<td><p><b>Domain Announcements.</b> Similar to the previous kind,
+except that they peg at 15 minutes instead of 12 and the series is
+reported to be: 1, 1, 1, 1, 1, 15, 15...</p></td>
+</tr>
+<tr>
+<td><p>36 minutes</p></td>
+
+<td><p>The timeout period for a Host entry to time out of the local
+Browse List.<idx>Browse List</idx> It should be 3&#160;&#215;&#160;the
+announcement period, but in testing, some Providers<idx>Browse
+Service<sidx>Provider</sidx></idx> listed their
+<code>Periodicity</code> incorrectly.</p></td>
+</tr>
+<tr>
+<td><p>45 minutes</p></td>
+
+<td><p>The timeout period for a Domain entry to time out of a foreign
+workgroup's<idx>Workgroup</idx> Browse List.</p></td>
+</tr>
+<tr>
+<td><p>15/2 minutes</p></td>
+
+<td><p>The average amount of time required before a Backup Browser
+discovers that its Local Master is missing, and calls another
+election. Elections may also be called if a Preferred
+Master<idx>Preferred Master Browser</idx> shows up on the LAN or if a
+Consumer gets no response to a
+<code>GetBackupListRequest</code>.<idx>GetBackupListRequest</idx><idx
+end="c23-dmb">DMB</idx><idx end="c23-election">election</idx><idx
+end="c23-lmb">LMB</idx></p></td>
+</tr>
+</tbody>
+</table>
+
+<p>If you like playing with numbers (and really, who doesn't) you
+can spend some time going through the mental exercise of figuring
+out how long it takes for Host and Domain entries to time out
+across subnets.</p>
+
+<p>...or you could take a nice quiet walk in the forest. The forest
+sounds good. Yep. Forest.</p>
+
+</h1s>
+</chapter>
+</oim>

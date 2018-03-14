@@ -1,0 +1,1001 @@
+<?xml version="1.0" encoding="US-ASCII"?>
+<!DOCTYPE oim SYSTEM "oimxml.dtd" [
+  <!ENTITY nbsp  "&#160;">
+  <!ENTITY lsquo "&#8216;">
+  <!ENTITY rsquo "&#8217;">
+  <!ENTITY minus "&#8211;">
+  <!ENTITY mdash "&#8212;">
+  <!ENTITY times "&#xd7;">
+  <!ENTITY copy "&#xa9;">
+] >
+<oim xmlns:dk="http://www.kirsanov.com">
+<chapter id="SMB2.7">
+<chapopen><title>Session Setup</title>
+<epigraph dk:padding-top="24">
+<p><line>...it is a tale</line>
+<line>Told by an idiot, full of sound</line>
+<line>and fury, signifying nothing.</line></p>
+<attribution><line><cite>Macbeth</cite>, Act V, Scene v,</line>
+<line>William Shakespeare<idx>Shakespeare, William</idx></line></attribution>
+</epigraph>
+</chapopen>
+
+<p>Originally, the <code>SESSION SETUP</code><idx
+start="c14-setup">SESSION SETUP</idx> was not required by - or even
+defined as part of - the SMB protocol. It was introduced in the LANMAN
+days in order to handle User Level<idx>User Level Security</idx>
+authentication and could be skipped if the server was in Share Level
+security mode.<idx>Share Level Security</idx> These days, however, the
+<code>SESSION SETUP</code> takes care of a lot of unfinished business,
+like cleaning up some of the debris left by the <code>NEGOTIATE
+PROTOCOL RESPONSE</code>.<idx start="c14-negotiate">NEGOTIATE
+PROTOCOL</idx> In the NT&#160;LM&#160;0.12<idx>NT LM 0.12</idx>
+dialect<idx>dialect</idx> there <em>must</em> be a <code>SESSION
+SETUP</code> exchange before a <code>TREE CONNECT</code><idx>TREE
+CONNECT</idx> may be sent, even if the server is operating in
+Share Level security mode. </p>
+
+<h1 id="SMB2.7.1"><code>SESSION SETUP ANDX REQUEST</code> Parameters</h1><h1s>
+
+<p dk:break="after">The <code>SESSION SETUP</code> SMB is actually a
+<code>SESSION SETUP ANDX</code>, which simply means that there's an
+AndX block in the parameter section. In the
+NT&#160;LM&#160;0.12<idx>NT LM 0.12</idx> dialect, the Parameter block
+is formatted as shown below:</p>
+
+<pre>typedef struct
+  {
+  uchar WordCount;  /* 12 or 13 words */
+  struct
+    {
+    struct
+      {
+      uchar  Command;
+      uchar  Reserved;
+      ushort Offset;
+      } AndX;
+    ushort MaxBufferSize;
+    ushort MaxMpxCount;
+    ushort VcNumber;
+    ulong  SessionKey;
+    ushort Lengths[];  /* 1 or 2 elements */
+    ulong  Reserved;
+    ulong  Capabilities;
+    } Words;
+  } smb_SessSetupAndX_Req_Params;</pre>
+
+<p>When looking at these C-like structures, keep in mind that they are
+intended as descriptions rather than specifications. On the wire, the
+parameters are packed tightly into the SMB messages, and they are not
+aligned. Though the structures show the type and on-the-wire ordering
+of the fields, the C programming language does not guarantee that the
+layout will be retained in memory. That's why our example code
+includes all those functions and macros for packing and unpacking
+the packets.<fn>To be pedantic, the correct terms are "marshaling" and
+"unmarshaling." "Marshaling" means collecting data in system-internal
+format and re-organizing it into a linear format for transport to
+another system (virtual, physical, or otherwise). "Unmarshaling," of
+course, is the reverse process. These terms are commonly associated
+with Remote Procedure Call (RPC) protocols, but some have argued (not
+unreasonably) that SMB is a simple form of RPC.</fn></p>
+
+<p>Many of the fields in the
+<code>SESSION_SETUP_ANDX.SMB_PARAMETERS</code> block should be
+familiar from the <code>NEGOTIATE PROTOCOL RESPONSE</code> SMB. This
+time, though, it's the client's turn to set the limits.</p>
+
+<dl>
+<dt><code>MaxBufferSize</code></dt>
+
+<dd><p><code>MaxBufferSize</code> is the size (in bytes) of the
+largest message that the <em>client</em> can receive. It is typically
+less than or equal to the server's <code>MaxBufferSize</code>, but it
+doesn't need to be.</p></dd>
+
+<dt><code>MaxMpxCount</code></dt>
+
+<dd><p>This must always be less than or equal to the server-specified
+<dk:nobr><code>MaxMpxCount</code></dk:nobr>. This is the client's way of letting the
+server know how many outstanding requests it will allow. The server
+might use this value to pre-allocate resources.</p></dd>
+
+<dt><code>VcNumber</code></dt>
+
+<dd><p>This field is used to establish a Virtual Circuit
+(VC<idx>VC</idx>) with the server. Keep reading, we're almost
+there...</p></dd>
+
+<dt><code>SessionKey</code><idx>SessionKey</idx></dt>
+
+<dd><p>Just echo back whatever you got in the <code>NEGOTIATE PROTOCOL
+<dk:nobr>RESPONSE</dk:nobr></code>.</p></dd>
+
+<dt><code>Lengths</code></dt>
+
+<dd><p>For efficiency's sake the structure above provides the
+<code>Lengths</code> field, defined as an array of unsigned short
+integers and described as having one or two elements. The SNIA
+doc<idx>SNIA<sidx>CIFS Technical Reference</sidx></idx> and other
+references go to a lot more trouble and provide two separate and
+complete versions of the entire <code>SESSION SETUP REQUEST</code>
+structure. </p>
+
+<p>Basically, though, if Extended Security has been negotiated then
+the <code>Lengths</code> field is a single <code>ushort</code>, known
+as <code>SecurityBlobLength</code> in the SNIA doc. (We touched on the
+concept of security blobs briefly back in <snumref refid="SMB2.6.3.2"/>.)
+If Extended Security is <em>not</em> in use then there will be two
+<code>ushort</code> fields identified by the excessively long
+names:</p>
+
+<ul>
+<li><p><code>CaseInsensitivePasswordLength</code> and<idx>CaseInsensitivePassword</idx></p></li>
+<li><p><code>CaseSensitivePasswordLength</code>.<idx>CaseSensitivePassword</idx></p></li>
+</ul>
+
+<p>Obviously, all of this stuff falls into the general category of
+authentication, and will be covered in more detail when we finally
+focus on <dk:nobr>that topic.</dk:nobr></p>
+</dd>
+
+<dt><code>Reserved</code></dt>
+
+<dd><p>Four bytes of must-be-zero.</p></dd>
+
+<dt><code>Capabilities</code></dt>
+
+<dd><p>This field contains the client capabilities flag
+bits.<idx>Capabilities</idx></p></dd>
+</dl>
+
+<p>You might notice, upon careful examination, that the client does
+not send back a <code>MaxRawSize</code> value. That's because it can
+specify raw read/write<idx>raw read/write mode</idx> sizes in the
+<code>SMB_COM_RAW_READ</code> and <code>SMB_COM_RAW_WRITE</code>
+requests, if it sends them. These SMBs are considered obsolete, so
+newer clients really shouldn't be using them.</p>
+
+<p>There are a couple of fields in the <code>SESSION SETUP
+REQUEST</code> which touch on esoteric concepts that we have been
+promising to explain for quite a while now - specifically virtual
+circuits and capabilities - so let's get it <dk:nobr>over with...</dk:nobr> </p>
+
+<h2>Virtual Circuits</h2><h2s>
+
+<p><idx start="c14-vc">VC</idx><idx
+start="c14-dialect">dialect</idx>It does seem as though there's a good
+deal of cruft in the SMB protocol. The
+<code>SessionKey</code><idx>SessionKey</idx>, for example, appears to
+be a vestigial organ, the purpose of which has been mostly
+forgotten. Originally, such fields may have been intended to
+compensate for a limitation in a specific transport or an older
+implementation, or to solve some other problem that isn't a problem
+any more.</p>
+
+<p>Consider virtual circuits...</p>
+
+<p>The LAN Manager<idx>LM</idx> documentation available from
+Microsoft's<idx>Microsoft</idx> ftp site provides the best clues
+regarding virtual circuits (see
+<code>SMB-LM1X.PS</code><idx>SMB-LM1X.PS</idx>, for
+instance). According to those docs a virtual circuit (VC) represents a
+single transport layer connection, and the <code>VcNumber</code> is a
+tag used to identify a specific transport link between a specific
+client/server pair.</p>
+
+<p>That concept probably needs to be considered in context.</p>
+
+<p>The LANMAN dialects were developed in conjunction with
+OS/2<idx>OS/2</idx> (an honest-to-goodness, really-truly, multitasking
+OS). OS/2 clients pass SMB traffic through a
+<idx>redirector</idx>redirector - just like DOS and Windows - and it
+seems as though there was some concern that multiplexing the SMB
+traffic from several processes across a single connection might cause
+a bit of a bottleneck. So, to avoid congestion, the redirector could
+create additional connections to facilitate faster transfers for
+individual processes.<fn>If you enjoy digging into odd details, this
+is a great one. See the <code>SMB-LM1X.PS</code> file, also known as
+Microsoft Networks/SMB File Sharing Protocol Extensions, Version 2.0,
+Document Version 3.3. In particular, see the definition of a VC on
+page 2, and the description of the "Virtual Circuit Environment" in
+Section 4.a on page 10.</fn> Under this scheme, all of the transport
+level connections from a client to a server were considered part of a
+single <dk:nobr>logical</dk:nobr> "session" (we now, officially, have
+way too many meanings for that term). Within that logical session
+there could, conversely, be multiple transport level connections - aka
+virtual circuits - up to the limit set in the <code>NEGOTIATE PROTOCOL
+RESPONSE</code>.</p>
+
+<fig id="Figure2.10">
+<img dk:width="160" loc="SMB10"/>
+<caption>Virtual circuits</caption>
+<subcaption><p>Process 11 has the use of virtual circuit number 1 (VC
+1).  VC 0 and VC 1 are separate TCP/IP connections, yet both VCs are
+part of the same logical client/server "session" (and the term
+"session" is clearly overused).</p></subcaption>
+</fig>
+
+<p><ref refid="Figure2.10"/> illustrates the point, and here's how
+it's supposed to work:</p>
+
+<ul>
+<li><p>Logical Session Creation</p>
+<ul>
+<li><p>The client makes an initial connection to the SMB server,
+performs the <code>NEGOTIATE PROTOCOL</code> exchange, and establishes
+the session by sending a <code>SESSION SETUP ANDX
+REQUEST</code>.</p></li>
+
+<li><p>The <code>VcNumber</code> in the initial <code>SESSION SETUP
+ANDX REQUEST</code> is zero (<code>0</code>).</p></li>
+</ul>
+</li>
+
+<li><p>Additional VC Creation </p>
+<ul>
+<li><p>An additional transport level connection is created.</p></li>
+
+<li><p>The client sends a new <code>SESSION SETUP ANDX REQUEST</code> with
+a <code>VcNumber</code> greater than zero, but less than the
+<code>MaxNumberVCs</code> sent by the server.</p></li>
+
+<li><p>The <code>SessionKey</code><idx>SessionKey</idx> field in the
+<code>SESSION SETUP ANDX REQUEST</code> must match the
+<code>SessionKey</code> returned in the initial <code>NEGOTIATE
+PROTOCOL RESPONSE</code>. That's how the new VC is bound to the
+existing logical session.</p></li>
+</ul>
+</li>
+</ul>
+
+<p>Ah-hahhh! The mystery of the <code>SessionKey</code> field is
+finally revealed. Kind of a let-down, isn't it?</p>
+
+<p>Whenever a new transport-layer connection is created, the client is
+supposed to assign a new VC number. Note that the
+<code>VcNumber</code> on the initial connection is expected to be zero
+to indicate that the client is starting from scratch and is creating a
+new logical session. If an additional VC is given a
+<code>VcNumber</code> of zero, the server <em>may</em> assume that any
+existing connections with that same client are now bogus, and shut
+them down.</p>
+
+<p>Why do such a thing?</p>
+
+<p>The explanation given in the LANMAN documentation, the Leach/Naik
+IETF draft, and the SNIA doc is that clients may crash and reboot
+without first closing their connections. The zero
+<code>VcNumber</code> is the client's signal to the server to clean up
+old connections. Reasonable or not, that's the logic behind it.
+Unfortunately, it turns out that there are some annoying side-effects
+that result from this behavior. It is possible, for example, for one
+rogue application to completely disrupt SMB filesharing on a system
+simply by sending Session Setup requests with a zero
+<code>VcNumber</code>. Connecting to a server through a NAT
+(<b>N</b>etwork <b>A</b>ddress <b>T</b>ranslation) gateway is also
+problematic, since the NAT makes multiple clients appear to be a
+single client by placing them all behind the same IP address.<fn>See
+<cite>Microsoft Knowledge Base Article #301673</cite> for more
+information.</fn></p>
+
+<p>The biggest problem with virtual circuits, however, is that they
+are not really needed any more (if, in fact, they ever were). As a
+result, they are handled inconsistently by various implementations and
+are not entirely to be trusted. On the client-side, the best thing to
+do is to ignore the concept and view each transport connection as a
+separate logical session, one VC per session. Oh! ...and contrary to
+the specs the client should always use a <code>VcNumber</code> of one,
+never zero.</p>
+
+<p>On the server side, it is important to keep in mind that the
+<code>TID</code>,<idx>TID</idx> <code>UID</code>,<idx>UID</idx>
+<code>PID</code>,<idx>PID</idx> and <code>MID</code><idx>MID</idx> are
+all supposed to be relative to the VC. In particular, <code>TID</code>
+and <code>UID</code> values negotiated on one VC have no meaning (and
+no authority) on another VC, even if both VCs appear to be from the
+same client. Another important note is that the server should
+<em>not</em> disconnect existing VCs upon receipt of a new VC with a
+zero <code>VcNumber</code>. As described above, doing so is
+impractical and may break things. The server should let the transport
+layer detect and report session disconnects. At most, a zero
+<code>VcNumber</code> might be a good excuse to send a keep-alive
+packet.</p>
+
+<p>The whole VC thing probably seemed like a good idea at the
+time.<idx end="c14-vc">VC</idx></p>
+
+</h2s><h2><code>Capabilities</code> Bits</h2><h2s>
+
+<p><idx start="c14-capabilities">Capabilities</idx>Remember a little
+while back when we said that there were subtle variations within SMB
+dialects? Well, some of them are not all that subtle once you get to
+know them. The <code>Capabilities</code> bits formalize several such
+variations by letting the client and server negotiate which special
+features will be supported. The server sends its
+<code>Capabilities</code> field in the <code>NEGOTIATE PROTOCOL
+RESPONSE</code>, and the client returns its own set of capabilities in
+the <code>SESSION SETUP ANDX REQUEST</code>.</p>
+
+<p>The table below provides a listing of the capabilities defined for
+servers. The client set is smaller.</p>
+
+<table colwidths="5* 35* 60*">
+<caption>Server capabilities</caption>
+<thead>
+<tr dk:border="after">
+<th><p>Bit</p></th>
+<th><p>Name / Bitmask</p></th>
+<th><p>Description</p></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><p>31</p></td>
+<td><p><line><code dk:type="small">CAP_EXTENDED_SECURITY</code></line>
+<line><code>0x80000000</code></line></p></td>
+
+<td><p>Set to indicate that Extended Security exchanges are
+supported.</p></td>
+</tr>
+<tr>
+<td><p>30</p></td>
+<td><p><line><code dk:type="small">CAP_COMPRESSED_DATA</code></line>
+<line><code>0x40000000</code></line></p></td>
+
+<td><p>If set, this bit indicates that the server can compress Data
+blocks before sending them.<fn>There are a few small notes scattered
+about the SNIA doc that suggest that the prescribed compression
+algorithm is something called LZNT<idx>LZNT</idx>. I haven't been able
+to find a definitive reference that explains what LZNT is, but it
+appears from the name that it is a form of Lempel-Ziv
+compression.</fn> This might be useful to improve throughput of large
+file transfers over low-bandwidth links. This capability requires
+</p></td>
+</tr>
+
+<tr>
+<td><p></p></td>
+<td><p></p></td>
+<td><p>that the <code>CAP_BULK_TRANSFER</code>
+capability also be set. Currently, however, there are no known
+implementations that support bulk transfer.</p></td>
+</tr>
+<tr>
+<td><p>29</p></td>
+<td><p><line><code dk:type="small">CAP_BULK_TRANSFER</code></line>
+<line><code>0x20000000</code></line></p></td>
+
+<td><p>If set, the server supports the
+<code>SMB_COM_READ_BULK</code> and <code>SMB_COM_WRITE_BULK</code> SMBs.</p>
+
+<p>There are no known implementations which support
+<code>CAP_BULK_TRANSFER</code> and/or
+<code>CAP_COMPRESSED_DATA</code>.  Samba<idx>Samba</idx> does not even
+bother to define constants for these capabilities.</p></td>
+</tr>
+<tr>
+<td><p>23</p></td>
+<td><p><line><code dk:type="small">CAP_UNIX</code></line>
+<line><code>0x00800000</code></line></p></td>
+
+<td><p>Microsoft<idx>Microsoft</idx> reserved this bit based on a
+proposal (by Byron Deadwiler<idx>Deadwiler, Byron</idx> at
+Hewlett-Packard) for a small set of Unix extensions. The SNIA doc
+describes these extensions in an appendix. Note, however, that the
+proposal was made and the appendix written before the extensions were
+widely implemented.  Samba supports the SMB Unix extensions, but
+probably not exactly as specified in the SNIA doc.</p></td>
+</tr>
+<tr>
+<td><p>15</p></td>
+<td><p><line><code dk:type="small">CAP_LARGE_WRITEX</code></line>
+<line><code>0x00008000</code></line></p></td>
+
+<td><p>If set, the server supports a special mode of the
+<code>SMB_COM_WRITE_ANDX</code><idx>WRITE_ANDX</idx> SMB which allows
+the client to send more data than would normally fit into the server's
+receive buffers, up to a maximum of 64 Kbytes.</p></td>
+</tr>
+<tr>
+<td><p>14</p></td>
+<td><p><line><code dk:type="small">CAP_LARGE_READX</code></line>
+<line><code>0x00004000</code></line></p></td>
+
+<td><p>Similar to the <code>CAP_LARGE_WRITEX</code>, this bit
+indicates whether the server can handle
+<code>SMB_COM_READ_ANDX</code><idx>READ_ANDX</idx> requests for blocks
+of data larger than the reported maximum buffer size. The theoretical
+maximum is 64 Kbytes, but the client should never request more data
+than it can receive.</p></td>
+</tr>
+<tr>
+<td><p>13</p></td>
+<td><p><line><code dk:type="small">CAP_INFOLEVEL_PASSTHROUGH</code><idx>InfoLevel</idx></line>
+<line><code>0x00002000</code></line></p></td>
+
+<td><p>Samba calls this the <code>CAP_W2K_SMBS</code> bit. In testing,
+NT&nbsp;4.0 systems did not set this bit, but W2K systems did. Basically, it
+indicates support for some advanced requests.</p></td>
+</tr>
+<tr>
+<td><p>12</p></td>
+<td><p><line><code dk:type="small">CAP_DFS</code></line>
+<line><code>0x00001000</code></line></p></td>
+
+<td><p>If set, this bit indicates that the server supports Microsoft's
+Distributed File System.<idx>DFS</idx></p></td>
+</tr>
+<tr>
+<td><p>9</p></td>
+<td><p><line><code dk:type="small">CAP_NT_FIND</code></line>
+<line><code>0x00000200</code></line></p></td>
+
+<td><p>This is a mystery bit. There is very little documentation about
+it and what does exist is not particularly helpful. The SNIA doc
+simply says that this bit is "Reserved," but the notes regarding the
+<code>CAP_NT_SMBS</code> bit state that the latter implies the
+former. (Counter-examples have been found in some references, but not
+on the wire during testing.  Your mileage may vary.)</p>
+
+<p>Basically, though, if this bit is set it indicates that the server
+supports an extended set of function calls belonging to a class of
+calls known as "transactions."</p></td>
+</tr>
+<tr>
+<td><p>8</p></td>
+<td><p><line><code dk:type="small">CAP_LOCK_AND_READ</code></line>
+<line><code>0x00000100</code></line></p></td>
+
+<td><p>If set, the server is reporting that it supports the obsolete
+<code>SMB_COM_LOCK_AND_READ</code> SMB.</p>
+
+<p>...but go back and look at the
+<code>SMB_HEADER.FLAGS</code><idx>FLAGS</idx> bits described
+earlier. The lowest order <code>FLAGS</code> bit is
+<code>SMB_FLAGS_SUPPORT_LOCKREAD</code>, and it is also supposed to
+indicate whether or not the server supports
+<code>SMB_COM_LOCK_AND_READ</code> (as well as the complimentary
+<code>SMB_COM_WRITE_AND_UNLOCK</code>). The thing is, traces from
+Windows NT and Windows 2000 systems show the
+<code>CAP_LOCK_AND_READ</code> bit set while the
+<code>SMB_FLAGS_SUPPORT_LOCKREAD</code> <dk:nobr>is
+clear.</dk:nobr></p>
+
+<p>That doesn't make a lot of sense.</p>
+
+<p>Well... it <em>may</em> be that the server is indicating that it
+supports the <code>SMB_COM_LOCK_AND_READ</code> SMB but <em>not</em>
+the <code>SMB_COM_WRITE_AND_UNLOCK</code> SMB, or it may be that the
+server may be using the <code>Capabilities</code> field in preference
+to the <code>FLAGS</code> field.</p>
+
+<p>Avoid the use of the <code>SMB_COM_LOCK_AND_READ</code> and
+<code>SMB_COM_WRITE_AND_UNLOCK</code> SMBs and everything should turn
+out alright.</p></td>
+</tr>
+<tr>
+<td><p>7</p></td>
+<td><p><line><code dk:type="small">CAP_LEVEL_II_OPLOCKS</code></line>
+<line><code>0x00000080</code></line></p></td>
+
+<td><p>If set, Level II OpLocks<idx>OpLocks</idx> are supported in
+addition to Exclusive and Batch OpLocks.</p></td>
+</tr>
+<tr>
+<td><p>6</p></td>
+<td><p><line><code dk:type="small">CAP_STATUS32</code></line>
+<line><code>0x00000040</code></line></p></td>
+
+<td><p>If set, this bit indicates that the server supports the 32-bit
+NT_STATUS<idx>NT_STATUS</idx> error codes.</p></td>
+</tr>
+<tr>
+<td><p>5</p></td>
+<td><p><line><code dk:type="small">CAP_RPC_REMOTE_APIS</code></line>
+<line><code>0x00000020</code></line></p></td>
+
+<td><p>If set, this bit indicates that the server permits remote
+management via Remote Procedure Call (RPC) requests. RPC is way beyond
+the scope of this book.</p></td>
+</tr>
+<tr>
+<td><p>4</p></td>
+<td><p><line><code dk:type="small">CAP_NT_SMBS</code></line>
+<line><code>0x00000010</code></line></p></td>
+
+<td><p>If set, this bit indicates that the server supports some
+advanced SMBs that were designed for use with Windows NT and
+above. These are, essentially, an extension to the
+NT&#160;LM&#160;0.12 dialect.</p>
+
+<p>According to the SNIA doc, the <code>CAP_NT_SMBS</code> implies
+<code>CAP_NT_FIND</code>.</p></td>
+</tr>
+<tr>
+<td><p>3</p></td>
+<td><p><line><code dk:type="small">CAP_LARGE_FILES</code></line>
+<line><code>0x00000008</code></line></p></td>
+
+<td><p>If set, this bit indicates that the server can handle 64-bit
+file sizes. With 32-bit file sizes, files are limited to 4&nbsp;GB in
+size.</p></td>
+</tr>
+<tr>
+<td><p>2</p></td>
+<td><p><line><code dk:type="small">CAP_UNICODE</code></line>
+<line><code>0x00000004</code></line></p></td>
+
+<td><p>Set to indicate that the server supports Unicode.<idx>Unicode</idx></p></td>
+</tr>
+<tr>
+<td><p>1</p></td>
+<td><p><line><code dk:type="small">CAP_MPX_MODE</code></line>
+<line><code>0x00000002</code></line></p></td>
+
+<td><p>If set, the server supports the (obsolete)
+<code>SMB_COM_READ_MPX</code> and <code>SMB_COM_WRITE_MPX</code>
+SMBs.</p></td>
+</tr>
+<tr>
+<td><p>0</p></td>
+<td><p><line><code dk:type="small">CAP_RAW_MODE</code></line>
+<line><code>0x00000001</code></line></p></td>
+
+<td><p>If set, the server supports the (obsolete)
+<code>SMB_COM_READ_RAW</code> and <code>SMB_COM_WRITE_RAW</code>
+SMBs.</p></td>
+</tr>
+</tbody>
+</table>
+
+<p>On the server side, the implementor's rule of thumb regarding
+capabilities is to start by supporting as few as possible and add new
+ones one at a time. Each bit is a cornucopia - or Pandora's box - of
+new features and requirements, and most represent a very large
+development effort. As usual, if there is documentation it is
+generally either scarce or encumbered.</p>
+
+<p>Things are not quite so bad if you are implementing a client,
+though the client also has a list of capabilities that it can
+declare. The client list is as follows:</p>
+
+<table colwidths="5* 30* 65*">
+<caption>Client capabilities</caption>
+<thead>
+<tr dk:border="after">
+<th><p>Bit</p></th>
+<th><p>Name / Bitmask</p></th>
+<th><p>Description</p></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><p>31</p></td>
+<td><p><line><code dk:type="small">CAP_EXTENDED_SECURITY</code></line>
+<line><code>0x80000000</code></line></p></td> 
+
+<td><p>Set to indicate that Extended Security exchanges are supported.</p>
+
+<p>The SNIA doc and the older IETF Draft do not list this as a
+capability set by the client. On the wire, however, it is clearly used
+as such by Windows, Samba, and by Steve French's<idx>French,
+Steven</idx> CIFS VFS for Linux. If the server indicates Extended
+Security support in its <code>Capabilities</code> field, then the
+client may set this bit to indicate that it also supports Extended
+Security.</p></td>
+</tr>
+
+<tr>
+<td><p>9</p></td>
+<td><p><line><code dk:type="small">CAP_NT_FIND</code></line>
+<line><code>0x00000200</code></line></p></td> 
+
+<td><p>If set, this bit indicates that the client is capable of utilizing
+the <code>CAP_NT_FIND</code> capability of the server.</p></td>
+</tr>
+
+<tr>
+<td><p>7</p></td>
+<td><p><line><code dk:type="small">CAP_LEVEL_II_OPLOCKS</code></line>
+<line><code>0x00000080</code></line></p></td> 
+
+<td><p>If set, this bit indicates that the client understands Level II
+OpLocks.</p></td>
+</tr>
+
+<tr>
+<td><p>6</p></td>
+<td><p><line><code dk:type="small">CAP_STATUS32</code></line>
+<line><code>0x00000040</code></line></p></td> 
+
+<td><p>Indicates that the client understands 32-bit NT_STATUS error
+codes.</p></td>
+</tr>
+
+<tr>
+<td><p>4</p></td>
+<td><p><line><code dk:type="small">CAP_NT_SMBS</code></line>
+<line><code>0x00000010</code></line></p></td> 
+
+<td><p>Likewise, I'm sure. </p>
+
+<p>As with the <code>CAP_NT_FIND</code> bit, the client will set this
+to let the server know that it, too, understands the extended set
+of SMBs and function calls that are available if the server has set
+the <code>CAP_NT_SMBS</code> bit.</p></td>
+</tr>
+
+<tr>
+<td><p>3</p></td>
+<td><p><line><code dk:type="small">CAP_LARGE_FILES</code></line>
+<line><code>0x00000008</code></line></p></td> 
+
+<td><p>The client sets this to let the server know that it can handle
+64-bit file sizes and offsets.</p></td>
+</tr>
+
+<tr>
+<td><p>2</p></td>
+<td><p><line><code dk:type="small">CAP_UNICODE</code></line>
+<line><code>0x00000004</code></line></p></td> 
+
+<td><p>Set to indicate that the client understands Unicode.</p></td>
+</tr>
+</tbody>
+</table>
+
+<p>The client should not set any bits that were not also set by the
+server. That is, the <code>Capabilities</code> bits sent <em>to</em>
+the server should be the intersection (bitwise AND) of the client's
+actual capabilities and the set sent <em>by</em> the server.</p>
+
+<p>The <code>Capabilities</code> bits are like the razor-sharp barbs
+on a government fence. Attempting to hurdle any one of them can shred
+your implementation. Consider adding Unicode support to a system that
+doesn't already have it. Ooof! That's going to be a lot of work.<fn>It
+was, in fact, a lot of work for the Samba Team. Those involved did a
+tremendous job, and they deserve several rounds of applause. Things
+were much easier for jCIFS<idx>jCIFS</idx> because Java natively
+supports Unicode.</fn></p>
+
+<p>Some <code>Capabilities</code> bits indicate support for sets of
+function calls that can be made via SMB. These function calls, which
+are sometimes referred to as "sub-protocols," fall into two separate
+(but similar) categories:</p>
+
+<ul>
+<li><p><b>R</b>emote <b>A</b>dministration <b>P</b>rotocol
+(RAP<idx>RAP</idx>),</p></li>
+
+<li><p><b>R</b>emote <b>P</b>rocedure <b>C</b>all (RPC).</p></li>
+</ul>
+
+<p>Of the two, the RAP sub-protocol is older and (relatively speaking)
+simpler. Depending upon the SMB dialect, server support for some RAP
+calls is assumed rather than negotiated. Fortunately, much of RAP is
+documented... if you know where to look.<fn>Information on RAP calls
+is scattered among several sources, including the archives of
+Microsoft's CIFS mailing list.<idx>CIFS<sidx>mailing list</sidx></idx>
+The SNIA doc has enough to get you started with the basics of RAP, but
+see also the file <code>cifsrap2.txt</code><idx>cifsrap2.txt</idx>
+which can be found on Microsoft's aforementioned FTP site.</fn></p>
+
+<p>Microsoft's RPC system - known as <idx>MS-RPC</idx>MS-RPC - is
+newer, and has a lot in common with the better-known
+DCE/RPC<idx>DCE/RPC</idx> system. MS-RPC over SMB allows the client to
+make calls to certain Windows DLL library functions on the server side
+which, in turn, allows the client to do all sorts of interesting
+things. Of course, if you are building a server and you want to
+support the MS-RPC calls you have to implement all of the required
+functions in addition to SMB itself.  Unfortunately, much of MS-RPC is
+undocumented.<fn>Luke Kenneth Casson Leighton's<idx>Leighton, Luke
+Kenneth Casson</idx> book <cite>DCE/RPC over SMB: Samba and Windows NT
+Domain Internals</cite> is an essential reference for CIFS developers
+who need to know more about MS-RPC.</fn></p>
+
+<p>The MS-RPC function call APIs are defined using a language called
+<b>M</b>icrosoft <b>I</b>nterface <b>D</b>efinition <b>L</b>anguage
+(MIDL<idx>MIDL</idx>). There is a fair amount of information about
+MIDL available on the web and <em>some</em> of the function interface
+definitions have been published. CIFS implementors have repeatedly
+asked Microsoft for open access to all of the CIFS-relevant MIDL
+source files. Unencumbered access to the MIDL source would go a long
+way towards <dk:nobr>opening up the CIFS</dk:nobr> protocol
+suite. Since MIDL provides only the interface
+<dk:nobr>specifications</dk:nobr> and not the function internals,
+Microsoft could release them without exposing their proprietary DLL
+source code.</p>
+
+<p>Both the RAP and MS-RPC sub-protocols provide access to a large set
+of features, and both are too big to be covered in detail here.
+Complete documentation of all of the nooks and crannies of CIFS would
+probably require a set of books large enough to cause an encyclopedia
+to cringe in awe, so it would seem that our attempt to clean up the
+mess we made with the <code>NEGOTIATE PROTOCOL</code> exchange has
+instead created an even bigger mess and left some permanent stains on
+the carpet. Ah, well. Such is the nature of CIFS.<idx
+end="c14-capabilities">Capabilities</idx><idx
+end="c14-dialect">dialect</idx><idx end="c14-negotiate">NEGOTIATE
+PROTOCOL</idx></p>
+
+</h2s></h1s><h1 id="SMB2.7.2"><code>SESSION SETUP ANDX REQUEST</code> Data</h1><h1s>
+
+<p>The dissection of the <code>SMB_PARAMETERS</code> portion of the
+<code>SESSION SETUP ANDX REQUEST</code> cleared up a few issues and
+exposed a few others. Now we get to look at the <code>SMB_DATA</code>
+block and see what further mysteries may lie uncovered.
+</p>
+
+<p>Fortunately, the Data block is much less daunting. It contains a
+few fields used for authentication<idx>authentication</idx> and the
+rest is just useful bits of information about the client's operating
+environment. The structure looks like this:</p>
+
+<pre>typedef struct
+  {
+  ushort ByteCount;
+  struct
+    {
+    union
+      {
+      uchar SecurityBlob[];
+      struct
+        {
+        uchar CaseInsensitivePassword[];
+        uchar CaseSensitivePassword[];
+        uchar Pad[];
+        uchar AccountName[];
+        uchar PrimaryDomain[];
+        } non_ext_sec;
+      } auth_stuff;
+    uchar NativeOS[];
+    uchar NativeLanMan[];
+    uchar Pad2[];
+    } Bytes;
+  } smb_SessSetupAndx_Req_Data;</pre>
+
+
+<dl>
+<dt><code>auth_stuff</code></dt>
+
+<dd><p>As you may by now have come to expect, the structure of the
+<code>auth_stuff</code> field depends upon whether or not Extended
+Security has been negotiated. We have shown it as a union type just to
+emphasize the point. Under Extended Security, the blob will contain a
+structure specific to the type of Extended Security being used. The
+<code>SecurityBlobLength</code> value in the Parameter block indicates
+the size (in bytes) of the
+<code>SecurityBlob</code>.<idx>SecurityBlob</idx></p>
+
+<p>If Extended Security has not been negotiated, the structure will
+contain the following fields:</p>
+
+<dl>
+<dt><code>CaseInsensitivePassword</code><idx>CaseInsensitivePassword</idx> and
+<code>CaseSensitivePassword</code><idx>CaseSensitivePassword</idx></dt>
+
+<dd><p>If these names seem familiar it's because the associated length
+fields were in the Parameter block, described above. These fields
+are, of course, used in authentication. <ref refid="SMB2.8"/>
+covers authentication in detail.</p></dd>
+
+<dt><code>Pad</code></dt>
+
+<dd><p>If Unicode<idx>Unicode</idx> is in use, then the <code>Pad</code> field will
+contain a single nul byte (<code>0x00</code>) to force two-byte
+alignment of the following fields (which are Unicode strings).</p>
+
+<p>As you know, the Parameter block is made up of a single byte
+followed by an array of zero or more words. It starts on a word
+boundary, but the <code>WordCount</code> byte knocks it off balance,
+so it never ends on a word boundary. That means that the Data block
+always starts misaligned.<fn>I vaguely remember a conversation with
+Tridge<idx>Tridge</idx> in which he indicated that there was an
+obscure exception to the misalignment of the Data block. I'm not sure
+which SMB, or which dialect, but if I recall correctly there's one SMB
+that has an extra byte just before the
+<dk:nobr><code>ByteCount</code></dk:nobr> field. Keep your eyes
+open.</fn> Typically, that's not considered a problem for data in SMB
+messages. It is not clear why, but it seems that when Unicode support
+was added to SMB it was decided that Unicode strings should be
+word-aligned within the SMB message (even though they are likely to be
+copied out of the message before they're fiddled). That's why the
+<code>Pad</code> byte is there.</p>
+
+<p>Note that if Unicode support is enabled the password fields will
+always contain an even number of bytes. Strange but true. <dk:nobr>Here's
+why:</dk:nobr></p>
+
+<ul>
+<li><p>On Windows server systems, plaintext passwords and Unicode are
+mutually exclusive. The password hashes used for authentication are
+always an even number of bytes.</p></li>
+
+<li><p>Unlike Windows, Samba<idx>Samba</idx> <em>can</em> be
+configured to use plaintext passwords and Unicode. In that
+configuration, the
+<dk:nobr><code>CaseInsensitivePassword</code></dk:nobr> field will be
+empty and the <code>CaseSensitivePassword</code> field will contain
+the password in Unicode format - two bytes per character.</p></li>
+</ul>
+
+<p>Note the subtle glitch here. If Samba is configured to send Unicode
+plaintext passwords, the <code>CaseSensitivePassword</code> field will
+<em>not</em> be word-aligned because the <code>Pad</code> byte comes
+afterward. It seems that the designers of the
+NT&#160;LM&#160;0.12<idx>NT LM 0.12</idx> dialect did not consider the
+possibility of plaintext Unicode passwords.</p>
+</dd>
+
+<dt><code>AccountName</code></dt>
+
+<dd><p>This is the username field. If Unicode has been negotiated,
+then the username is presented in Unicode. Otherwise, the string is
+converted to uppercase and sent using the 8-bit OEM character
+set.</p></dd>
+
+<dt><code>PrimaryDomain</code><idx>PrimaryDomain</idx></dt>
+
+<dd><p>As with the <code>AccountName</code>, this value is converted
+to uppercase unless it is being sent in Unicode format.</p>
+
+<p>Whenever possible, this field should contain the NetBIOS
+name<idx>NetBIOS<sidx>name</sidx></idx> of the NT Domain to which the
+user belongs. Basically, it allows the client to specify the NT
+Domain<idx>NT Domain</idx> in which the username and password are
+valid - the Authentication Domain. A correct value is not always
+needed, however. If the server is not a member of an NT Domain, then
+it will have its own authentication database, and no Domain
+Controller<idx>DC</idx> need be consulted.</p>
+
+<p>Some testing was done with Windows NT&nbsp;4.0 and Windows 2000
+systems that were not members of an NT Domain. As clients, these
+systems sent their own NetBIOS machine names in the
+<dk:nobr><code>PrimaryDomain</code></dk:nobr> field. The
+<code>smbclient<idx>smbclient</idx></code> utility sent the workgroup name, as specified
+in the <code>smb.conf</code><idx>smb.conf</idx>
+file. jCIFS<idx>jCIFS</idx> just sent <dk:nobr>a question</dk:nobr>
+mark. All of these variations seem to work, as long <dk:nobr>as the
+server maintains</dk:nobr> its own authentication database. The
+<dk:nobr><code>PrimaryDomain</code></dk:nobr> field is really only
+useful when authenticating against a <dk:nobr>Domain
+Controller.</dk:nobr></p>
+</dd>
+</dl>
+</dd>
+</dl>
+
+<p>...and that's the end of the <code>auth_stuff</code> block. On to
+the rest of it.</p>
+
+<dl>
+<dt><code>NativeOS</code></dt>
+
+<dd><p>This string identifies the host operating system. Windows
+systems, of course, will fill this field with their OS name and some
+revision information. This field will be expressed in Unicode if that
+format has <dk:nobr>been negotiated.</dk:nobr></p></dd>
+
+<dt><code>NativeLanMan</code></dt>
+
+<dd><p>Similar to the <code>NativeOS</code> field, this one contains a
+short description of the client SMB software. <code>Smbclient</code>
+fills this field with the name "Samba." jCIFS used to just say "foo"
+here, but starting with release 0.7.0beta10 it says "jCIFS."  The
+successful use of "foo" demonstrates, however, that the field is not
+used for anything critical on the server side. Just error reporting,
+most likely.</p>
+
+<email> 
+<pre>   From: Gerald (Jerry) Carter<idx>Carter, Gerald (Jerry)</idx>
+     To: Chris Hertel
+Subject: NativeLanMan
+
+Note that NT4 misaligns the NativeLanMan string by one byte 
+(see Ethereal for details). Also note that Samba uses this 
+string to distinguish between W2K/XP/2K3 for the %a smb.conf 
+variable. So it is used by the server in some cases.</pre>
+</email>
+
+</dd>
+
+<dt><code>Pad2</code></dt>
+
+<dd><p>Some systems add one or two extra nul bytes at the end of the
+<code>SESSION SETUP</code>. Not all clients do this; it appears to be
+more common if Unicode has been negotiated. The extra bytes pad the
+end of the <code>SESSION SETUP</code> to the next word boundary. If
+these bytes are present, they are generally included in the total
+count given in the <code>ByteCount</code> field.</p></dd>
+</dl>
+
+<p>We have done a lot of work ripping apart packet structures and
+studying the internal organs. Don't worry, that's the last of it.  You
+should be familiar enough with this stuff by now, so from here on out
+we will rely on the SNIA doc<idx>SNIA<sidx>CIFS Technical
+Reference</sidx></idx> and packet traces to provide the gory
+details.</p>
+
+<alert type="Don't Know When to Quit">
+
+<p>Some of the Windows systems that were tested did not place the
+correct number of nul bytes at the ends of some Unicode strings.
+Consider, for example, this snippet from an
+Ethereal<idx>Ethereal</idx> capture:</p>
+
+<pre dk:type="small" dk:keep="together">0000029F                         57 00 69 00 6e 00 64 00          W.i.n.d.
+000002AF 6f 00 77 00 73 00 20 00 4e 00 54 00 20 00 31 00 o.w.s. . N.T. .1.
+000002BF 33 00 38 00 31 00 <b>00 00 00 00</b> 57 00 69 00 6e 00 3.8.1... ..W.i.n.
+000002CF 64 00 6f 00 77 00 73 00 20 00 4e 00 54 00 20 00 d.o.w.s.  .N.T. .
+000002DF 34 00 2e 00 30 00 <b>00 00 00 00</b> 4...0... ..</pre>
+
+<p>Look closely, and you will see that there are two extra nul bytes
+following each of the two Unicode strings in the hex dump.  Under
+UCS-2LE<idx>UCS-2LE</idx> encoding, the nul string terminator would be
+encoded as two nul bytes (<code>00&#160;00</code>). In the sample
+above, however, there are four null bytes
+(<code>00&#160;00&#160;00&#160;00</code>) following the last Unicode
+character of each string.</p>
+
+<p>In this next excerpt, taken from a <code>SESSION SETUP ANDX
+RESPONSE</code> SMB, it appears as though one of the terminating nul
+bytes at the end of the <dk:nobr><code>PrimaryDomain</code></dk:nobr> field has been
+lost:</p>
+
+<pre dk:type="small" dk:keep="together">0000008F                                           57 00                W.
+0000009F 69 00 6e 00 64 00 6f 00 77 00 73 00 20 00 35 00 i.n.d.o. w.s. .5.
+000000AF 2e 00 30 00 00 00 57 00 69 00 6e 00 64 00 6f 00 ..0...W. i.n.d.o.
+000000BF 77 00 73 00 20 00 32 00 30 00 30 00 30 00 20 00 w.s. .2. 0.0.0. .
+000000CF 4c 00 41 00 4e 00 20 00 4d 00 61 00 6e 00 61 00 L.A.N. . M.a.n.a.
+000000DF 67 00 65 00 72 00 00 00 55 00 42 00 49 00 51 00 g.e.r... U.B.I.Q.
+000000EF 58 00 <b>00</b>                                         X..</pre>
+
+<p>The first two bytes of the last line (<code>58 00</code>) are the
+letter &lsquo;X&rsquo; in UCS-2LE encoding. They should be followed by two nul
+bytes... but there's only one.
+</p>
+</alert>
+
+</h1s><h1 id="SMB2.7.3">The <code>SESSION SETUP ANDX RESPONSE</code> SMB</h1><h1s>
+
+<p>The <code>SESSION SETUP ANDX RESPONSE</code> SMB structure is
+described in Section&nbsp;4.1.2 of the SNIA doc.<idx>SNIA<sidx>CIFS
+Technical Reference</sidx></idx></p>
+
+<p>In the NT&#160;LM&#160;0.12<idx>NT LM 0.12</idx> dialect, there are
+two versions of the <code>SESSION SETUP ANDX RESPONSE</code>
+message. They differ, of course, based on whether or not Extended
+Security is in use. In the Extended Security version the
+<dk:nobr>Parameter</dk:nobr> block has a
+<code>SecurityBlobLength</code> field, and there is an associated
+<code>SecurityBlob</code><idx>SecurityBlob</idx> within the Data
+block. These two fields are missing from the non-Extended Security
+version. Other than that, the two are the same.</p>
+
+<p>The <code>SESSION SETUP ANDX RESPONSE</code> message also has an
+interesting little bitfield called <code>SMB_PARAMETERS.Action</code>.
+Only the low-order bit (bit 0) of this field is defined. If set, it
+indicates that the username was not recognized by the server (that
+is, authentication failed - no such user) but the logon is being
+allowed to succeed anyway.</p>
+
+<p>That's rather odd, eh?</p>
+
+<p>What it means is this: If the username (in the
+<code>AccountName</code> field) is not recognized, the server
+<em>may</em> choose to grant <em>anonymous</em> or <em>guest</em>
+authorization<idx>authorization</idx> instead. Anonymous access
+typically provides only very limited access to the server. For
+example, it may allow the use of a limited set of RAP<idx>RAP</idx>
+function calls such as those used for querying the Browse
+Service.<idx>Browse Service</idx></p>
+
+<p>So, the <code>Action</code> bit is used to indicate that the logon
+attempt failed, but anonymous access was granted instead. No error
+code will be returned in this case, so the <code>Action</code> bit is
+the only indication to the client that the rules have changed.
+Server-side support for this behavior is optional.<idx
+end="c14-setup">SESSION SETUP</idx></p>
+
+</h1s></chapter>
+</oim>

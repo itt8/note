@@ -1,0 +1,311 @@
+<?xml version="1.0" encoding="US-ASCII"?>
+<!DOCTYPE oim SYSTEM "oimxml.dtd" [
+  <!ENTITY nbsp  "&#160;">
+  <!ENTITY lsquo "&#8216;">
+  <!ENTITY rsquo "&#8217;">
+  <!ENTITY minus "&#8211;">
+  <!ENTITY mdash "&#8212;">
+  <!ENTITY times "&#xd7;">
+  <!ENTITY copy "&#xa9;">
+] >
+<oim xmlns:dk="http://www.kirsanov.com">
+<chapter id="Browsing3.3">
+<chapopen><title>Infrastructure: The&nbsp;Mailslot and&nbsp;Named Pipe
+Abstractions</title>
+
+<epigraph dk:padding-top="36">
+<p><line>Nothing lasts longer than</line>
+<line>a provisional arrangement.</line></p>
+<attribution>Unknown
+(thanks to Olaf Barthel<idx>Barthel, Olaf</idx>)</attribution>
+</epigraph>
+</chapopen>
+
+<p>We touched on the Mailslots and Named Pipes back in <ref
+refid="SMB2.9.4.1"/>, and then we pulled our collective hand away
+really fast as if those subjects were much too hot to handle. We will
+need to be brave and give them another go, though, because the Browse
+Service relies on them. Sorry 'bout that, folks.</p>
+
+<p>Mailslots<idx>mailslot</idx> and Named Pipes are like the wiring
+and plumbing in an old house.<fn>"Old" is a relative term. In
+Minnesota, a 100-year-old house is considered old. In cities like
+Charleston, SC, the houses go back 300 years or so... and that's
+nothing compared to what they've got in places like Japan, Europe, the
+Middle East, etc.</fn> It probably all made sense when it was
+installed, but over the years new construction has built upon the
+old. Some parts have been reused, some replaced, and other bits and
+pieces recycled in ways that make it seem as though no one remembers
+their original purpose. As long as it looks good on the surface (and
+isn't a fire hazard), it's okay.</p>
+
+<p>And it really is okay. The old stuff has held up remarkably
+well. So well, in fact, that it is sometimes forgotten - which is
+exactly why we need to take a closer look at it.</p>
+
+<p>The goal here is to provide a basic understanding of the Named Pipe
+and Mailslot concepts. We won't be going in too deep. If you want, you
+can find more detail in the X/Open book <cite>IPC Mechanisms for
+SMB</cite>. Named Pipes and Mailslots are nifty constructs, and are
+worthy of further study when you have the time. </p>
+
+<h1 id="Browsing3.3.1">Meet the Plumbing: Named Pipes</h1><h1s>
+
+<p>As you are by now well aware, SMB is a protocol that implements a
+network filesystem and, of course, a network filesystem is the result
+of extrapolating the general concepts that lie behind a disk-based
+filesystem. The difference is that the network variety uses higher
+level protocols to stretch things out across <dk:nobr>a network.</dk:nobr></p>
+
+<p>Some disk-based filesystems (such as those used in Unix and its
+kin) can handle the inclusion of objects that aren't really files at
+all, but which - through the use of some clever abstraction layers -
+can be made to look and work like files. For those familiar with such
+things, common examples include device nodes, the contents of
+<code>/proc</code>, and Named Pipes.</p>
+
+<p>We are interested in the latter.</p>
+
+<p>A Named Pipe is, at its heart, an interprocess communications
+channel. It allows two programs running independently to exchange
+messages. The SMB protocol, as you have already guessed, provides
+support for Named Pipes, but it can stretch them out over the network
+so that programs on different machines can talk to one another.</p>
+
+<fig id="Figure3.8">
+<img dk:width="220" loc="BRO08"/>
+<caption>Named Pipes</caption>
+
+<subcaption><p>An SMB named pipe is an abstraction that provides
+two-way communication between processes on remote nodes. The pipe is
+given a name ("<code>\PIPE\DREAM</code>", in this example) so that it
+can be easily identified by programs that wish to use
+it.</p></subcaption>
+</fig>
+
+<p>A Named Pipe is "named" so that it can be identified by the
+programs that want to use it. It is a "pipe" because data is shoved
+in at one end and then falls gracefully out the other. CIFS Named
+Pipes have some additional qualities:</p>
+
+<dl>
+<dt>They are transported over TCP.<idx>TCP</idx></dt>
+
+<dd><p>The use of SMB (over NBT) over TCP means that Named Pipe
+transactions are reliable.</p></dd>
+
+<dt>They are built on SMBtrans<idx>SMBtrans</idx> transactions.</dt>
+
+<dd><p>SMBtrans allows for data transfers up to 64K in size, per
+transaction.</p></dd>
+
+<dt>They are bi-directional.</dt>
+
+<dd><p>As with other protocols that we have studied, data may be sent
+and <dk:nobr>received</dk:nobr> over the same connection.</p></dd>
+
+<dt>They are filesystem abstractions.</dt>
+
+<dd><p>CIFS Named Pipes can be opened, closed, read from, and written
+to.</p></dd>
+</dl>
+
+<p>These features make CIFS Named Pipes ideal for transporting network
+function calls, which is one of the key ways (but not the only way)
+they are used. The <b>R</b>emote <b>A</b>dministration <b>P</b>rotocol
+(RAP<idx>RAP</idx>) and Microsoft's <b>R</b>emote <b>P</b>rocedure
+<b>C</b>all implementation (MS-RPC<idx>MS-RPC</idx>) are both built on
+top of <dk:nobr>Named Pipes.</dk:nobr></p>
+
+<p>Although they are filesystem abstractions, CIFS Named Pipes are
+kept separate from the real files and directories made available by
+the SMB Server Service.<idx>SMB<sidx>Server Service</sidx></idx> They
+are placed in a special share - the <code>IPC$</code><idx>IPC$</idx>
+share - which is "hidden." You won't be able to browse to it using the
+Windows Network Neighborhood<idx>Network Neighborhood</idx> tool. If
+you know it's there, however, you can access it just as you would any
+other SMB share - specifically, by sending a <code>SESSION
+SETUP</code><idx>SESSION SETUP</idx> followed by a <code>TREE
+CONNECT</code><idx>TREE CONNECT</idx>.</p>
+
+<alert type="Hidden Expense">
+<p>Share names that end with a dollar sign (&lsquo;$&rsquo;) are
+considered "hidden" shares. It is expected that client software will
+not display hidden share names unless specifically asked to do
+so. Note that it is the client, not the server, that takes care of
+hiding the hidden shares. Samba's<idx>Samba</idx>
+<code>smbclient</code> tool and the jCIFS
+<code>List.java</code><idx>List.java</idx> utility will both happily
+display hidden share names for you.</p>
+</alert>
+
+<p>Named Pipes within the <code>IPC$</code> share have names that
+match the following format:</p>
+
+<p dk:displayed="yes"><code>\PIPE\<em>pipename</em></code></p>
+
+<p dk:indent="no">where <em>pipename</em> is determined by the service
+that created the pipe. Since they are filesystem abstractions, it
+would be logical to assume that the full name of a Named Pipe (in
+UNC<idx>UNC</idx> format) would look something like this:</p>
+
+<p dk:displayed="yes"><code>\\<em>server</em>\IPC$\PIPE\<em>pipename</em></code></p>
+
+<p>As it turns out, however, the DOS, OS/2<idx>OS/2</idx>, and Windows
+functions that manipulate Named Pipes abbreviate the name by removing
+"<code>\IPC$</code>" from the string, which gives:</p>
+
+<p dk:displayed="yes"><code>\\<em>server</em>\PIPE\<em>pipename</em></code></p>
+
+<p>Named Pipes are created on the SMB server side by applications and
+tools that are willing to provide specialized services. The
+architecture is quite analogous to services that register NetBIOS
+names<idx>NetBIOS<sidx>name</sidx></idx> to make themselves available,
+it's just that there are more intervening protocol layers which
+provide additional features. For example, Named Pipes can take
+advantage of the SMB authentication and MAC<idx>MAC</idx> signing mechanisms.</p>
+
+<p>Microsoft<idx>Microsoft</idx> has created several services that use
+Named Pipes, but the set of services that are actually available will
+vary depending upon the host OS and/or the CIFS implementation. Luke
+K.&nbsp;C.&nbsp;Leighton's book <cite>DCE/RPC over SMB:
+Samba<idx>Samba</idx> and Windows NT Domain Internals</cite> (which we
+have referenced often) lists several known pipes that offer services
+based on MS-RPC.</p>
+
+<p>Our particular interest, however, is with the specific Named Pipe
+that will connect us to the <b>R</b>emote <b>A</b>dministration
+<b>P</b>rotocol service. That pipe is:</p>
+
+<p dk:displayed="yes"><code>\PIPE\LANMAN</code></p>
+
+<p>We will be using it a little later on, when we dig into the one RAP
+function that is commonly used by the Browser Service: the
+<code>NetServerEnum2</code><idx>NetServerEnum2</idx>
+<dk:nobr>function.</dk:nobr></p>
+
+<p>...and that is really all we have to say about CIFS Named
+Pipes.</p>
+
+<p>There is, of course, a lot more that <em>could</em> be said. Named
+Pipes can be used in a variety of ways to support a variety of
+different kinds of operations. Our goal, however, is to explore the
+Browse Service, so the scope of this discussion is purposfully
+limited. </p>
+
+</h1s><h1 id="Browsing3.3.2">The Mailslot Metaphor</h1><h1s>
+
+<p><idx start="c21-dmb">DMB</idx>CIFS supports two kinds of
+Mailslots<idx>mailslot</idx> :</p>
+
+<dl>
+<dt>Class 1: Reliable</dt>
+
+<dd><p>Class 1 Mailslots are a whole heck of a lot like Named Pipes.
+Class 1 messages are packed into an SMBtrans<idx>SMBtrans</idx> SMB,
+and then sent across the network using TCP. The only real difference
+is that Class 1 Mailslot calls indicate only success or failure. They
+do not return any other results.</p>
+
+<p>We won't be paying any attention to Class 1 Mailslots, because
+they are not used by the Browse Service.</p></dd>
+
+<dt>Class 2: Unreliable and Broadcast</dt>
+
+<dd><p>Class 2 Mailslots are a whole 'nother kettle of
+bananafish. On the surface, they look like Named
+Pipes and Class 1 Mailslots, but that's just because the interface was
+designed to be somewhat consistent. </p>
+
+<p>Below the surface, Class 2 Mailslot messages are sent using the NBT
+Datagram Service<idx>NBT<sidx>Datagram Service</sidx></idx>. That
+means that the underlying transport is UDP<idx>UDP</idx>, not TCP. It
+also means that Class 2 Mailslot messages can be broadcast or
+multicast to the local LAN. Another difference is that Class 2
+Mailslot messages are simply sent. No result (success, failure, or
+otherwise) <dk:nobr>is returned.</dk:nobr></p></dd>
+</dl>
+
+<p>Mailslots, like Named Pipes, exist within the <code>IPC$</code><idx>IPC$</idx>
+share. Mailslot names have a familiar format, as shown below.</p>
+
+<dl>
+<dt><code>\MAILSLOT\</code><em>mailslotname</em></dt>
+
+<dd><p>The general form of a Mailslot name.<idx>\MAILSLOT</idx>
+Similar to the convention used for Named Pipes.</p></dd>
+
+<dt><code>\MAILSLOT\BROWSE<idx>\MAILSLOT<sidx>\BROWSE</sidx></idx></code></dt>
+
+<dd><p>The Mailslot name used by the Windows NT Browse Service.</p></dd>
+
+<dt><code>\MAILSLOT\LANMAN<idx>\MAILSLOT<sidx>\LANMAN</sidx></idx></code></dt>
+
+<dd><p>The Mailslot name used by the older LAN Manager Browse Service.</p></dd>
+</dl>
+
+<p>The Browse Service<idx>Browse Service</idx> uses Class 2 Mailslots
+extensively. With the exception of the
+<code>NetServerEnum2</code><idx>NetServerEnum2</idx> RAP<idx>RAP</idx>
+call, all Browse Service announcements and requests are sent using
+Class 2 Mailslots.</p>
+
+<p>In general, if the destination is local, a Browse Service Mailslot
+message will be sent as a broadcast at the IP level.  Unicast UDP
+datagrams are used if the destination is on a remote subnet (e.g., a
+remote DMB). Broadcast messages that contain an NBT group
+name<idx>group name</idx> in the
+<dk:nobr><code>DESTINATION_NAME</code></dk:nobr> field are considered
+Multicast at the NBT level. If the
+<dk:nobr><code>DESTINATION_NAME</code></dk:nobr> is unique<idx>unique
+name</idx>, the message may still be broadcast to avoid the need to
+resolve the name using the NBT Name Service<idx>NBT<sidx>Name
+Service</sidx></idx>. As suggested in <ref refid="Figure3.9"/>, the
+receiver of a broadcast datagram should discard the message if it is
+not listening on the <dk:nobr><code>DESTINATION_NAME</code></dk:nobr>
+or the given Mailslot name.</p>
+
+<fig id="Figure3.9">
+<img dk:width="200" loc="BRO09"/>
+<caption>Class 2 Mailslots</caption>
+<subcaption><p>Class 2 Mailslot messages may be broadcast, multicast
+(NBT group), or unicast. If a message is sent as a broadcast or
+multicast datagram, all of the NBT nodes on the LAN will receive
+it. Those that are not listening on the specified Mailslot
+(<code>\MAILSLOT\MEGAPHONE</code>, in this case) or on the specified
+NBT name should discard it.</p></subcaption>
+</fig>
+
+<p>Class 2 Mailslot messages are kind of quirky. Even though they use
+the NBT Datagram Service, they are formatted as
+<dk:nobr><code>SMB_COM_TRANSACTION</code></dk:nobr> (that is,
+SMBtrans) messages. That's right: SMB over UDP. Go figure. This may be
+the result of someone being overly enthusiastic about reusing existing
+code. In any case, it means that we will be learning how to format an
+<dk:nobr>SMBtrans message.</dk:nobr></p>
+
+<alert type="It's Not a Bug It's a Feature">
+<p>The one-way nature of Mailslot messages has an interesting
+side-effect, which is this: <em>All</em> Browse Service Mailslot
+messages are sent to UDP port 138.<idx>138/UDP</idx></p>
+
+<p>The reason for this seemingly incorrect behavior is that the
+receiver's response to a Mailslot message is not really a reply. It is
+a "response" in the sense of "stimulus-response." When a browser node
+receives one of the Browse Service Mailslot Messages, it may react by
+sending messages of its own. In many cases, those messages must be
+multicast to a NetBIOS group name,<idx>NetBIOS<sidx>name</sidx></idx>
+so sending them to the source port of the original "stimulus" datagram
+would simply not work.</p>
+
+<p>(You're getting to love this stuff, aren't you...)</p>
+
+<p>The upshot is that the only way to properly implement the Browse
+Service (and Class 2 Mailslots in general) is to run a daemon that
+listens on UDP/138.<idx end="c21-dmb">DMB</idx>
+</p>
+</alert>
+
+</h1s>
+</chapter>
+</oim>

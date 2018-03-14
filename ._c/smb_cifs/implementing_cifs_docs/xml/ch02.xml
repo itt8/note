@@ -1,0 +1,513 @@
+<?xml version="1.0" encoding="US-ASCII"?>
+<!DOCTYPE oim SYSTEM "oimxml.dtd" [
+  <!ENTITY nbsp "&#160;">
+  <!ENTITY lsquo "&#8216;">
+  <!ENTITY rsquo "&#8217;">
+  <!ENTITY times "&#xd7;">
+  <!ENTITY mdash "&#8212;">
+] >
+
+<oim xmlns:dk="http://www.kirsanov.com">
+<chapter id="NBT1.2">
+<chapopen><title>Speaking NetBIOS</title>
+
+<epigraph dk:padding-top="60">
+<p>Genuine Imitation</p>
+<attribution>Well known oxymoron</attribution>
+</epigraph>
+</chapopen>
+
+<p>The hardware part of IBM's<idx>IBM</idx> PC&#160;Network is no
+longer in use and the protocol that actually ran on the wire is all
+but forgotten, yet the NetBIOS
+API<idx>NetBIOS<sidx>API</sidx></idx> remains. Vast sweeping hoards of
+programs - including DOS<idx>DOS</idx> itself - were written to use
+NetBIOS. Like COBOL<idx>COBOL</idx>, it may never die.</p>
+
+<p>Many vendors, eager for a piece of the
+Microsoft<idx>Microsoft</idx> desktop pie, figured out how to
+implement the NetBIOS API on top of other protocols. There is
+<dk:nobr>NetBIOS</dk:nobr> over DECnet, NetBIOS over NetWare,
+<dk:nobr>NetBIOS</dk:nobr> over mashed potatoes and gravy with creamed
+corn, NetBIOS over SNA, NetBIOS over TCP/IP<idx
+start="c2-TCP">TCP</idx>, and more. Of these, the most popular, tasty,
+and important is <dk:nobr>NetBIOS</dk:nobr> over TCP/IP, and that's
+what this chapter is really all about.</p>
+
+<fig dk:pos="top" id="NBT01">
+<img dk:width="140" loc="NBT01"/>
+<caption>The NetBIOS layer</caption>
+<subcaption><p>The NetBIOS layer is sandwiched between the Server
+Message Block (SMB) filesharing protocol and the underlying network
+transport layer.</p></subcaption>
+</fig>
+
+<p>NetBIOS over TCP/IP is sometimes called <i>NetBT</i> or
+<i>NBT</i>. Folks from IBM - for reasons unfathomable - sometimes
+call it <i>TCPBEUI</i><idx>TCPBEUI</idx>. NBT is the simplest and most common
+name, so we'll stick with that.</p>
+
+<p>On the 7-layer OSI reference model, NetBIOS is a session-layer
+(layer 5) API. Under DOS and its offspring, applications talk to
+NetBIOS by filling in a record structure known as a Network Control
+Block (NCB) and signaling an interrupt. The NCBs are used to pass
+commands and messages between applications and the underlying
+protocol stack.</p>
+
+<p>Fortunately, the NetBIOS API is specific to DOS and its kin.  Unix
+and other systems do not need to implement the NetBIOS API, as there
+is no legacy of programs that use it. Instead, these systems
+participate in NBT networks by directly handling the TCP and
+UDP<idx>UDP</idx> packets described in two IETF<idx>IETF</idx>
+(Internet Engineering Task Force) <em>Request for Comments</em>
+documents: RFC&nbsp;1001 and RFC&nbsp;1002 (known collectively as
+Internet Standard #19). These RFCs describe a set of services that
+work together to create virtual <dk:nobr>NetBIOS</dk:nobr>
+LANs<idx>NetBIOS<sidx>LAN</sidx></idx> over IP.</p>
+
+<h1 id="NBT1.2.1">Emulating "NetBIOS LANs"</h1><h1s>
+
+<p>At this point, we hit an interesting twist in the terminology.
+NetBIOS is a driver that presents an
+API<idx>NetBIOS<sidx>API</sidx></idx>; it is neither a protocol nor a
+topology. The API does, however, make a number of assumptions about
+the workings of the underlying network, and it presents some quirky
+restrictions. The terms "NetBIOS Network" and "NetBIOS LAN" are
+commonly used to identify the network architecture that is,
+essentially, <i>defined</i> by the NetBIOS API.</p>
+
+<p>RFCs 1001 and 1002 list three basic services that must be
+supported in order to implement NetBIOS LAN emulation. These
+are:</p>
+
+<ul>
+<li><p>the Name Service,<idx start="c2-nservice">NBT<sidx>Name Service</sidx></idx></p></li>
+<li><p>the Datagram Service<idx>NBT<sidx>Datagram Service</sidx></idx>, and</p></li>
+<li><p>the Session Service.<idx>NBT<sidx>Session Service</sidx></idx></p></li>
+</ul>
+
+<p>The Name Service is used to map NetBIOS names<idx
+start="c2-NetBIOS-name">NetBIOS<sidx>name</sidx></idx> (addresses) to
+IP addresses in the underlying IP network. The Datagram Service
+provides for the delivery of NetBIOS datagrams via UDP. Finally, the
+Session Service is used to establish and maintain point-to-point,
+connection-oriented NetBIOS sessions over TCP.<idx end="c2-TCP">TCP</idx></p>
+
+<h2 id="NBT1.2.1.1">The NetBIOS Name Service</h2><h2s>
+
+<p><idx>node type</idx>The NetBIOS LAN architecture is very simple. No
+routers, no switches - just a bunch of nodes connected to a (virtual)
+wire.  Unlike IP, there is no need for separate hardware addresses,
+network addresses, or even port numbers. Instead, the communications
+endpoints are identified by 16-byte strings known as "NetBIOS
+names."</p>
+
+<p>NetBIOS addressing is dynamic. Applications may add names as
+needed and remove those names when they are finished. Each node on
+the LAN will also have a default name, known as the <em>Machine
+Name</em> or the <em>Workstation Service Name</em>, which is
+typically added when NetBIOS starts. The process of adding a name is
+called <em>registration</em>.<idx>name registration</idx></p>
+
+<p>There are two kinds of names that can be registered:
+<em>unique</em><idx>unique name</idx> and <em>group</em>. Group names<idx
+start="c2-group">group name</idx> may be shared by multiple clients,
+thus providing a mechanism for multicast. In contrast, unique names
+may only be used by one client per LAN. Keep in mind, though, that
+these are virtual LANs which may actually be spread out across
+different subnets in a routed IP internetwork.</p>
+
+<fig id="NBT02">
+<img dk:width="200" loc="NBT02"/>
+<caption>Group names</caption>
+<subcaption><p>In addition to their Machine Names, some of the nodes on
+this IP LAN have registered the group name
+<code>Lindisfarne</code>. Nodes <code>Mick</code> and
+<code>Ringo</code> are not members of the group
+<code>Lindisfarne</code>.</p></subcaption>
+</fig>
+
+<p>The Name Service is supposed to keep track of all the NetBIOS
+names in use within the virtual LAN and ensure that messages sent
+to a given NetBIOS name are directed to the correct underlying IP
+address. It does this in two ways:</p>
+
+<dl>
+<dt>On an IP LAN</dt>
+<dd>
+<p>Each node keeps a list of the names it has registered (that is, the
+names it "owns"). When sending a message, the first step is to send an
+IP broadcast query, called a <code>NAME QUERY REQUEST</code><idx>NAME
+QUERY</idx>. If there is a machine on the IP LAN that owns the queried
+name, it will reply by sending a <code>NAME QUERY RESPONSE</code>.</p>
+
+<p>So, to send a message to the node which has registered the name
+<code>EADFRITH</code>, the sender calls out "Yo! Eadfrith!"
+<code>EADFRITH</code> responds with an "I am here!" message, giving its
+IP address.</p>
+
+<p>This is known as "B mode"<idx>B</idx> (broadcast) name resolution, and
+the participants are referred to as "B <b>n</b>odes." In B mode, each
+node keeps track of - and answers queries for - its own names, so the
+NetBIOS Name Service "database" is a distributed database.</p></dd>
+</dl>
+
+<fig id="NBT03">
+<img dk:width="185" loc="NBT03"/>
+<caption>B mode name resolution</caption>
+
+<subcaption><p>Node <code>Chad</code> wishes to contact node
+<code>Eadfrith</code>. Since the underlying transport is IP,
+<code>Chad</code> must first discover the IP address of
+<code>Eadfrith</code>.</p>
+
+<p><code>Chad</code> sends a broadcast name query to all nodes on the
+local segment, asking <dk:nobr><code>Eadfrith</code></dk:nobr> to
+respond. All other nodes should ignore the request.</p></subcaption>
+</fig>
+
+<dl>
+<dt>Over a routed Internet</dt>
+<dd>
+<p>Broadcasts aren't meant to cross subnet boundaries, so a different
+<dk:nobr>mechanism</dk:nobr> is used when the nodes are separated by
+routers.</p>
+
+<p>The Network Administrator chooses a machine to be the
+<b>N</b>et<b>B</b>IOS <b>N</b>ame <b>S</b>erver (NBNS<idx>NBNS</idx>,
+aka WINS<idx>WINS</idx> Server<fn>Microsoft calls their NBNS
+implementation "<b>W</b>indows <b>I</b>nternet <b>N</b>ame
+<b>S</b>ervice" (WINS). The term WINS is now commonly used instead of
+NBNS, but we will be pedantic and stick with the
+latter.</fn>). Typically this will be a Unix host running
+Samba<idx>Samba</idx>, or a Windows NT or W2K server. In order to use
+the NBNS, all of the nodes that are participating in the virtual
+NetBIOS LAN must be given the server's IP address. This can be done by
+entering the address in the client's NetBIOS configuration or, on
+Windows systems, via DHCP<idx>DHCP</idx>.</p>
+
+<p>NBT client nodes send NetBIOS name registrations and queries
+directly to the NBNS, which maintains a central database of all
+registered names in the virtual LAN. This is known as "P mode"
+(point-to-point) name resolution, and its participants are referred to
+as "P nodes."</p>
+
+<fig id="NBT04">
+<img dk:width="164" loc="NBT04"/>
+<caption>P mode name resolution</caption>
+<subcaption><ol>
+<li><p>Node <code>Bede</code> registers its name with <code>Cuthbert</code>, the NBNS (WINS server).</p></li>
+<li><p>Node <code>Backhouse</code> is looking for <code>Bede</code> and sends a query to <code>Cuthbert</code>.</p></li>
+<li><p><code>Cuthbert</code> provides the IP address of <code>Bede</code> to <code>Backhouse</code>.</p></li>
+</ol></subcaption>
+</fig></dd>
+</dl>
+
+<p>These are the two basic modes of NetBIOS name resolution over
+NBT. There are, of course, others. The RFCs describe "M
+mode<idx>M</idx>" (mixed mode) which combines characteristics of
+P<idx>P</idx> and B modes<idx>B</idx>. "H mode<idx>H</idx>" (hybrid
+mode) was introduced later; it is similar to M mode except for the
+order in which B and P mode behavior is applied.</p>
+
+<p>The Name Service runs on UDP port 137.<idx>137/UDP</idx> According
+to the RFCs the use of TCP port 137 can be negotiated for some
+queries, though few (if any) implementations actually support
+this.</p>
+
+</h2s><h2 id="NBT1.2.1.2">The NetBIOS Datagram Service</h2><h2s>
+
+<p><idx>node type</idx><idx>NBT<sidx>Datagram Service</sidx></idx>In
+the IP world, TCP<idx>TCP</idx> provides connection-oriented sessions
+in which packets are acknowledged, put in order, and retransmitted if
+lost. This creates the <dk:nobr>illusion</dk:nobr> of a continuous,
+sequential data stream from one end to the other. In contrast,
+UDP<idx>UDP</idx> datagrams are simply sent. Thus, UDP requires less
+overhead, but it is less reliable than TCP. NetBIOS also provides
+connection-oriented (session) and connectionless (datagram)
+communications. Naturally, NBT maps NetBIOS sessions to TCP and
+NetBIOS datagrams to UDP.</p>
+
+<p>The Datagram Distribution Service is the NBT service that handles
+NetBIOS datagram transport. It runs on UDP port 138,<idx>138/UDP</idx>
+and can handle unicast (also known as "specific"), multicast (group),
+and broadcast NetBIOS <dk:nobr>datagrams.</dk:nobr></p>
+
+<dl>
+<dt>Unicast (specific)</dt> <dd><p>The handling of unicast datagrams
+is fairly straightforward.  The Name Service is used to resolve the
+destination name to an IP address. The NetBIOS packet is then
+encapsulated in a UDP packet and sent to the specified IP.</p></dd>
+
+<dt>Multicast (group) and broadcast</dt>
+<dd>
+<p>According to the RFCs, a <b>B</b> node<idx>B</idx> can simply
+encapsulate NetBIOS multicast and broadcast datagrams in UDP and send
+them to the IP broadcast address. The UDP datagram will then be picked
+up by all local nodes listening on the Datagram Service port
+(138/UDP). Thus, NetBIOS broadcast datagrams will reach all nodes in
+the virtual LAN. In the case of multicast datagrams, nodes which are
+not members of the group (have not registered the group name) will
+discard the message.</p>
+
+<p><b>P</b>, <b>M</b>, and <b>H</b>
+nodes<idx>H</idx><idx>M</idx><idx>P</idx> are a bit more complicated,
+as you might expect. When the virtual LAN extends beyond the physical
+LAN, an IP broadcast will not reach all of the nodes in the NetBIOS
+name space. In order to deliver group and broadcast datagrams, the
+NBNS<idx>NBNS</idx> database must be consulted. How this is (or isn't)
+actually done will be explained in strikingly painful detail later
+on. <ref refid="NBT1.5"/> is dedicated to the workings of datagram
+distribution.</p></dd>
+</dl>
+
+<p>The Datagram Service is probably the second least well understood
+aspect of NBT, most likely because its correct implementation isn't
+critical to filesharing. Many implementations get it wrong, and there
+is much debate over the value of getting it right.<idx
+end="c2-nservice">NBT<sidx>Name Service</sidx></idx><idx
+end="c2-vlan">NBT<sidx>vLAN</sidx></idx><idx
+end="c2-NetBIOS-name">NetBIOS<sidx>name</sidx></idx></p>
+
+</h2s><h2 id="NBT1.2.1.3">The NetBIOS Session Service</h2><h2s>
+
+<p>The Session Service<idx>NBT<sidx>Session Service</sidx></idx> is
+the traditional transport for SMB, and this is our primary reason for
+caring about NetBIOS at all. The Session Service runs on TCP port
+139.<idx>139/TCP</idx><idx>TCP</idx><fn>If the NBT authors had used
+TCP/138<idx>138/TCP</idx> instead of 139 for the Session Service, they
+could have saved a couple of ports. Instead, TCP/138<idx>138/TCP</idx>
+and UDP/139<idx>139/TCP</idx> are wasted.</fn> There is no particular
+mechanism for multicast or broadcast because each session is, by
+definition, a one-to-one connection. The RFCs do, however, briefly
+discuss what might happen if a session setup request were sent to a
+group name<idx end="c2-group">group name</idx> (see RFC 1001, Section
+16.1.1.2).
+</p>
+
+<p>We will get to the details of session creation, use, and closure
+when we discuss Session Service implementation.</p>
+
+<alert type="Weirdness">
+<p>TCP/138<idx>138/TCP</idx> has no defined behavior under NBT and
+Microsoft<idx>Microsoft</idx> never implemented support for NBT Name
+Resolution over TCP/137,<idx>137/TCP</idx> yet some versions of
+Windows seem to listen on these two TCP ports when NBT is active.</p>
+
+<pre><![CDATA[C:\> netstat -a
+
+Active Connections
+
+  Proto  Local Address     Foreign Address  State
+  TCP    paris:137         PARIS:0          LISTENING
+  TCP    paris:138         PARIS:0          LISTENING
+  TCP    paris:nbsession   PARIS:0          LISTENING
+  UDP    paris:nbname      *:*
+  UDP    paris:nbdatagram  *:*
+]]></pre>
+
+<p>It turns out that this is due to a known bug in the
+<code>netstat</code> utility included with older Windows
+releases.</p>
+</alert>
+
+<email>
+<pre>From: Jean-Baptiste Marchand<idx>Marchand, Jean-Baptiste</idx>
+  To: Chris Hertel
+
+Hello,
+
+I've noticed that, in Section 2.1, there is a weirdness alert about
+the Windows netstat program showing TCP ports 137 and 138 open,
+whereas only UDP ports 137 and 138 are actually opened by the NetBT
+driver.
+
+In fact, it is a known problem in Windows NT (this is fixed in 
+Windows 2000 and later) that netstat shows TCP ports opened, whereas
+only UDP ports with the same number are opened. This is documented 
+in an entry of Microsoft's knowledge base (Q194171).
+
+This article states that this is only a display problem. This is 
+true and can be verified using any TCP port scanner.</pre>
+</email>
+
+</h2s></h1s><h1 id="NBT1.2.2">Scope: The Final Frontier</h1><h1s>
+
+<p><idx>node type</idx><idx>NBT<sidx>scope</sidx></idx>This is a good
+point at which to get up, stretch, make a nice hot cup of
+tea<idx>tea</idx> for yourself, take a soothing bath, play with your
+cat, go for a long walk in the park, take dance lessons, volunteer in
+your community, sort and organize your old photographs, or join a
+United Nations Peace Keeping Force. The Datagram
+Service<idx>NBT<sidx>Datagram Service</sidx></idx> was previously
+described as "the second least well understood aspect of NBT." Guess
+which bit wins first prize.</p>
+
+<p>Scope is an oddity of NBT, not because it was a bad idea (though
+perhaps it was) but because few have ever bothered to really
+understand it. In practice this feature is rarely used, in part
+because it is rarely implemented to its full potential.</p>
+
+<p>In the RFCs, the term <gt>scope</gt> is used as a name for:</p>
+
+<ul>
+<li><p>the set of NetBIOS nodes that participate in an NBT virtual
+LAN,<idx>NBT<sidx>vLAN</sidx></idx></p></li>
+
+<li><p>an identifier used to distinguish one virtual LAN from
+another, and</p></li>
+
+<li><p>that which is included within the purpose of the RFC
+document.</p></li>
+</ul>
+
+<p dk:indent="no">...but the last of these is beyond the scope of
+this discussion, so let's take a closer look at the first two.</p>
+
+<p>Scope is explained in RFC 1001, Section 9, which starts off by
+saying:</p>
+
+<pre>A "NetBIOS Scope" is the population of computers across 
+which a registered NetBIOS name is known. NetBIOS broadcast 
+and multicast datagram operations must reach the entire extent 
+of the NetBIOS scope.</pre>
+
+<p>This basically means <gt>all nodes connected to the virtual
+LAN</gt>. So, for B nodes<idx>B</idx> the NetBIOS scope consists of
+all nodes within the local IP broadcast domain that are running
+NBT. For P nodes,<idx>P</idx> the NetBIOS scope includes all nodes
+across the routed internetwork that run NBT and share the same
+NBNS<idx>NBNS</idx>. For an M<idx>M</idx> or H node<idx>H</idx>, the
+scope is the union of the local broadcast and the <dk:nobr>NBNS
+scopes.</dk:nobr></p>
+
+<p>This is all quite straightforward when all NBT nodes are of the
+same node type, but strange things can happen when you mix modes,
+particularly in a routed environment.</p>
+
+<dl>
+<dt>P &amp; B</dt>
+<dd>
+<p>Two separate scopes are defined. The B nodes will only see other B
+nodes<idx>B</idx> on the same wire, and the P nodes will only see
+other P nodes using the same NBNS. If creating separate NetBIOS
+vLANs<idx start="c2-vlan">NBT<sidx>vLAN</sidx></idx> is your goal,
+then mixing P and B nodes on the same wire is perfectly okay.</p></dd>
+
+<dt>P &amp; M</dt>
+<dd>
+<p>This results in a single scope. The M nodes perform all of the
+functions of a P node, including registering their names with the
+NBNS. Thus, all P nodes can see all M nodes, though M nodes on the
+same wire can bypass the NBNS when resolving names.</p></dd>
+
+<dt>B &amp; M</dt>
+<dd>
+<p>On a single, non-routed IP LAN there will be only one scope. The
+M nodes will register and resolve names via the broadcast mechanism,
+making their use of the NBNS pointless.</p>
+
+<p>Things start going terribly wrong, though, when the NetBIOS vLAN
+is distributed across multiple subnets in a routed internetwork.
+When this happens the result is multiple, intersecting scopes. B
+nodes on one subnet will not be able to see any node on any other
+subnet. M nodes will see all other M nodes, but only the B nodes on
+their local wire. Thus, parts of the NetBIOS vLAN are hidden from
+other parts, yet all are somewhat connected via the common M node
+scope.</p>
+
+<p>One result of this mess is the potential for name collisions. A
+B node could register a name that is already in the NBNS database,
+and an M node might register a name that one or more B nodes on
+remote subnets have already claimed. Name resolution then
+essentially fails because the same name does not resolve to the
+same IP address across the <dk:nobr>fractured scope.</dk:nobr></p>
+
+<p>The RFCs recognize this potential for disaster and warn against
+it. See RFC 1001, Section 10.</p></dd>
+
+<dt>P, B, &amp; M</dt>
+<dd>
+<p>From bad to worse. The P nodes can see all of the M nodes which
+can see some of the B nodes which cannot see any P nodes at all. B
+nodes and M (or H) nodes don't mix.</p></dd>
+</dl>
+
+<p>We now have a good handle on our first definition of scope:
+"<gt>the set of NetBIOS nodes that participate in a virtual
+LAN</gt>." What about the second: "<gt>an identifier used to
+distinguish one virtual LAN from another</gt>"? (This is a good point
+at which to get up, stretch, make a nice hot cup of tea for
+yourself...)</p>
+
+<p>Every scope has a name, called the Scope Identifier (Scope
+ID)<idx>NBT<sidx>Scope ID</sidx></idx>.  The most common Scope ID is
+the empty string:&#160;<code>""</code>.  Indeed, this is the default
+in Windows, Samba,<idx>Samba</idx> jCIFS<idx>jCIFS</idx>, and every
+other system encountered so far. The only problem with this name is
+that it becomes too easy to forget that the <dk:nobr>Scope ID
+exists.</dk:nobr></p>
+
+<p>We have already seen that distinct NetBIOS vLANs can be created
+by using the behavior of B, P, M, and H nodes to create separate
+scopes. For example, multiple scopes are defined when multiple
+independent NBNS's provide service for P nodes. B nodes on separate
+IP LANs are also in separate scopes, and so on. The Scope ID
+provides another, more refined mechanism for separating scopes.</p>
+
+<p>Think of an IP LAN with a bunch of B nodes. Some of the B nodes
+have Scope ID <code>DOG</code>, and others have Scope ID
+<code>CAT</code>.  Only members of scope <code>DOG</code> will
+listen to messages sent with that ID; the cats will ignore messages
+sent to the dogs. So, even though all of the B nodes are on the same
+wire, we have two separate scopes. The same applies to P and M
+nodes. The Scope IDs identify, and separate, virtual NetBIOS
+LANs. Note, though, that an NBNS will handle requests from any node
+regardless of scope. A single NBNS server can, therefore, support
+multiple scopes.</p>
+
+<fig id="NBT05">
+<img dk:width="178" loc="NBT05"/>
+<caption>Multiple named scopes in a broadcast LAN</caption>
+
+<subcaption><p>Nodes with scope ID <code>DOG</code> are in their own
+virtual NetBIOS LAN.  Nodes with scope ID <code>CAT</code> will ignore
+broadcasts to the <code>DOG</code> scope.</p></subcaption>
+</fig>
+
+<p>According to RFC 1001/1002, a node may belong to more than one
+scope. In practice, however, it is much easier to choose a single
+scope and stick with it. This is particularly true for DOS and Windows
+systems because <dk:nobr>NetBIOS</dk:nobr> itself has no concept of
+scope.  The Scope ID is a feature of NBT, and programs that call the
+NetBIOS API<idx>NetBIOS<sidx>API</sidx></idx> have no way of telling
+NBT which <dk:nobr>scope to use.</dk:nobr></p>
+
+<p>The RFCs suggest that extensions might be added to NetBIOS to
+manage scope, but using those extensions would require changes to
+applications. Further, other NetBIOS transports would not support
+extensions, which would result in compatibility problems.</p>
+
+<alert type="Confusion">
+<p>Scope IDs are used by the Name Service<idx>NBT<sidx>Name
+Service</sidx></idx> and the Datagram Service, but <em>not</em> the
+Session Service.<idx>NBT<sidx>Session Service</sidx></idx> This seems
+awkward at first, but it makes sense when you consider that the
+NetBIOS API itself has no knowledge of scope.</p>
+
+<p>Once again, Scope IDs serve only to identify virtual NetBIOS
+LANs. They operate at a lower level than the NetBIOS API.</p>
+</alert>
+
+</h1s><h1 id="NBT1.2.3">Thus Endeth the Overview</h1><h1s>
+
+<p>Now that you have a clear and precise understanding of the
+workings of NetBIOS over TCP, go read RFC 1001. That ought to muddy the
+waters a bit. Clear or not, the next step is to write some code and
+see what works - and what doesn't. Actual implementation will
+provide a lot of opportunity to discuss details, bugs, and common
+errors.<idx end="c1-2-netbios">NetBIOS</idx></p>
+
+</h1s>
+
+</chapter></oim>

@@ -1,0 +1,897 @@
+<?xml version="1.0" encoding="US-ASCII"?>
+<!DOCTYPE oim SYSTEM "oimxml.dtd" [
+  <!ENTITY nbsp  "&#160;">
+  <!ENTITY lsquo "&#8216;">
+  <!ENTITY rsquo "&#8217;">
+  <!ENTITY minus "&#8211;">
+  <!ENTITY mdash "&#8212;">
+  <!ENTITY times "&#xd7;">
+  <!ENTITY copy "&#xa9;">
+] >
+<oim xmlns:dk="http://www.kirsanov.com">
+<chapter id="SMB2.6">
+<chapopen><title>Protocol Negotiation</title>
+
+<epigraph dk:padding-top="68">
+<p><line>I don't have an accent.</line>
+<line>&mdash;Oh yes you do.</line></p>
+</epigraph>
+</chapopen>
+
+<p>CIFS is a very rich and varied protocol suite, a fact that is
+evident in the number of SMB dialects<idx
+start="c13-dialect">dialect</idx> that exist. Five are listed in the
+X/Open SMB protocol specification,<idx>X/Open SMB Documentation</idx>
+and the SNIA<idx>SNIA<sidx>CIFS Technical Reference</sidx></idx> doc -
+published ten years later - lists eleven. That's a bigbunch, and they
+probably missed a few. Each new dialect may add new SMBs, deprecate
+old ones, or extend existing ones. As if that were not enough,
+implementations introduce subtle variations within dialects.</p>
+
+<p>All that in mind, our goal in this section will be to provide an
+overview of the available dialects, cover the workings of the
+<code>NEGOTIATE PROTOCOL</code><idx>NEGOTIATE PROTOCOL</idx> SMB
+exchange, and take a preliminary peek at some of the concepts that we
+have yet to consider (things like virtual circuits<idx>VC</idx> and
+authentication). For the most part, the examples and discussion will
+be based on the "NT&#160;LM&#160;0.12"<idx start="c13-lm0.12">NT LM 0.12</idx>
+dialect. The majority of the servers currently available support some
+variation of NT&#160;LM&#160;0.12, and at least one client
+implementation (jCIFS<idx>jCIFS</idx>) has managed to get by without
+supporting any others. Server writers should be warned, however, that
+there really are a lot of clients still around that use older
+calls. Even new clients will use older calls, simply because of the
+difficulty of acquiring reliable documentation on the newer
+stuff. </p>
+
+<h1 id="SMB2.6.1">A Smattering of SMB Dialects</h1><h1s>
+
+<p>In keeping with tradition, the list of dialects is presented as a
+table with the dialect name in the left-hand column and a short
+description in the right, ordered from oldest to newest. Most of the
+references to these dialects seem to do it this way. Our list is not
+quite as complete as you might find elsewhere. The aim here is to
+highlight some of the better-known examples in order to provide a bit
+of context for the examination of the <code>SMB_COM_NEGOTIATE</code>
+message.</p>
+
+<p>Where relevant, important differences between dialects will be
+noted. It would be very difficult, however, to try to document all of
+the features of each dialect and all of the changes between them. If
+you really, really need to know more (which is likely, if you are
+working on server code) see the SNIA doc<idx>SNIA<sidx>CIFS Technical
+Reference</sidx></idx>, the X/Open doc<idx>X/Open SMB
+Documentation</idx>, the expired IETF drafts, and the other old
+Microsoft<idx>Microsoft</idx> documentation that is still freely
+available from their FTP server.<fn>...or was, last time I
+checked. Once again, that URL is:
+<url>ftp://ftp.microsoft.com/<dk:br/>developr/drg/CIFS/</url>. See the
+References section for links to specific documents.</fn>
+</p>
+
+<table colwidths="24* 76*">
+<caption>SMB dialects</caption>
+<thead>
+<tr dk:border="after">
+<th><p>Dialect Identifier</p></th>
+<th><p>Notes</p></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><p><b><code>PC&#160;NETWORK PROGRAM&#160;1.0</code></b></p></td>
+<td><p>Also known as the <b>Core Protocol</b>.<idx>SMB<sidx>Core
+Protocol</sidx></idx> This is the original stuff, as documented in
+<code>COREP.TXT</code><idx>COREP.TXT</idx>. According to ancient lore,
+this dialect is sometimes also identified by the string
+"<code>PCLAN1.0</code>".</p></td>
+</tr>
+<tr>
+<td><p><b><code>MICROSOFT NETWORKS&#160;1.03</code></b></p></td>
+<td><p>This is the <b>Core Plus Protocol</b>.<idx>SMB<sidx>Core Plus
+Protocol</sidx></idx> It extends a few Core Protocol SMB commands, and
+adds a few new ones.</p></td>
+</tr>
+<tr>
+<td><p><b><code>MICROSOFT NETWORKS&#160;3.0</code></b></p></td>
+
+<td><p>Known as the <b>Extended 1.0 Protocol</b> or <b>LAN Manager
+1.0</b><idx>LM</idx>. This dialect was created when IBM and
+Microsoft were working together on OS/2<idx>OS/2</idx>. This particular variant was
+designed for<idx>DOS</idx> DOS clients, which understood a narrower
+set of error codes than&nbsp;OS/2.</p></td>
+</tr>
+<tr>
+<td><p><b><code>LANMAN1.0</code></b></p></td>
+<td><p>Identical to the <code>MICROSOFT
+NETWORKS 3.0</code> dialect except that it was intended for use with
+OS/2 clients, so a larger set of error codes was available. OS/2
+and DOS both expect that the <code>STATUS</code> field will be in the
+DOS-style <code>ErrorClass</code> / <code>ErrorCode</code> format. Again,
+this dialect is also known as <b>LAN Manager 1.0</b> or as the
+<b>Extended 1.0 Protocol</b>.</p></td>
+</tr>
+<tr>
+<td><p><b><code>LM1.2X002</code></b></p></td>
+<td><p>Called the <b>Extended 2.0
+Protocol</b>; also known as <b>LAN Manager 2.0</b>. This dialect
+represents OS/2 LANMAN version 2.0, and it introduces a few new
+SMBs. The identifier for the DOS version of this dialect is
+"<code>DOS LM1.2X002</code>". As before, the key difference between the
+DOS and OS/2 dialects is simply that the OS/2 version provides a
+larger set of error codes.</p></td>
+</tr>
+<tr>
+<td><p><b><code>LANMAN2.1</code></b></p></td>
+
+<td><p>Called the <b>LAN Manager 2.1</b> dialect (no surprise there),
+this version is documented in a paper titled <cite>Microsoft Networks
+SMB File Sharing Protocol Extensions, Document Version 3.4</cite>. You
+can find it by searching the web for a file named
+"<code>SMB-LM21.DOC</code><idx>SMB-LM21.DOC</idx>". You will likely
+need a conversion tool of some sort in order to read the file, as it
+is encoded in an outdated form of a proprietary Microsoft format (it's
+a word-processing file). The cool thing about the
+<code>SMB-LM21.DOC</code> document is that instead of explaining how
+LANMAN2.1 works it describes how LANMAN2.1 differs from its
+predecessor, LANMAN2.0. That's useful for people who want to know how
+the protocol has evolved.</p></td>
+</tr>
+<tr>
+<td><p><b><code>Samba</code></b></p></td> 
+
+<td><p>You may see this dialect listed in the protocol negotiation
+request coming from a Samba-based client such as
+<code>smbclient</code>, KDE Konqueror<idx>Konqueror</idx> (which uses
+Samba's<idx>Samba</idx>
+<code>libsmbclient</code><idx>libsmbclient</idx> library), or the
+Linux <code>SMBFS</code><idx>SMBFS</idx> implementation. No one from
+the Samba Team<idx>Samba<sidx>Team</sidx></idx> seems to remember
+when, or why, this was added. It doesn't appear to be used any more
+(if, indeed, it ever was).</p></td>
+</tr>
+<tr>
+<td><p><b><code>NT LM 0.12</code></b></p></td>
+<td><p>This dialect, sometimes called
+NT&#160;LANMAN, was developed for use with Windows NT. All of the
+Windows 9x clients also claim to speak it, as do Windows 2000 and XP.
+As mentioned above, this is currently the most widely supported dialect. It
+is, quite possibly, also the sloppiest with all sorts of variations
+and differing implementations.</p></td>
+</tr>
+<tr>
+<td><p><b><code>CIFS</code></b></p></td>
+<td><p>Following the release of the IETF
+CIFS protocol drafts, many people thought that Microsoft would
+produce a "CIFS" dialect, and many documents refer to it. No such
+beast has actually materialized, however. Maybe that's a good
+thing.</p></td>
+</tr>
+</tbody>
+</table>
+
+<p dk:break="before">Section 3.16 of the SNIA <cite>CIFS Technical Reference,
+V1.0</cite> provides a list of of SMB message types categorized by the
+dialect in which they were introduced. There is also a slightly more
+complete list of dialects in Section 5.4 of the SNIA doc.</p>
+
+</h1s><h1 id="SMB2.6.2">Greetings: The <code>NEGOTIATE PROTOCOL REQUEST</code></h1><h1s>
+
+<p>We have already provided a detailed breakdown of a <code>NEGOTIATE
+PROTOCOL REQUEST</code><idx start="c13-negotiate">NEGOTIATE
+PROTOCOL</idx> SMB (back in <ref refid="SMB2.4.3"/>), so we don't need
+to go to the trouble of fully dissecting it again. The interesting
+part of the <dk:nobr>request is the data section</dk:nobr> (the
+parameter section is empty). If we were to <dk:nobr>write a client
+that supported</dk:nobr> all of the dialects in our chart, the
+<dk:nobr><code>NEGOTIATE_PROTOCOL_REQUEST.SMB_DATA</code></dk:nobr>
+field would break out something like this:</p>
+
+<pre>SMB_DATA
+  {
+  ByteCount = 131
+  Bytes
+    {
+    Dialect[0] = "\x02PC NETWORK PROGRAM 1.0"
+    Dialect[1] = "\x02MICROSOFT NETWORKS 1.03"
+    Dialect[2] = "\x02MICROSOFT NETWORKS 3.0"
+    Dialect[3] = "\x02LANMAN1.0"
+    Dialect[4] = "\x02LM1.2X002"
+    Dialect[5] = "\x02LANMAN2.1"
+    Dialect[6] = "\x02Samba"
+    Dialect[7] = "\x02NT LM 0.12"<idx end="c13-lm0.12">NT LM 0.12</idx>
+    Dialect[8] = "\x02CIFS"
+    }
+  }</pre>
+
+<p>Each dialect string is preceded by a byte containing the value
+<code>0x02</code>. This, perhaps, was originally intended to make it
+easier to parse the buffer. In addition to the <code>0x02</code>
+prefix the dialect strings are nul-terminated, so if you go to the
+trouble of counting up the bytes to see if the <code>ByteCount</code>
+value is correct in this example don't forget to add 1 to each string
+length.</p>
+
+<p><ref refid="Listing2.5"/> provides code for creating a
+<code>NEGOTIATE PROTOCOL <dk:nobr>REQUEST</dk:nobr></code> message. It
+also takes care of writing an NBT Session Message header for us -
+something we must not forget to do.</p>
+
+<example id="Listing2.5">
+<caption>Negotiate Protocol Request</caption>
+<pre dk:break="after"><![CDATA[/* Define the SMB message command code.
+ */
+#define SMB_COM_NEGOTIATE 0x72
+
+int nbt_SessionHeader( uchar *bufr, ulong size )
+  /* ---------------------------------------------------- **
+   * This function writes the NBT Session Service header.
+   * Note that we use NBT byte order, not SMB.
+   * ---------------------------------------------------- **
+   */
+  {
+  if( size > 0x0001FFFF ) /* That's the NBT maximum. */
+    return( -1 );
+  bufr[0] = 0;
+  bufr[1] = (size >> 16) & 0xFF;
+  bufr[2] = (size >>  8) & 0xFF;
+  bufr[3] = size & 0xFF;
+  return( (int)size );
+  } /* nbt_SessionHeader */
+
+int smb_NegProtRequest( uchar  *bufr,
+                        int     bsize,
+                        int     namec,
+                        uchar **namev )
+  /* ---------------------------------------------------- **
+   * Build a Negotiate Protocol Request message.
+   * ---------------------------------------------------- **
+   */
+  {
+  uchar *smb_bufr;
+  int    i;
+  int    length;
+  int    offset;
+  ushort bytecount;
+  uchar  flags;
+  ushort flags2;
+
+  /* Set aside four bytes for the session header. */
+  bsize    = bsize - 4;
+  smb_bufr = bufr + 4;]]></pre>
+
+<pre dk:break="after"><![CDATA[  /* Make sure we have enough room for the header,
+   * the WORDCOUNT field, and the BYTECOUNT field.
+   * That's the absolute minimum (with no dialects).
+   */
+  if( bsize < (SMB_HDR_SIZE + 3) )
+    return( -1 );
+
+  /* Initialize the SMB header.
+   * This zero-fills all header fields except for
+   * the Protocol field ("\ffSMB").
+   * We have already tested the buffer size so
+   * we can void the return value.
+   */
+  (void)smb_hdrInit( smb_bufr, bsize );
+
+  /* Hard-coded flags values...
+   */
+  flags  = SMB_FLAGS_CANONICAL_PATHNAMES;
+  flags |= SMB_FLAGS_CASELESS_PATHNAMES;
+  flags2 = SMB_FLAGS2_KNOWS_LONG_NAMES;
+
+  /* Fill in the header.
+   */
+  smb_hdrSetCmd(    smb_bufr, SMB_COM_NEGOTIATE );
+  smb_hdrSetFlags(  smb_bufr, flags );
+  smb_hdrSetFlags2( smb_bufr, flags2 );
+
+  /* Fill in the (empty) parameter block.
+   */
+  smb_bufr[SMB_HDR_SIZE] = 0;
+
+  /* Copy the dialect names into the message.
+   * Set offset to indicate the start of the
+   * BYTES field, skipping BYTECOUNT.  We will
+   * fill in BYTECOUNT later.
+   */
+  offset = SMB_HDR_SIZE + 3;
+  for( bytecount = i = 0; i < namec; i++ )
+    {
+    length = strlen(namev[i]) + 1;       /* includes nul  */
+    if( bsize < (offset + 1 + length) )  /* includes 0x02 */
+      return( -1 );
+    smb_bufr[offset++] = '\x02';
+    (void)memcpy( &smb_bufr[offset], namev[i], length );
+    offset += length;
+    bytecount += length + 1;
+    }]]></pre>
+
+<pre><![CDATA[  /* The offset is now the total size of the SMB message.
+   */
+  if( nbt_SessionHeader( bufr, (ulong)offset ) < offset )
+    return( -1 );
+
+  /* The BYTECOUNT field starts one byte beyond the end
+   * of the header (one byte for the WORDCOUNT field).
+   */
+  smb_SetShort( smb_bufr, (SMB_HDR_SIZE + 1), bytecount );
+
+  /* Return the total size of the packet.
+   */
+  return( offset + 4 );
+  } /* smb_NegProtRequest */]]></pre>
+</example>
+
+</h1s><h1 id="SMB2.6.3">Gesundheit: The <code>NEGOTIATE PROTOCOL RESPONSE</code></h1><h1s>
+
+<p>The <code>NEGOTIATE PROTOCOL RESPONSE</code> SMB is more complex
+than the request. In addition to the dialect selection, it also
+contains a variety of other parameters that let the client know the
+capabilities, limitations, and expectations of the server. Most of
+these values are stuffed into the <code>SMB_PARAMETERS</code> block,
+but there are a few fields defined in the <code>SMB_DATA</code> block
+as well. </p>
+
+<h2 id="SMB2.6.3.1">NegProt Response Parameters</h2><h2s>
+
+<p dk:break="after">The
+<code>NEGOTIATE_PROTOCOL_RESPONSE.SMB_PARAMETERS.Words</code> block
+for the NT&#160;LM&#160;0.12<idx>NT LM 0.12</idx> dialect is 17 words
+(34 bytes) in size, and is structured as shown below. Earlier dialects
+use a different structure and, of course, the server should always
+match the reply to the dialect it selects.</p>
+
+<pre>typedef struct
+  {
+  uchar WordCount;              /* Always 17 for this struct */
+  struct
+    {
+    ushort DialectIndex;        /* Selected dialect index    */
+    uchar  SecurityMode;        /* Server security flags     */
+    ushort MaxMpxCount;         /* Maximum Multiplex Count   */
+    ushort MaxNumberVCs;        /* Maximum Virtual Circuits  */
+    ulong  MaxBufferSize;       /* Maximum SMB message size  */
+    ulong  MaxRawSize;          /* Obsolete                  */
+    ulong  SessionKey;          /* Unique session ID         */
+    ulong  Capabilities;        /* Server capabilities flags */
+    ulong  SystemTimeLow;       /* Server time; low bytes    */
+    ulong  SystemTimeHigh;      /* Server time; high bytes   */
+    short  ServerTimeZone;      /* Minutes from UTC; signed  */
+    uchar  EncryptionKeyLength; /* 0 or 8                    */
+    } Words;
+  } smb_NegProt_Rsp_Params;</pre>
+
+<p>That requires a lot of discussion. Let's tear it up and take a
+close look at the tiny pieces.</p>
+
+<dl>
+<dt><code>DialectIndex</code></dt>
+
+<dd><p>Things start off fairly simply. The <code>DialectIndex</code>
+field contains the index of the dialect string that the server has
+selected, which will be the highest-level dialect that the server
+understands. The dialect strings are numbered starting with zero, so
+to choose "NT&#160;LM&#160;0.12" from the list in the example request
+the server would return 7 in the <code>DialectIndex</code> field.</p></dd>
+
+<dt><code>SecurityMode</code></dt>
+
+<dd><p
+dk:break="after"><code>SecurityMode</code><idx>SecurityMode</idx> is a
+bitfield that provides some information about the
+authentication<idx>authentication</idx> sub-protocol that the server
+is expecting. Four flag bits are defined; they are described below.
+Challenge/Response<idx>challenge/response</idx> and <b>M</b>essage
+<b>A</b>uthentication <b>C</b>ode (MAC<idx>MAC</idx>) message signing
+will be explained later (this is becoming our mantra), when we cover
+authentication. It will take a little while to get there, but keep
+your eyes open for additional clues along the way.</p>
+
+<table colwidths="6* 56* 38*">
+<caption><code>SecurityMode</code></caption>
+<thead>
+<tr dk:border="after">
+<th><p>Bit</p></th>
+<th><p>Name / Bitmask / Values</p></th>
+<th><p>Description</p></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><p>7-4</p></td>
+<td><p><code>0xF0</code></p></td>
+<td><p><b>&lt;Reserved&gt; (must be zero)</b></p></td>
+</tr>
+<tr>
+<td><p>3</p></td>
+<td><p><line><code dk:type="small">NEGOTIATE_SECURITY_SIGNATURES_REQUIRED</code></line>
+<line><code>0x08</code></line>
+<line><code>0</code>:&#160;Message signing is optional</line>
+<line><code>1</code>:&#160;Message signing is required</line></p></td>
+
+<td><p>If set, this bit indicates that the server is requiring the use
+of a <b>M</b>essage <b>A</b>uthentication <b>C</b>ode (MAC) in each
+packet. If the bit is clear then message signing is optional.</p>
+
+<p>This bit should be zero if the next bit (mask <code>0x04</code>) <dk:nobr>is zero.</dk:nobr></p></td>
+</tr>
+<tr>
+<td><p>2</p></td>
+<td><p><line><code dk:type="small">NEGOTIATE_SECURITY_SIGNATURES_ENABLED</code></line>
+<line><code>0x04</code></line>
+<line><code>0</code>:&#160;Message signing not supported</line>
+<line><code>1</code>:&#160;Server can perform message signing</line></p></td>
+
+<td><p>If set, the server is indicating that it is capable of
+performing <b>M</b>essage <b>A</b>uthentication <b>C</b>ode (MAC)
+message signing.</p>
+
+<p>This bit should be zero if the next bit (mask <code>0x02</code>) <dk:nobr>is zero.</dk:nobr></p></td>
+</tr>
+<tr>
+<td><p>1</p></td>
+<td><p><line><code dk:type="small">NEGOTIATE_SECURITY_CHALLENGE_RESPONSE</code></line>
+<line><code>0x02</code></line>
+<line><code>0</code>:&#160;Plaintext Passwords</line>
+<line><code>1</code>:&#160;Challenge/Response</line></p></td>
+
+<td><p>This bit indicates whether or not the server supports
+Challenge/Response authentication (which will be covered further
+on). If the bit is clear, then plaintext passwords must be used. If
+set, the server may (optionally) reject plaintext authentication.</p>
+
+<p>If this bit is clear and the client rejects the use of plaintext,
+then there is no way to perform the logon and the client will be
+unable to connect to the server.</p></td>
+</tr>
+<tr>
+<td><p>0</p></td>
+<td><p><line><code dk:type="small">NEGOTIATE_SECURITY_USER_LEVEL</code></line>
+<line><code>0x01</code></line>
+<line><code>0</code>:&#160;Share Level</line>
+<line><code>1</code>:&#160;User Level</line></p></td>
+
+<td><p>Ah! Finally something we've already covered!</p>
+
+<p>This bit indicates whether the server, as a whole, is operating
+under Share Level or User Level security.<idx>User Level Security</idx><idx>Share Level
+Security</idx> Share and User Level security were explained along with
+the <code>TID</code><idx>TID</idx> and <code>UID</code><idx>UID</idx>
+header fields, back in <ref refid="SMB2.5.4"/>.</p></td>
+</tr>
+</tbody>
+</table>
+</dd>
+
+<dt><code>MaxMpxCount</code></dt>
+
+<dd><p>Remember the <code>PID</code><idx>PID</idx> and
+<code>MID</code><idx>MID</idx> fields in the header? They could be
+used to multiplex several sessions over a single TCP/IP
+connection. The thing is, the server might not be able to handle more
+than a fixed number of total outstanding requests.</p>
+
+<p>The <code>MaxMpxCount</code> field lets the server tell the client
+how many requests, in total, it can handle concurrently. It is the
+client's responsibility to ensure that there are no more than
+<code>MaxMpxCount</code> outstanding requests in the pipe at any time.
+That may mean that client processes will block, waiting for their turn
+to send an SMB.</p>
+</dd>
+
+<dt><code>MaxNumberVCs</code></dt>
+
+<dd><p>The <code>MaxNumberVCs</code> field specifies the maximum number of
+<b>V</b>irtual <b>C</b>ircuits (VCs<idx>VC</idx>) that the server is able to
+accommodate. VCs are yet another mechanism by which multiple SMB
+sessions could, in theory, be multiplexed over a single
+transport-layer session. Note the use of the phrase "in theory."
+The dichotomy between theory and practice is a recurring theme in
+the study of CIFS.</p></dd>
+
+<dt><code>MaxBufferSize</code></dt>
+
+<dd><p><code>MaxBufferSize</code> is the size (in bytes) of the largest
+message that the server can receive. </p>
+
+<p>Keep in mind that the transport layer will fragment and
+defragment packets as necessary. It is, therefore, possible to send
+very large SMBs and let the lower layers worry about ensuring safe,
+fast, reliable delivery.</p>
+
+<p>How big can an SMB message be?</p>
+
+<p>In the NT&#160;LM&#160;0.12 dialect, the <code>MaxBufferSize</code>
+field is an unsigned longword. As described much earlier on, however,
+the <code>Length</code> field in the NBT <code>SESSION MESSAGE</code>
+is 17 bits wide and the naked transport header has a 24-bit
+<code>Length</code> field. So the session headers <dk:nobr>place slightly more</dk:nobr>
+reasonable limits on the maximum size of a single <dk:nobr>SMB message.</dk:nobr></p></dd>
+
+<dt><code>MaxRawSize</code></dt>
+
+<dd><p>This is the maximum size of a raw data buffer.</p>
+
+<p>The X/Open doc<idx>X/Open SMB Documentation</idx> describes the
+<code>READ&#160;RAW</code> and <code>WRITE&#160;RAW</code> SMBs, which
+were introduced with the Extended 1.0 version of SMB <dk:nobr>(the
+<code>MICROSOFT&#160;NETWORKS&#160;3.0</code></dk:nobr> and
+<code>LANMAN1.0</code> dialects). These were a speed hack. For a large
+read or write operation,<idx>raw read/write mode</idx> the first
+message would be a proper SMB, but subsequent messages would be sent
+in "raw" mode, with no SMB or session header. The raw blocks could be
+as large as <code>MaxRawSize</code> bytes in length. Once again, the
+transport layer was expected to take care of
+fragmentation/defragmentation<idx>fragmentation</idx> as well as
+resending of any lost packets.</p>
+
+<p>Raw mode is not used much any more. Among other things, it
+conflicts with message signing because the raw messages have no header
+in which to put the MAC Signature. Thus, the <code>MaxRawSize</code>
+field is considered obsolete.<fn>There may be a further problem with
+raw mode. Microsoft has made some obtuse references to obscure
+patents<idx>patent</idx> which may or may not be related to <code>READ
+RAW</code> and <code>WRITE RAW</code>. The patents in question have
+been around for quite some time, and were not mentioned in any of the
+SMB/CIFS documentation that Microsoft released up until March of
+2002. Still, the best bet is to avoid <code>READ RAW</code> and
+<code>WRITE RAW</code> (since they are not particularly useful anyway)
+and/or check with a patent lawyer. The Samba
+Team<idx>Samba<sidx>Team</sidx></idx> released a statement regarding
+this issue, see
+<url>http://us1.samba.org/samba/ms_license.html</url>.</fn></p>
+</dd>
+
+<dt><code>SessionKey</code></dt>
+
+<dd><p>The <code>SessionKey</code><idx>SessionKey</idx> is supposed to
+be used to identify the session in which a VC has been
+opened. Documentation on the use of this field is very poor, however,
+and the commentary in various mailing list<idx>Samba<sidx>technical
+mailing list</sidx></idx> archives shows that there is not much
+agreement about what to do with it.</p>
+
+<p>In theory, the <code>SessionKey</code> value should be echoed back
+to the server whenever the client sends a <code>SESSION
+SETUP</code><idx>SESSION SETUP</idx> request. Samba's<idx>Samba</idx>
+<code>smbclient</code> does this, but some versions of jCIFS always
+reply with zero, and they don't seem to have any trouble with it. In
+testing, it also appears that Windows 2000 servers do not generate a
+session key. They send zero in <code>NEGOTIATE PROTOCOL
+RESPONSE</code> messages. Hmmm...</p>
+
+<p>It would seem that the use of this field was never clearly 
+defined - anywhere by anyone - and that most servers really don't care what
+goes there. It is probably safest if the client echoes back the value
+sent by <dk:nobr>the server.</dk:nobr></p>
+</dd>
+
+<dt><code>Capabilities</code><idx>Capabilities</idx></dt>
+
+<dd><p>This is a grab-bag bitfield, similar in style to the
+<code>FLAGS</code><idx>FLAGS</idx> and <code>FLAGS2</code><idx>FLAGS2</idx> fields in
+the header except, of course, that it is not included in every
+message. The bits of the <code>Capabilities</code> field indicate
+specific server features of which the client may choose to take
+advantage.</p>
+
+<p>We are already building up a backlog of unexplained features. We
+will also postpone the discussion of the <code>Capabilities</code>
+field until we get some of the other stuff out of the way.</p>
+</dd>
+
+<dt><code>SystemTimeLow</code> and <code>SystemTimeHigh</code></dt>
+
+<dd><p>The <code>SystemTime</code> fields are shown as two unsigned
+longs in the SNIA doc<idx>SNIA<sidx>CIFS Technical
+Reference</sidx></idx>. We might write it as: </p>
+
+<pre>typedef struct
+  {
+  ulong timeLow;
+  ulong timeHigh;
+  } smb_Time;</pre>
+
+<p>Keeping byte order in mind, the completed time value should be read
+as two little-endian 32-bit integers. The result, however, should be
+handled as a 64-bit <em>signed</em> value representing the number of
+tenths of a microsecond since January 1, 1601, 00:00:00.0
+UTC.<idx>January 1, 1601, 00:00:00.0 UTC</idx></p>
+
+<p>WHAT?!?!</p>
+
+<p>Yes, you read that right folks. The time value is based on that
+unwieldy little formula. Read it again five times and see if you don't
+get a headache. Looks as though we need to get out the protractor, the
+astrolabe, and the didgeridoo and try a little calculating. Let's start
+with some complex scientific equations:</p>
+
+<ul>
+<li><p>1 microsecond = 10<sup>&minus;6</sup> seconds,</p></li>
+<li><p>1/10 microsecond = 10<sup>&minus;7</sup> seconds.</p></li>
+</ul>
+
+<p>In other words, the server time is given in units of
+10<sup>&minus;7</sup> seconds.<fn>There is no name for
+10<sup>&minus;7</sup> seconds. Other fractions of seconds have names
+with prefixes like deci, centi, milli, micro, nano, pico, even
+zepto<idx>zepto</idx>, but there is no prefix that applies to
+10<sup>&minus;7</sup>. In honor of the fact that this rare measure of
+time is used in the CIFS protocol suite, I propose that it be called a
+<b>bozo</b>second.</fn> Many CIFS implementations
+handle these units by converting them into Unix-style
+measurements. Unix, of course, bases its time measurements on an
+equally obscure date: January 1, 1970, 00:00:00.0 UTC.<idx>January 1,
+1970, 00:00:00.0 UTC</idx><fn>January 1, 1970, 00:00:00.0 UTC, known
+as "the Epoch," is sometimes excused as being the approximate
+birthdate of Unix.</fn> Converting between the two schemes requires
+knowing the difference (in seconds) between the two base times.</p>
+
+<email> 
+<pre>       From: Andrew Narver<idx>Narver, Andrew</idx>
+In-Reply-To: A message from Mike Allen<idx>Allen, Michael B.</idx> sent to Microsoft's CIFS 
+             mailing list and the Samba-Technical mailing list.
+
+&gt; (what's the number of seconds between 1601 and 1970 again?)
+
+Between Jan 1, 1601 and Jan 1, 1970, you have 369 complete 
+years, of which 89 are leap years (1700, 1800, and 1900 were 
+not leap years). That gives you a total of 134774 days or 
+11644473600 seconds.</pre>
+</email>
+
+<p>So, if you want to convert the <code>SystemTime</code> to a Unix
+<code>time_t</code> value, you need to do something like this:</p>
+
+<pre>unix_time = (time_t)(((smb_time)/10000000) - 11644473600);</pre>
+
+<p dk:indent="no">which gives you the server's system time in seconds
+since January 1, 1970, 00:00:00.0 UTC.</p></dd>
+
+<dt><code>ServerTimeZone</code></dt>
+
+<dd><p><code>ServerTimeZone</code>, of course, is the timezone in
+which the server believes it resides. It is represented as an offset
+relative to UTC, in minutes. Minutes, that is. Multiply by 60 in order
+to get seconds, or 600,000,000 to get tenths of a microsecond.</p>
+
+<p>The available documentation (the SNIA doc<idx>SNIA<sidx>CIFS
+Technical Reference</sidx></idx> and the Leach/Naik IETF
+draft<idx>Leach/Naik Internet Drafts</idx>) states that this field is
+an <em>un</em>signed short integer. They're wrong. The field is a
+signed value which is subtracted from the
+<dk:nobr><code>SystemTime</code></dk:nobr> to give local time.</p>
+
+<p>If, for example, your server is located in the beautiful city of
+Saint Paul, Minnesota, it would be in the US Central timezone<fn>This
+is probably because Saint Paul is at the center of the universe. The
+biomagnetic center of the universe used to be located across the river
+in Minneapolis until they closed it down. It was a little out of whack
+in the same way that the magnetic poles are not quite where they
+should be. The magnetic north pole, for instance, is on or near an
+island in northern Canada instead of at the center of the Arctic Ocean
+where it belongs.</fn> which is six hours west of UTC.  The value in
+the <code>ServerTimeZone</code> field would, therefore be 360
+minutes. (Except, of course, during the summer when Daylight Savings
+Time is in effect, in which case it would be 300 minutes.)  On the
+other hand, if your server is in Moscow in the winter, the
+<code>ServerTimeZone</code> value would be&#160; &minus;180.</p>
+
+<p>The basic rule of thumb:</p>
+
+<pre>LocalTime = SystemTime - ( ServerTimeZone &times; 600000000 )</pre>
+
+<p dk:indent="no">...which returns local time in units of
+10<sup>&minus;7</sup> seconds, based on January 1601 as described
+above.</p>
+
+<p>If you found all of that to be complicated, you will be relieved to
+know that this is only one of many different time formats used in
+SMB. Time And Date Encoding is covered in Section 3.7 of the SNIA
+doc.<idx>SNIA<sidx>CIFS Technical Reference</sidx></idx></p>
+</dd>
+
+<dt><code>EncryptionKeyLength</code></dt>
+
+<dd><p>This is the last field in the
+<code>NEGOTIATE_PROTOCOL_RESPONSE.<dk:br/>SMB_PARAMETERS</code> block. It
+provides the length, in bytes, of the Challenge used in
+Challenge/Response authentication. SMB Challenges, if present, are
+always 8 bytes long, so the <code>EncryptionKeyLength</code> will have
+a value of either 8 or 0 - the latter if Challenge/Response
+authentication is not in use.</p>
+
+<p>The name of this field is probably a hold-over from some
+previous enhancement to the protocol - still in use for "historical
+reasons."</p></dd>
+</dl>
+
+<p>Wow... a lot of stuff there. No time to sit and chat about it right
+<dk:nobr>now, though. We</dk:nobr> still need to finish out the examination of the
+<dk:nobr><code>NEGOTIATE_PROTOCOL_RESPONSE.SMB_DATA</code> block.</dk:nobr><idx end="c13-dialect">dialect</idx></p>
+
+</h2s><h2 id="SMB2.6.3.2">NegProt Response Data</h2><h2s>
+
+<p><code>SMB_DATA</code>, of course, is handed to us as an array of
+bytes with the length provided in the <code>ByteCount</code>
+field. The parsing of those bytes depends upon the values in the
+<code>SMB_PARAMETER</code> block that we just examined. The structure
+is completely different depending upon whether Extended Security has
+<dk:nobr>been negotiated.</dk:nobr></p>
+
+<p>Here is what it looks like, more or less, in the
+NT&#160;LM&#160;0.12<idx>NT LM 0.12</idx> dialect:</p>
+
+<pre>typedef struct
+  {
+  ushort ByteCount;          /* Number of bytes to follow  */
+  union
+    {
+    struct
+      {
+      uchar GUID[16];        /* 16-byte Globally Unique ID */
+      uchar SecurityBlob[];  /* Auth-system dependent      */
+      } ext_sec;             /* Extended Security          */
+    struct
+      {
+      uchar EncryptionKey[]; /* 0 or 8 bytes long          */
+      uchar DomainName[];    /* nul-terminated string      */
+      } non_ext_sec;         /* Non-Extended Security      */
+    } Bytes;
+  } smb_NegProt_Rsp_Data;</pre>
+
+<p>The first thing to note is that this <code>SMB_DATA.Bytes</code>
+block structure is the union of two smaller structures:</p>
+
+<ul>
+<li><p><code>ext_sec</code> is used if Extended Security has been
+negotiated,</p></li>
+
+<li><p><code>non_ext_sec</code> is used otherwise.</p></li>
+</ul>
+
+<p>The second thing to note is that this is pseudo-code, not valid C
+code. Some of the array lengths are unspecified because we don't know
+the byte-length of the fields ahead of time. In real code, you will
+probably need to use pointers or some other mechanism to extract the
+variable-length data from <dk:nobr>the buffer.</dk:nobr></p>
+
+<p>Okay, let's chop that structure into little bits...</p>
+
+<dl>
+<dt><code>GUID</code><idx>GUID</idx></dt>
+
+<dd><p><code>GUID</code> stands for <b>G</b>lobally <b>U</b>nique
+<b>ID</b>entifier. The <code>GUID</code> field is always 16 bytes long.</p>
+
+<p>As of this writing, research by Samba
+Team<idx>Samba<sidx>Team</sidx></idx> members shows that this value is
+probably the same as the <code>GUID</code> identifier used by Active
+Directory<idx>Active Directory</idx> to keep track of servers in the
+database.  Standalone servers (which are not listed in any Active
+Directory) also generate and use a <code>GUID</code>. <dk:nobr>Go
+figure.</dk:nobr></p>
+
+<p>Though this field is only present when Extended Security is
+enabled, it is not, strictly speaking, a security field. The value is
+well known and easily forged. It is not clear (yet) why this field is
+even sent to the client. In testing, a Samba<idx>Samba</idx> server
+was configured to fill the <code>GUID</code> field with its own
+16-byte Server Service<idx>SMB<sidx>Server Service</sidx></idx> NetBIOS
+name...<idx>NetBIOS<sidx>name</sidx></idx> and that worked just
+fine.</p>
+</dd>
+
+<dt><code>SecurityBlob</code></dt>
+
+<dd><p>The <code>SecurityBlob</code><idx>SecurityBlob</idx> is - as
+the name says - a blob of security information. In other words, it is
+a block of data that contains authentication information particular to
+the Extended Security mechanism being used. Obviously, this field will
+need to be covered in the Authentication section.</p>
+
+<p>The <code>SecurityBlob</code> is variable in length. Fortunately,
+the <code>GUID</code> field is always 16 bytes, so the length of the
+<code>SecurityBlob</code> is <dk:nobr><code>(ByteCount - 16)</code> bytes.</dk:nobr></p>
+</dd>
+
+<dt><code>EncryptionKey</code></dt>
+
+<dd><p>This field should be called <code>Challenge</code> because
+that's what it actually contains - the Challenge used in
+Challenge/Response<idx>challenge/response</idx> authentication. The SMB Challenge, if present, is
+always eight bytes long. If plaintext passwords are in use then there
+is no Challenge, the <code>EncryptionKey</code> will be empty, and the
+<code>SMB_PARAMETERS.EncryptionKeyLength</code> field will contain
+<code>0</code>.</p></dd>
+
+<dt><code>DomainName</code></dt>
+
+<dd><p>This field sometimes contains the NetBIOS name of the
+Workgroup<idx>Workgroup</idx> or NT Domain<idx>NT Domain</idx> to
+which the server belongs. (We have talked a bit, in previous sections,
+about Workgroups and NT Domains so the terms should be somewhat
+familiar.) In testing, Samba servers always provided a name in the
+<code>DomainName</code> field; Windows systems less reliably
+so. Windows 98, for example, would sometimes provide a value and
+sometimes not.<fn>A lot of time was wasted trying to figure out which
+configuration options would change the behavior. The results were
+inconclusive. At first it seemed as though the DomainName was included
+if the Windows 98 system was running in User Level security<idx>User
+Level Security</idx> mode and passing logins through to an NT Domain
+Controller.<idx>DC</idx> Further testing, however, showed that this
+was not a hard-and-fast rule. It should also be mentioned that if the
+systems are running naked transport there may not be an NT Domain or
+Workgroup name. SMB can be mightily inconsistent - but not all the
+time.</fn></p>
+
+<p>The SNIA doc<idx>SNIA<sidx>CIFS Technical Reference</sidx></idx>
+calls this field the
+<code>OEMDomainName</code><idx>OEMDomainName</idx> and claims that the
+characters will be eight-bit values using the OEM character set of the
+server (that's the 7-bit ASCII character set augmented by an extended
+DOS code page which defines characters for the upper 128 octet
+values). In fact, this field may contain either a string of 8-bit OEM
+<dk:nobr>characters or a Unicode<idx>Unicode</idx> string</dk:nobr>
+with 16-bit characters. The value of
+<dk:nobr><code>SMB_HEADER.FLAGS2.SMB_FLAGS2_UNICODE_STRINGS</code><idx>FLAGS2</idx></dk:nobr>
+will let you know how to read the <code>DomainName</code>
+field.</p></dd>
+</dl>
+
+</h2s></h1s><h1 id="SMB2.6.4">Are We There Yet?</h1><h1s>
+
+<p>Okay, let's be honest... Ripping apart that <code>NEGOTIATE
+PROTOCOL <dk:nobr>RESPONSE</dk:nobr></code> SMB was about as exciting as the epic saga of
+undercooked toast. It doesn't get any better than that, though, and
+there's a lot more of it. Implementing SMB is a game of patience and
+persistence. It also helps if you get a cheap thrill from fiddly
+little details. (Just don't go parsing your packets in public or
+people will look at you funny.)</p>
+
+<p>It seems, too, that our overview of the SMB Header and the
+<code>NEGOTIATE PROTOCOL</code> exchange has left a bit of a mess on
+the floor. We have pulled a lot of concepts off of the shelves and out
+of the closets, and we will need to do some sorting and organizing
+before we can put them back. Let's see what <dk:nobr>we've got:</dk:nobr></p>
+
+<ul>
+<li><p>Opportunistic Locks (OpLocks<idx>OpLocks</idx>), which were
+taking up space in the <code>SMB_HEADER.FLAGS</code> field,</p></li>
+
+<li><p>Virtual Circuits (we found these in the box labeled
+<code>MaxNumberVCs</code>),</p></li>
+
+<li><p>The <code>Capabilities</code> bits (and
+pieces),<idx>Capabilities</idx></p></li>
+
+<li><p>Distributed File System (DFS), which spilled out when
+<code>FLAGS2</code> fell open,</p></li>
+
+<li><p>Character Encoding - which seems to get into everything, sort of
+like cat hair and dust,</p></li>
+
+<li><p>Extended vs. DOS Attributes,</p></li>
+
+<li><p>Long vs. short names, and...</p></li>
+
+<li><p>Authentication, including plaintext passwords,
+Challenge/Response, Extended Security, and Packet Signing.</p></li>
+</ul>
+
+<p>The only way to approach all of these topics is one-at-a-time.
+...but first, take another break. Every now and then, it is a good
+idea to stop and think about what has been covered so far. This is one
+of those times. We have finished tearing apart SMB headers and the
+body of a <code>NEGOTIATE PROTOCOL</code> message. That should provide
+some familiarity with the overall structure of SMBs. Try doing some
+packet captures, or skim through the SNIA <cite>CIFS Technical
+Reference</cite><idx>SNIA<sidx>CIFS Technical
+Reference</sidx></idx>. It should all begin to make a little more
+sense now than it did when we started.<idx
+end="c13-negotiate">NEGOTIATE PROTOCOL</idx></p>
+
+</h1s></chapter>
+</oim>

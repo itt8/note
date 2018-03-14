@@ -1,0 +1,261 @@
+<?xml version="1.0" encoding="US-ASCII"?>
+<!DOCTYPE oim SYSTEM "oimxml.dtd" [
+  <!ENTITY nbsp  "&#160;">
+  <!ENTITY lsquo "&#8216;">
+  <!ENTITY rsquo "&#8217;">
+  <!ENTITY minus "&#8211;">
+  <!ENTITY mdash "&#8212;">
+  <!ENTITY times "&#xd7;">
+  <!ENTITY copy "&#xa9;">
+] >
+<oim xmlns:dk="http://www.kirsanov.com">
+<chapter id="SMB2.2">
+<chapopen><title>An Introductory Tour of SMB</title>
+<epigraph dk:padding-top="60">
+<p>The devil is in the details.</p>
+<attribution>Popular saying</attribution>
+</epigraph>
+
+</chapopen>
+
+<p>We will start with a quick museum tour of SMB. Our guide will be
+the venerable <b>U</b>niversal <b>N</b>aming <b>C</b>onvention
+(UNC<idx start="c9-unc">UNC</idx>). You may remember UNC from the
+brief introduction way back in <ref refid="NBT1.1"/>.  UNC will
+provide directions and point out highlights along the tour.</p>
+
+<p>Please stay together, everyone.</p>
+
+<p>The UNC directions are presented in terms of a path, much like the
+<b>U</b>niform <b>R</b>esource <b>I</b>dentifier (URI) paths that are
+used on the World Wide Web. To explain UNC, let us first consider
+something more modern <dk:nobr>and familiar:</dk:nobr></p>
+
+<p dk:displayed="yes"><code>http://ubiqx.org/cifs/index.html</code><idx>ubiqx.org</idx></p>
+
+<p>That string is in <em>URI</em> syntax, as used by web
+browsers<idx>web browser</idx>, and it breaks down to provide these
+landmarks:</p>
+
+<p dk:displayed="yes">
+<line><code><dk:space size="5"/>http</code> == The protocol to use.</line>
+<line><code>ubiqx.org</code> == The name of the server.</line>
+<line><code><dk:space size="5"/>cifs</code> == The directory path.</line>
+<line><code><dk:space size="1"/>SMB.html</code> == The file name.</line></p>
+
+<p>The landmarks guide us along a path which eventually leads us to
+the file we wanted to access.</p>
+
+<p>The SMB protocol pre-dates the use of URIs and was originally
+designed for use on LANs, not internetworks, so it naturally has a
+different (though surprisingly similar) way of specifying paths. A
+<b>U</b>niversal <b>N</b>aming <b>C</b>onvention (UNC) path comparable
+to the URI path above might look something <dk:nobr>like this:</dk:nobr></p>
+
+<p dk:displayed="yes"><code>\\ubiqx\cifs\SMB.html</code></p>
+
+<p dk:indent="no">...and would parse out like this:</p>
+
+<p dk:displayed="yes">
+<line><code><dk:space size="3"/>ubiqx</code> == The name of the server.</line>
+<line><code><dk:space size="4"/>cifs</code> == The directory path.</line>
+<line><code>SMB.html</code> == The file name.</line></p>
+
+<p dk:indent="no">Very similar indeed.</p>
+
+<p>One obvious difference between the two formats is that UNC doesn't
+provide a protocol specification. That's <em>not</em> because it
+always assumes SMB. The UNC format can support all sorts of
+filesharing protocols, but it is up to the underlying operating system
+or application to try to figure out which one to use.  Protocol and
+transport discovery are handled by trial-and-error, with each
+possibility tested until something works. As you might imagine, a
+system with AppleTalk, NetWare, and SMB all enabled may have a lot of
+work to do.</p>
+
+<p>The UNC format is handled natively by Microsoft<idx>Microsoft</idx>
+&amp; IBM's extended family of operating systems: DOS<idx>DOS</idx>,
+OS/2<idx>OS/2</idx>, and Windows.<fn>Steve French says that OS/2 may
+have been the first OS to fully support the UNC scheme.</fn>
+Samba's<idx>Samba</idx> <code>smbclient</code><idx>smbclient</idx>
+utility can also parse UNC names, but it does so at the application
+level rather than within the OS, and it only ever tries to deal with
+SMB.  Even so, <dk:nobr><code>smbclient</code></dk:nobr> must handle
+both NBT and naked transport<idx>naked transport</idx>, which can
+<dk:nobr>be tricky.</dk:nobr>
+</p>
+
+<h1>The Server Identifier</h1><h1s>
+
+<p>The first stop on our UNC tour of SMB is the server name field,
+which is really a server <em>identifier</em> field because it will
+accept addresses in addition to names. This book concerns itself with
+only two transports - NBT and naked<idx>naked transport</idx> TCP
+transport - so the only identifiers we care about are:</p>
+
+<ul>
+<li><p>NetBIOS names,<idx>NetBIOS<sidx>name</sidx></idx></p></li>
+<li><p>DNS names,<idx>DNS</idx> and</p></li>
+<li><p>IP addresses.</p></li>
+</ul>
+
+<p>NetBIOS and DNS names both resolve to IP addresses, so all three
+are equivalent.</p>
+
+<p>Sort of...</p>
+
+<p>Recall that the NBT <code>SESSION REQUEST</code> packet requires a
+<code>CALLED NAME</code> in order to set up an NBT session with the
+server. Without a correct <code>CALLED NAME</code>,<idx>CALLED
+NAME</idx> the NBT <code>SESSION REQUEST</code> <em>may</em> be
+rejected (different implementations behave differently). So...</p>
+
+<ul>
+<li><p>if the transport is NBT (not raw),</p></li>
+<li><p>and the server is identified using a DNS name or IP
+address...</p></li>
+</ul>
+
+<p dk:indent="no">...then we're in a bit of a pickle. How do we find
+the correct NetBIOS name to put into the <code>CALLED NAME</code>
+field? There really is no "right" way to reverse-map an IP address to
+a particular NetBIOS service name. The solution to this problem
+involves some guessing, and it's not pretty. We will go into detail
+when we discuss the interface between SMB and the transport layer.</p>
+
+<p>Of course, if SMB is running over raw transport then there is no
+NBT <code>SESSION REQUEST</code> message and, therefore, no
+<code>CALLED NAME</code>. In that case, the NetBIOS name isn't needed
+at all, which saves a lot of fuss <dk:nobr>and bother.</dk:nobr> </p>
+
+</h1s><h1>The Directory Path</h1><h1s>
+
+<p>The directory path looks just like a directory path, but there is
+one small thing that makes it different. That thing is called the
+"share name."</p>
+
+<p>Whenever a resource is made available (shared) via SMB it is given
+a share name. The share name doesn't need to be the same as the actual
+name of the object being shared as it exists on the server. For
+example, consider the directory path below:</p>
+
+<p dk:displayed="yes"><code>/dogs/corgi/stories/jolyon/</code></p>
+
+<p>Suppose we just want to share the <code>/stories</code>
+subdirectory. If we simply call it "<code>stories</code>" no one will
+know what kind of stories it contains, so we should give it a more
+descriptive name. We might, for example, call <dk:nobr>it
+"<code>dogbytes</code>".</dk:nobr></p>
+
+<p>The share name takes the place of the actual directory name when
+the share is accessed via SMB. If the server is named
+"<code>petserver</code>", then the UNC path to the same directory
+would be:</p>
+
+<p dk:displayed="yes"><code>\\petserver\dogbytes\jolyon\</code></p>
+
+<p>As shown in <ref refid="Figure2.1"/>, there can be more than one
+share name pointing to the same directory and access rules may be
+applied on a per-share basis. The idea is similar, in some ways, to
+that of symbolic links (symlinks) in Unix, or shortcuts in
+Windows. The share is a named pointer - with its own set of attributes - 
+to the object being made available by the server.</p>
+
+<fig id="Figure2.1">
+<img dk:width="200" loc="SMB01"/>
+<caption>SMB shares</caption>
+<subcaption><p>Share names are similar to Unix <code>symlinks</code>.
+Multiple share names may point to the same directory on the server
+or to different directories. Each share may have its own set <dk:nobr>of permissions.</dk:nobr></p></subcaption>
+</fig>
+
+</h1s><h1>The File</h1><h1s>
+
+<p>This is the last stop on our quick UNC tour of SMB.</p>
+
+<p>Files, like directories, should be fairly familiar and fairly
+straightforward. As has been continually demonstrated, however,
+things in the CIFS world are not always as simple as they ought to
+be. Our point of interest on this part of the tour is the distinction
+between server filesystem syntax and semantics - and client
+expectations... a very gnarled knot for CIFS implementors.</p>
+
+<p>Consider, for example, a bunch of Windows clients connecting to an
+SMB server running on Linux. On the Linux system the filenames
+<code>Corgi</code>, <code>corgi</code>, and
+<code>CORGI</code> would all be distinct because Linux
+filesystems are typically case-sensitive.  Windows, however, expects
+filenames to be case-insensitive, so all three names are the same from
+the Windows point of view.  Thus, we have a conflict. How does a Linux
+server make all three files available to the <dk:nobr>Windows
+client?</dk:nobr></p>
+
+<p>Other difficult issues include:</p>
+
+<ul>
+<li><p>filename lengths,</p></li>
+<li><p>valid characters,</p></li>
+<li><p>file access permissions, and</p></li>
+<li><p>the end-of-line delimiter in text files.</p></li>
+</ul>
+
+<p>These are complex problems, not easily solved. The CIFS protocol
+suite is <em>not</em> designed to be agnostic with regard to such
+things. In fact, CIFS goes out of its way at times to support features
+that are specific to DOS<idx>DOS</idx>, OS/2,<idx>OS/2</idx>
+<dk:nobr>and Windows.</dk:nobr></p>
+
+<p>...and that concludes our tour. It's time to visit the gift
+shoppe. </p>
+
+</h1s><h1>The SMB URL</h1><h1s>
+
+<p><idx>SMB<sidx>URL</sidx></idx>The UNC format is specific to one
+family of operating systems.  Earlier on, though, we compared UNC with
+the more portable and modern URI format. That's called
+foreshadowing. It's a literary trick used to build suspense
+<dk:nobr>and anticipation.</dk:nobr></p>
+
+<p>There is, in fact, such a thing as an SMB URL. It fits into the
+general URI syntax<fn>The distinction between a UR<u>L</u> and a
+UR<u>I</u> is subtle, and confuses me to no end. Fortunately, it is
+not something we need to worry about.</fn> and can be used to specify
+files, directories, and other SMB-shared stuff. It is intended as a
+more portable and more complete way to specify SMB paths at the
+application level.</p>
+
+<p>As of this writing, the SMB URL is only documented in an
+IETF<idx>IETF</idx> Internet Draft, and is not yet any kind of
+standard. That hasn't stopped folks from implementing it, though. The
+SMB URL is supported in a wide variety of products including the
+KDE<idx>KDE</idx> and GNOME desktop GUI environments, web
+browsers<idx>web browser</idx> such as Galeon<idx>Galeon</idx> and
+Konqueror<idx>Konqueror</idx>, and Open Source CIFS projects like
+jCIFS<idx>jCIFS</idx> and
+<code>libsmbclient</code><idx>libsmbclient</idx> (the latter is
+included with Samba<idx>Samba</idx>). Thursby Software and Apple
+Computer also make use of the SMB URL in their commercial CIFS
+implementations.</p>
+
+<p>That's good news for CIFS implementors because it means that there
+is an accepted, cross-platform way to identify SMB-shared resources,
+both within LANs and across the Internet. </p>
+
+</h1s><h1>Was That Trip Really Necessary?</h1><h1s>
+
+<p>Our quick UNC tour provided an introduction to some of the basic
+concepts - and annoyances - of SMB. We will expand upon those ideas as
+we dig more deeply into the protocol. The UNC format itself is also
+important for a variety of reasons, both historical and practical. Not
+least among these is that UNC strings are used within some of the SMB
+messages that cross the wire.</p>
+
+<p>The SMB URL format is equally significant. It is portable,
+flexible, and gaining in popularity. It will also form the basis for
+examples given later in the text. If you are implementing an SMB
+client, you will most likely want to have some convention for
+identifying resources. You could invent your own, or use UNC, but the
+SMB URL is probably your best option.<idx end="c9-unc">UNC</idx></p>
+
+</h1s></chapter>
+</oim>

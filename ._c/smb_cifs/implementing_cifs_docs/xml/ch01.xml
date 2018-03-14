@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="US-ASCII"?>
+
+<!DOCTYPE oim SYSTEM "oimxml.dtd" [
+  <!ENTITY nbsp "&#160;">
+  <!ENTITY lsquo "&#8216;">
+  <!ENTITY rsquo "&#8217;">
+  <!ENTITY times "&#xd7;">
+] >
+
+<oim xmlns:dk="http://www.kirsanov.com">
+<partopen dk:number="I" id="NBT"><title><dk:line>NBT:</dk:line> <dk:line>NetBIOS</dk:line> <dk:line>over TCP/IP</dk:line></title></partopen>
+
+<chapter id="NBT1.1">
+<chapopen><title>A Short Bio of NetBIOS</title>
+
+<epigraph dk:padding-top="48">
+<p>Groan + Grump = GroanUmp</p>
+<attribution><line>Me, speculating on the etymology</line>
+<line>of the term "Grown-up" for my children</line></attribution>
+</epigraph>
+</chapopen>
+
+<p>It all started back in the frontier days of the PC when
+Microsoft<idx>Microsoft</idx> was a lot smaller, IBM<idx>IBM</idx>
+seemed a whole lot bigger, and Apple owned personal computer territory
+as far as the eye could see. Back then, you didn't need no dang
+standards. If you wanted to sell LANs, you just went out and branded
+yourself a protocol. Apple had AppleTalk, Digital had DECnet, and, for
+their longhorn mainframes, IBM had <b>S</b>ystems <b>N</b>etwork
+<b>A</b>rchitecture (SNA). SNA was a mighty big horse for little PCs,
+so IBM hired on a company called Sytec<idx>Sytec</idx> and together
+they rustled up a product they called "PC Network." Not an inspiring
+name, but it was a simpler time.</p>
+
+<p>PC Network was a Local Area Network (LAN) system designed to
+support about 80 nodes at best, with no provisions for routing.
+NetBIOS<idx start="c1-2-netbios">NetBIOS</idx> (<b>Net</b>work
+<b>B</b>asic <b>I</b>nput <b>O</b>utput <b>S</b>ystem) was the
+software interface to the PC&#160;Network hardware. It offered a set
+of commands that could control the hardware,
+<dk:nobr>establish</dk:nobr> and delete sessions, transfer data,
+etc.</p>
+
+<h1>NetBIOS and DOS: The Early Years</h1><h1s>
+
+<p>Starting with DOS<idx>DOS</idx> version 3.1,
+Microsoft<idx>Microsoft</idx> used the NetBIOS
+API<idx>NetBIOS<sidx>API</sidx></idx> to transport SMB file service
+messages. They created something called a
+<em>redirector</em>,<idx>redirector</idx> and its job was to catch
+disk drive or port references (e.g. "<code>C:</code><idx>C:</idx>" or
+"<code>LPT3:</code>") and look them up in a table. If the device was
+<em>not</em> in the table, the call was passed along to DOS. If the
+device <em>was</em> in the table, then the call would be
+<em>redirected</em>. <dk:nobr>For example:</dk:nobr></p>
+
+<ul>
+<li><p>Using the <code>SUBST</code> command, a user could substitute
+a drive letter for a local path. This simple aliasing provided
+convenient shortcuts for long path names:</p>
+
+<pre>subst S: C:\FILES\DEEP\IN\A\DIRECTORY</pre></li>
+
+<li><p>Using the <code>NET</code> command, a drive letter could be
+mapped to a remote file service. So, if the redirector found a
+remote service entry in its table, it would convert the request into
+an SMB packet and send it out <dk:nobr>via NetBIOS:</dk:nobr></p>
+
+<pre>net use N: \\SERVER\SERVICE</pre>
+
+<p dk:indent="no">Note the double backslash preceding the server
+name. This syntax is part of Microsoft's "<b>U</b>niversal
+<b>N</b>aming <b>C</b>onvention" (UNC<idx>UNC</idx>) for network services.</p></li>
+</ul>
+
+<p>These commands are still available from within the DOS shells of
+contemporary Windows products. It is worthwhile to fiddle with them
+a bit. At the DOS prompt, you can type <code>NET HELP</code> for a
+summary of the <code>NET</code> command and its options.<fn>...or,
+if you type the way I do, you can enter <code>NEWT KELP</code> to
+generate an error message.</fn></p>
+
+</h1s></chapter></oim>

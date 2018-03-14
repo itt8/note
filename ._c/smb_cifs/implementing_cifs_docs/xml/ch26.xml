@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="US-ASCII"?>
+<!DOCTYPE oim SYSTEM "oimxml.dtd" [
+  <!ENTITY nbsp  "&#160;">
+  <!ENTITY lsquo "&#8216;">
+  <!ENTITY rsquo "&#8217;">
+  <!ENTITY minus "&#8211;">
+  <!ENTITY mdash "&#8212;">
+  <!ENTITY times "&#xd7;">
+  <!ENTITY copy "&#xa9;">
+] >
+<oim xmlns:dk="http://www.kirsanov.com">
+<chapter id="Browsing3.8">
+<chapopen><title>At Home in the Network Neighborhood</title>
+<epigraph>
+<p>Are we there yet?</p>
+<attribution>Kids in the back seat</attribution>
+</epigraph>
+</chapopen>
+
+<p>The first time you visit a foreign country, things may seem
+strange and even a bit daunting. After a while, however, the
+scenery starts to become familiar, the customs seem less
+surprising, and even the rhythm of the language starts to feel
+comfortable.</p>
+
+<p>The Browse Service is a complex system built on top of a complex
+set of protocols. It can also seem strange and daunting at first.
+Now that you have travelled through it and spent some time getting
+to know the inhabitants, you should feel much more at home.</p>
+
+<p>By studying the Browse Service,<idx>Browse Service</idx> we have
+also managed to provide an introduction to some of the more difficult
+sub-systems in the CIFS protocol suite - things like Named Pipes and
+SMB transactions.  Understanding these is a prerequisite to dealing
+with the more advanced topics and sub-protocols that we have so
+carefully avoided.</p>
+
+<p>Coverage of the Browse Service concludes our study of CIFS.
+Between the information presented here, the suggested references, and a
+good protocol analyzer there is more than enough information
+available to build a solid CIFS client implementation and probably
+a working server - but you won't really know until you try.</p>
+
+<p>Welcome to the Network Neighborhood.<idx>Network Neighborhood</idx></p>
+
+
+</chapter>
+</oim>

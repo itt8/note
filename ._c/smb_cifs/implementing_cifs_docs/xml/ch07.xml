@@ -1,0 +1,160 @@
+<?xml version="1.0" encoding="US-ASCII"?>
+
+<!DOCTYPE oim SYSTEM "oimxml.dtd" [
+  <!ENTITY nbsp "&#160;">
+  <!ENTITY lsquo "&#8216;">
+  <!ENTITY rsquo "&#8217;">
+  <!ENTITY times "&#xd7;">
+] >
+
+<oim xmlns:dk="http://www.kirsanov.com">
+<chapter id="NBT1.7">
+<chapopen><title>Where It All Went Wrong</title>
+
+<epigraph dk:padding-top="48">
+<p>It was a dark and stormy night.</p>
+<attribution><line><cite>Paul Clifford</cite>,</line>
+<line>Edward George Bulwer-Lytton<idx>Bulwer-Lytton, Edward George</idx></line></attribution>
+</epigraph>
+</chapopen>
+
+<p>Implementation is the journey from Theory to Practice. The two
+extremes, as we have shown, are divided by a vast chasm wherein
+dwell all the evil monsters from all the cheesy sci-fi TV shows
+ever produced. For NBT implementors the journey can be perilous,
+and those who have gone before have blazed a somewhat twisted
+trail. Here are some of the dangers you will encounter along the
+way...</p>
+
+<h1 id="NBT1.7.1">The <code>0x1D</code>irty Little Secret</h1><h1s>
+
+<p><idx>0x1Dirty</idx>Master Browser Servers (which are described
+later in the book) register unique names<idx>unique name</idx> with
+the suffix<idx>suffix byte</idx> <code>0x1D</code>. The
+WINS<idx start="c7-wins">WINS</idx> server will happily acknowledge such registrations
+- and then drop them into a black hole and forget about them. When
+queried, the WINS server denies the existence of any <code>0x1D</code>
+unique names.  Nodes from one subnet can never know about the Master
+Browsers on other subnets, and there may be multiple nodes using the
+same unique <dk:nobr><code>0x1D</code> name.</dk:nobr></p>
+
+<p>B nodes<idx>B</idx> are immune to this behavior, since they do
+not make use of NBNS<idx>NBNS</idx> services. If the NBT
+vLAN<idx>NBT<sidx>vLAN</sidx></idx> is operating in M<idx>M</idx>
+or H mode,<idx>H</idx> however, the Master Browser<idx>LMB</idx>
+names will be unique <em>within the local IP subnet only</em>. The
+same name may be registered by another Master Browser on a separate
+subnet. Since the WINS server does not keep any record of
+<code>0x1D</code> names, Master Browsers can only be located using a
+broadcast query, which means that P nodes<idx>P</idx> can never
+find <code>0x1D</code> names.</p>
+
+<p>The strange handling of <code>0x1D</code> names may be related to
+the lack of NBDD<idx>NBDD</idx> functionality. As you can see, an
+implementation that strays from the path will quickly find itself lost
+in a jungle of exceptions, special cases, and other yucky stuff from
+an old episode of "Outer Limits."</p>
+
+</h1s><h1 id="NBT1.7.2">Twenty-five IPs or Less</h1><h1s>
+
+<p>An NBNS is supposed to keep a complete list of all IPs associated
+with each NBT name<idx>NBT<sidx>name</sidx></idx> (group or
+multi-homed<idx>multi-homed host</idx>). If the list is too large to fit in
+a single UDP<idx>UDP</idx> Name Query Reply datagram
+then, according to the RFCs, the NBNS<idx>NBNS</idx> is supposed to
+send a partial list with the <code>TR</code>uncation bit set. The
+client may then repeat the query using TCP<idx>TCP</idx> port
+137.<idx>137/TCP</idx></p>
+
+<p>...but that never happens. If anyone ever did provide support for
+NBT Name Service<idx>NBT<sidx>Name Service</sidx></idx> over TCP, the
+code is now lost in space. As explained earlier, when WINS sends a
+<code>NAME QUERY RESPONSE</code><idx>NAME QUERY</idx> it will contain
+a maximum of 25 IPs per name.</p>
+
+</h1s><h1 id="NBT1.7.3">Special Handling Required for <code>0x1B</code> Names</h1><h1s>
+
+<p>A Domain Master Browser<idx>DMB</idx> (a special kind of Master
+Browser, which is described later on in the book) will register unique
+names<idx>unique name</idx> with a suffix<idx>suffix byte</idx> of
+<code>0x1B</code>. These names get special treatment in WINS. Whenever
+a <code>0x1B</code> name is registed in WINS, the WINS server will
+look for a matching <code>0x1C</code> group name<idx>group name</idx>
+and modify the entry.</p>
+
+<p>As you may recall from our diatribe in the Datagram section,
+<code>0x1C</code> group names are "Internet Group" or "Special Group"
+names, and WINS will keep track of 25 IP addresses per
+<code>0x1C</code> group name. The weird thing is that WINS also sorts
+this IP list so that the IP address associated with the
+<code>0x1B</code> name is at the top of the list.</p>
+
+<p>Why?</p>
+
+<p>Well, see, the <code>0x1C</code> names represent the set of Domain
+Controllers<idx>DC</idx> for a given NT Domain.<idx>NT Domain</idx>
+Only the Primary Domain Controller is allowed to run the Domain Master
+Browser service and register the <code>0x1B</code> name. So, by
+sorting the IP list, WINS ensures that the IP address of the Primary
+Domain Controller is always the first IP address in the
+<code>0x1C</code> list of Domain Controllers.<idx end="c7-wins">WINS</idx></p>
+
+</h1s><h1 id="NBT1.7.4">Alternate Name Resolution</h1><h1s>
+
+<p>There are several ways to bypass the NBT Name
+Service<idx>NBT<sidx>Name Service</sidx></idx>. The simplest is the
+use of an <code>LMHOSTS</code><idx>LMHOSTS</idx> file, which provides
+NetBIOS name to IP address mappings. <code>LMHOSTS</code> is similar
+in concept to the <code>/etc/hosts</code> file commonly used by Unix-y
+systems to provide TCP/IP name mappings.</p>
+
+<p>Another Name Service bypass trick involves using DNS names or IP
+addresses instead of NetBIOS names<idx>NetBIOS<sidx>name</sidx></idx>
+to find remote services.  This trick is generally used when connecting
+to an SMB server via the NBT Session Service. The obvious problem here
+is that the Session Service<idx>NBT<sidx>Session Service</sidx></idx>
+expects that the <code>CALLED NAME</code><idx>CALLED NAME</idx> in the
+<code>SESSION MESSAGE</code> be correct.</p>
+
+<p>There are several work-arounds to the naming problem.</p>
+
+<ul>
+<li><p>One may <em>guess</em> that the service name matches the first
+label of the DNS name.<idx>DNS</idx> This often works, but it is not
+guaranteed.</p></li>
+
+<li><p>Another option is to send a <code>NODE STATUS REQUEST</code>
+and look through the reply for a unique name<idx>unique name</idx>
+with a suffix<idx>suffix byte</idx> of <code>0x20</code>, which is
+likely to be the correct service name. (The SMB Server
+Service<idx>SMB<sidx>Server Service</sidx></idx> always uses the
+<dk:nobr>suffix <code>0x20</code>.)</dk:nobr></p></li>
+
+<li><p>The ugliest (and also the most common) solution is to place the
+NetBIOS name "<code>*SMBSERVER</code>"<idx>*SMBSERVER&lt;20&gt;</idx>
+into the <code>CALLED NAME</code> field (encoded, of course). This
+special name was introduced with Windows NT&nbsp;4.0, and is now
+supported by Samba<idx>Samba</idx> and several commercial implementations. It is
+accepted for Session Service connections to the SMB Server Service, no
+matter what NetBIOS name is actually registered. Note that
+"<code>*SMBSERVER</code>" starts with an asterisk, which makes it an
+illegal NetBIOS name. The "<code>*SMBSERVER</code>" name is never
+registered, and name queries for this name should always
+fail.</p></li>
+</ul>
+
+</h1s><h1 id="NBT1.7.5">The Awful Truth</h1><h1s>
+
+<p>The awful truth is that an NBT implementation must accommodate -
+and often comply with - the errors, kludges, omissions, and fumbles of
+the past. The installed base is simply too big to try and get it
+right. Not to worry. You now have enough information to build a
+working NBT implementation. Writing an NBNS and NBDD<idx>NBDD</idx>
+server should also be within reach, and you can pull code from some of
+the many Open Source projects that are out there (as long as you
+respect the licenses). We have covered all of the major pitfalls, and
+NBT is a resilient little system. Making it work is a lot easier than
+getting it right.</p>
+
+</h1s></chapter>
+</oim>

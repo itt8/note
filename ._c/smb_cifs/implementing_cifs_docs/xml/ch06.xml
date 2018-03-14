@@ -1,0 +1,630 @@
+<?xml version="1.0" encoding="US-ASCII"?>
+
+<!DOCTYPE oim SYSTEM "oimxml.dtd" [
+  <!ENTITY nbsp "&#160;">
+  <!ENTITY lsquo "&#8216;">
+  <!ENTITY rsquo "&#8217;">
+  <!ENTITY times "&#xd7;">
+] >
+
+<oim xmlns:dk="http://www.kirsanov.com">
+<chapter id="NBT1.6">
+<chapopen><title>The Session Service in&nbsp;Detail</title>
+
+<epigraph dk:padding-top="24">
+<p><line>The best way to eliminate the problem</line>
+<line>is to remove Scopes completely.</line></p>
+<attribution><line>John Terpstra<idx>Terpstra, John</idx>, Samba Team,</line>
+<line>in a message to the</line>
+<line>Samba-Technical mailing list</line></attribution>
+</epigraph>
+</chapopen>
+
+<p>This is the last big chunk of NBT. It is also the easiest, which
+should bring a great sigh of relief. We have already covered all of the
+background material we need to cover, so there is no need to waste
+any time with preliminaries. Let's dive right in...</p>
+
+<h1>Session Service Header</h1><h1s>
+
+<p>The Session Service<idx start="6-nbt-ss">NBT<sidx>Session
+Service</sidx></idx> header, as presented in RFC 1002, is as
+follows:</p>
+
+<table colwidths="6.25* 6.25* 6.25* 6.25* 6.25* 6.25* 6.25* 6.25* 6.25* 6.25* 6.25* 6.25* 6.25* 6.25* 6.25* 6.25*" dk:type="centered" dk:borders="all">
+<tbody>
+<tr dk:border="after">
+<td dk:border="right"><p><code>0</code></p></td>
+<td dk:border="right"><p><code>1</code></p></td>
+<td dk:border="right"><p><code>2</code></p></td>
+<td dk:border="right"><p><code>3</code></p></td>
+<td dk:border="right"><p><code>4</code></p></td>
+<td dk:border="right"><p><code>5</code></p></td>
+<td dk:border="right"><p><code>6</code></p></td>
+<td dk:border="right"><p><code>7</code></p></td>
+<td dk:border="right"><p><code>8</code></p></td>
+<td dk:border="right"><p><code>9</code></p></td>
+<td dk:border="right"><p><code>10</code></p></td>
+<td dk:border="right"><p><code>11</code></p></td>
+<td dk:border="right"><p><code>12</code></p></td>
+<td dk:border="right"><p><code>13</code></p></td>
+<td dk:border="right"><p><code>14</code></p></td>
+<td><p><code>15</code></p></td>
+</tr>
+<tr dk:border="after">
+<td colspan="8" dk:border="right"><p><code>TYPE</code></p></td>
+<td colspan="8"><p><code>FLAGS</code></p></td>
+</tr>
+<tr>
+<td colspan="16"><p><code>LENGTH</code></p></td>
+</tr>
+</tbody></table>
+
+<p>The <code>FLAGS</code> field breaks down further into:</p>
+
+<table colwidths="12.5* 12.5* 12.5* 12.5* 12.5* 12.5* 12.5* 12.5*" dk:type="centered" dk:borders="all">
+<tbody>
+<tr dk:border="after">
+<td dk:border="right"><p><code>0</code></p></td>
+<td dk:border="right"><p><code>1</code></p></td>
+<td dk:border="right"><p><code>2</code></p></td>
+<td dk:border="right"><p><code>3</code></p></td>
+<td dk:border="right"><p><code>4</code></p></td>
+<td dk:border="right"><p><code>5</code></p></td>
+<td dk:border="right"><p><code>6</code></p></td>
+<td><p><code>7</code></p></td>
+</tr>
+<tr>
+<td colspan="7" dk:border="right"><p><code>reserved</code></p></td>
+<td><p><code>E</code></p></td>
+</tr>
+</tbody></table>
+
+<p>The reserved bits are always supposed to be zero, and the
+<code>E</code> bit is an additional high-order bit which is
+prepended to the <code>LENGTH</code> field. Another way to look at
+the layout is like this:</p>
+
+<table colwidths="3.125* 3.125* 3.125* 3.125* 3.125* 3.125* 3.125* 3.125* 3.125* 3.125* 3.125* 3.125* 3.125* 3.125* 3.125* 3.125* 3.125* 3.125* 3.125* 3.125* 3.125* 3.125* 3.125* 3.125* 3.125* 3.125* 3.125* 3.125* 3.125* 3.125* 3.125* 3.125*" dk:type="centered" dk:borders="all">
+<tbody>
+<tr dk:border="after" dk:display-align="after">
+<td dk:border="right"><p><code>0</code></p></td>
+<td dk:border="right"><p><code>1</code></p></td>
+<td dk:border="right"><p><code>2</code></p></td>
+<td dk:border="right"><p><code>3</code></p></td>
+<td dk:border="right"><p><code>4</code></p></td>
+<td dk:border="right"><p><code>5</code></p></td>
+<td dk:border="right"><p><code>6</code></p></td>
+<td dk:border="right"><p><code>7</code></p></td>
+<td dk:border="right"><p><code>8</code></p></td>
+<td dk:border="right"><p><code>9</code></p></td>
+<td dk:border="right"><p><line><code>1</code></line>
+<line><code>0</code></line></p></td>
+<td dk:border="right"><p><line><code>1</code></line>
+<line><code>1</code></line></p></td>
+<td dk:border="right"><p><line><code>1</code></line>
+<line><code>2</code></line></p></td>
+<td dk:border="right"><p><line><code>1</code></line>
+<line><code>3</code></line></p></td>
+<td dk:border="right"><p><line><code>1</code></line>
+<line><code>4</code></line></p></td>
+<td dk:border="right"><p><line><code>1</code></line>
+<line><code>5</code></line></p></td>
+<td dk:border="right"><p><line><code>1</code></line>
+<line><code>6</code></line></p></td>
+<td dk:border="right"><p><line><code>1</code></line>
+<line><code>7</code></line></p></td>
+<td dk:border="right"><p><line><code>1</code></line>
+<line><code>8</code></line></p></td>
+<td dk:border="right"><p><line><code>1</code></line>
+<line><code>9</code></line></p></td>
+<td dk:border="right"><p><line><code>2</code></line>
+<line><code>0</code></line></p></td>
+<td dk:border="right"><p><line><code>2</code></line>
+<line><code>1</code></line></p></td>
+<td dk:border="right"><p><line><code>2</code></line>
+<line><code>2</code></line></p></td>
+<td dk:border="right"><p><line><code>2</code></line>
+<line><code>3</code></line></p></td>
+<td dk:border="right"><p><line><code>2</code></line>
+<line><code>4</code></line></p></td>
+<td dk:border="right"><p><line><code>2</code></line>
+<line><code>5</code></line></p></td>
+<td dk:border="right"><p><line><code>2</code></line>
+<line><code>6</code></line></p></td>
+<td dk:border="right"><p><line><code>2</code></line>
+<line><code>7</code></line></p></td>
+<td dk:border="right"><p><line><code>2</code></line>
+<line><code>8</code></line></p></td>
+<td dk:border="right"><p><line><code>2</code></line>
+<line><code>9</code></line></p></td>
+<td dk:border="right"><p><line><code>3</code></line>
+<line><code>0</code></line></p></td>
+<td><p><line><code>3</code></line>
+<line><code>1</code></line></p></td>
+</tr>
+<tr>
+<td colspan="8" dk:border="right"><p><code>TYPE</code></p></td>
+<td colspan="7" dk:border="right"><p><code>reserved</code></p></td>
+<td colspan="17"><p><code>LENGTH (17 bits)</code></p></td>
+</tr>
+</tbody></table>
+
+<p>We will stick with the latter, simpler format and ignore the
+<code>FLAGS</code> field, which is never really used.</p>
+
+<p>The <code>LENGTH</code> field contains the number of bytes of
+payload, and the <code>TYPE</code> field is used to distinguish between
+the six different Session Service message types, which are:</p>
+
+<p dk:displayed="yes"><line><code>0x00</code> == Session Message</line>
+<line><code>0x81</code> == Session Request</line>
+<line><code>0x82</code> == Positive Session Response</line>
+<line><code>0x83</code> == Negative Session Response</line>
+<line><code>0x84</code> == Retarget Session Response</line>
+<line><code>0x85</code> == Session Keepalive</line></p>
+
+<p dk:indent="no">Each of these message types is explained below.</p>
+
+</h1s><h1>Creating an NBT Session</h1><h1s>
+
+<p dk:break="after">The first step in setting up an NBT session is to
+discover the IP address of the remote node. The IP address is, of
+course, required in order to create the TCP<idx>TCP</idx> session that
+will carry the NBT session. The NBT Name Service<idx>NBT<sidx>Name
+Service</sidx></idx> is generally used to find the remote host's IP
+address, though several implementations support kludges which bypass
+the Name Service. Once the TCP session <dk:nobr>is established
+(something we assume you know how to do) the NBT</dk:nobr>
+<dk:nobr>session is initiated using a <code>SESSION REQUEST</code>
+message, which looks</dk:nobr> <dk:nobr>like this:</dk:nobr></p>
+
+<pre><![CDATA[SESSION REQUEST
+  {
+  HEADER
+    {
+    TYPE   = 0x81 (Session Request)
+    LENGTH = 68   (See discussion below)
+    }
+  CALLED_NAME  = <Destination Level 2 Encoded NetBIOS name>
+  CALLING_NAME = <Source Level 2 Encoded NetBIOS name>
+  }]]></pre>
+
+<p><idx>NBT<sidx>scope</sidx></idx>One oddity of the Session Service
+is that the Scope ID<idx>NBT<sidx>Scope ID</sidx></idx> is dropped
+from the name fields in the <code>SESSION REQUEST</code> message. That
+results in a fixed length of 34 bytes per name.  That's one byte for
+the leading label (always <code>0x20</code>), 32 bytes for the First
+Level Encoded NetBIOS name<idx>NetBIOS<sidx>name</sidx></idx>, and one
+more byte for the trailing label (always <code>0x00</code>). The
+payload of a <code>SESSION REQUEST</code> message is, therefore, fixed
+at 2 &times; 34 = 68 bytes.</p>
+
+<alert type="Caveat">
+
+<p>The RFCs do not specify whether the Scope ID should or should not
+be included in the <code>CALLED</code><idx>CALLED NAME</idx> or
+<code>CALLING NAME</code>.<idx>CALLING NAME</idx> It would make sense
+to assume that the Scope ID should be included, since both the Name
+Service and Datagram Service<idx>NBT<sidx>Datagram
+Service</sidx></idx> require the Scope ID, but that's not how things
+actually work on the wire.</p>
+
+<p>As it is, the behavior of the Session Service is inconsistent
+with the rest of the NBT system. Fortunately, Scope is enforced by
+the Name Service, so it is not critical that it be enforced by the
+Session Service.</p>
+</alert>
+
+<p>There are three possible replies to the <code>SESSION REQUEST</code>
+message:</p>
+
+<dl>
+<dt><code>0x82: POSITIVE SESSION RESPONSE</code></dt>
+
+<dd><p>The remote node has accepted the session request, and the
+session is established. Kewl!</p>
+
+<pre>POSITIVE SESSION RESPONSE
+  {
+  HEADER
+    {
+    TYPE   = 0x82
+    LENGTH = 0
+    }
+  }</pre>
+</dd>
+
+<dt><code>0x83: NEGATIVE SESSION RESPONSE</code></dt>
+
+<dd><p>Something went wrong, and the remote node has rejected the
+<dk:nobr>session request.</dk:nobr></p>
+
+<pre><![CDATA[NEGATIVE SESSION RESPONSE
+  {
+  HEADER
+    {
+    TYPE   = 0x83
+    LENGTH = 1
+    }
+  ERROR_CODE = <A Session Service Error Code>
+  }]]></pre>
+
+<p>The one-byte <code>ERROR_CODE</code> field is supposed to
+indicate the cause of the trouble. Possible values are:</p>
+
+<dl>
+<dt><code>0x80:</code> Not Listening On Called Name</dt>
+<dd><p>The remote node has registered the <code>CALLED NAME</code>, but no
+application or service is listening for session connection requests
+on <dk:nobr>that name.</dk:nobr></p></dd>
+
+<dt><code>0x81:</code> Not Listening For Calling Name</dt>
+<dd><p>The remote node has registered the <code>CALLED NAME</code>
+and is listening for connections, but it doesn't want to talk to
+you. It is expecting a call from some other <code>CALLING
+NAME</code>.</p>
+
+<p>There are some interesting implications to this. It means that a
+server could, potentially, be selective about which nodes may
+connect. On the other hand, it would be trivial to spoof the
+<dk:nobr><code>CALLING NAME</code>.</dk:nobr></p></dd>
+
+<dt><code>0x82:</code> Called Name Not Present</dt>
+<dd><p>The remote node has not even registered the <code>CALLED NAME</code>.
+Better re-try your name resolution.</p></dd>
+
+<dt><code>0x83:</code> Insufficient Resources</dt>
+<dd><p>The remote node is busy and cannot take your call at this
+time.</p></dd>
+
+<dt><code>0x8F:</code> Unspecified Error</dt>
+<dd><p>Something is wrong on the far end, but we are not quite sure what
+the problem is.</p></dd>
+</dl>
+
+<p>It is annoying that the error code values overlap the Session
+Service message type values.</p>
+</dd>
+
+<dt><code>0x84: RETARGET SESSION RESPONSE</code></dt>
+
+<dd><p>This Session Service message tells the calling node to try a
+different IP address and/or port number, something like a
+<code>Redirect</code> directive on a web page. When a client receives
+a <code>RETARGET SESSION RESPONSE</code><idx>RETARGET SESSION
+RESPONSE</idx> message in response to a <code>SESSION REQUEST</code>,
+it is supposed to close the existing TCP connection and open a new one
+using the IP address and port number provided.</p>
+
+<pre><![CDATA[RETARGET SESSION RESPONSE
+  {
+  HEADER
+    {
+    TYPE   = 0x84
+    LENGTH = 6
+    }
+  RETARGET_IP_ADDRESS = <New IP address>
+  PORT                = <New TCP port number>
+  }]]></pre>
+
+<p>This feature opens up some interesting possibilities.
+Retargeting could be used for load balancing, fault tolerance, or to
+allow unprivileged users to run their own SMB servers on
+high-numbered ports.</p>
+
+<p>Of course, client support for this feature is inconsistent.
+Based on some simple tests, it seems that Samba's<idx>Samba</idx>
+<code>smbclient</code> handles retargeting just fine, as do Windows
+95 and Windows 98. In contrast, Windows 2000 deals with the
+<code>RETARGET SESSION RESPONSE</code> as if it were an error
+message of some sort. W2K will retry the original IP address and
+port number, and then give up.</p>
+
+<example id="Listing1.14">
+<caption><idx>recv()</idx>Session retargeting</caption>
+<pre dk:break="after"><![CDATA[#include <ctype.h>
+#include <stdlib.h>
+#include <string.h>
+#include <stdarg.h>
+#include <stdio.h>
+#include <errno.h>
+#include <unistd.h>]]></pre>
+
+<pre dk:break="after"><![CDATA[#include <sys/types.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+
+void PrintL1Name( uchar *src, int max )
+  /* ---------------------------------------------------- **
+   * Decode and pretty-print an L1-encoded NetBIOS name.
+   * ---------------------------------------------------- **
+   */
+  {
+  int         suffix;
+  static char namestr[16];
+
+  suffix = L1_Decode( namestr, src, 1, max );
+  Hex_Print( namestr, strlen( namestr ) );
+  printf( "<%.2x>", suffix );
+  }/* PrintL1Name */
+
+int Get_SS_Length( uchar *hdr )
+  /* ---------------------------------------------------- **
+   * Read the length field from an SMB Session Service
+   * header.
+   * ---------------------------------------------------- **
+   */
+  {
+  int tmp;
+
+  tmp  = (hdr[1] & 1) << 16;
+  tmp |= hdr[2] << 8;
+  tmp |= hdr[3];
+  return( tmp );
+  } /* Get_SS_Length */
+
+int OpenPort139( void )
+  /* ---------------------------------------------------- **
+   * Open port 139 for listening.
+   * Note: this requires root privilege, and Samba's
+   *       SMBD daemon must not be running on its
+   *       default port.
+   * ---------------------------------------------------- **
+   */
+  {
+  int                result;
+  int                sock;
+  struct sockaddr_in sox;]]></pre>
+
+<pre dk:break="after"><![CDATA[  /* Create the socket. */  
+  sock = socket( PF_INET, SOCK_STREAM, IPPROTO_TCP );
+  if( sock < 0 )
+    {
+    printf( "Failed to create socket(); %s.\n",
+            strerror( errno ) );
+    exit( EXIT_FAILURE );
+    }
+  
+  /* Bind the socket to any interface, port TCP/139.  */
+  sox.sin_addr.s_addr = INADDR_ANY;
+  sox.sin_family      = AF_INET;
+  sox.sin_port        = htons( 139 );
+  result = bind( sock,
+                 (struct sockaddr *)&sox,
+                 sizeof(struct sockaddr_in) );
+  if( result < 0 )
+    {
+    printf( "Failed to bind() socket; %s.\n",
+            strerror( errno ) );
+    exit( EXIT_FAILURE );
+    }
+
+  /* Post the listen request. */
+  result = listen( sock, 5 );
+  if( result < 0 )
+    {
+    printf( "Failed to listen() on socket; %s.\n",
+            strerror( errno ) );
+    exit( EXIT_FAILURE );
+    }
+    
+  /* Ready... */
+  return( sock );
+  } /* OpenPort139 */
+
+void Listen( struct in_addr trg_addr, int trg_port )
+  /* ---------------------------------------------------- **
+   * Accepts incoming connections, sends a retarget
+   * message, and then disconnects.
+   * ---------------------------------------------------- **
+   */
+  {
+  int                listen_sock;
+  int                reply_sock;
+  int                result;
+  struct sockaddr_in remote_addr;]]></pre>
+
+<pre dk:break="after"><![CDATA[  socklen_t          addr_len;
+  uchar              recvbufr[1536];
+  uchar              replymsg[10];
+          
+  listen_sock = OpenPort139();
+          
+  /* Fill in the redirect message. */
+  replymsg[0] = 0x84;   /* Retarget code. */
+  replymsg[1] = 0;
+  replymsg[2] = 0;
+  replymsg[3] = 6;      /* Remaining length. */
+  (void)memcpy( &(replymsg[4]), &trg_addr.s_addr, 4 );
+  trg_port = htons( trg_port );
+  (void)memcpy( &(replymsg[8]), &trg_port, 2 );
+
+  printf( "Waiting for connections...\n" );      
+  for(;;)  /* Until killed. */
+    {
+    /* Wait for a connection. */
+    addr_len = sizeof( struct sockaddr_in );
+    reply_sock = accept( listen_sock,
+                         (struct sockaddr *)&remote_addr,
+                         &addr_len );
+
+    /* If the accept() failed exit with an error message. */
+    if( reply_sock < 0 )
+      {
+      printf( "Error accept()ing a connection: %s\n",
+              strerror(errno) );
+      exit( EXIT_FAILURE );
+      }
+
+    result = recv( reply_sock, recvbufr, 1536, 0 );
+    if( result < 0 )
+      {
+      printf( "Error receiving packet: %s\n",
+              strerror(errno) );
+      }
+    else
+      {
+      printf( "SESSION MESSAGE\n  {\n" );
+      printf( "  TYPE   = 0x%.2x\n", recvbufr[0] );
+      printf( "  LENGTH = %d\n", Get_SS_Length( recvbufr ) );]]></pre>
+
+<pre dk:break="after"><idx>inet_aton()</idx><![CDATA[      if( 0x81 == recvbufr[0] )
+        {
+        int offset;
+
+        printf( "  CALLED_NAME  = " );
+        PrintL1Name( &recvbufr[4], result );
+        offset = 5 + strlen( &(recvbufr[4]) );
+        printf( "\n  CALLING_NAME = " );
+        PrintL1Name( &recvbufr[offset], result );
+        printf( "\n  }\nSending Retarget message.\n" );
+        (void)send( reply_sock, (void *)replymsg, 10, 0 );
+        }
+      else
+        printf( "  }\nPacket Dropped.\n" );
+      }
+    close( reply_sock );
+    }     
+  } /* Listen */
+
+int main( int argc, char *argv[] )
+  /* ---------------------------------------------------- **
+   * Simple daemon that listens on port TCP/139 and
+   * redirects incoming traffic to another IP and port.
+   * ---------------------------------------------------- **
+   */
+  {
+  int            target_port;
+  struct in_addr target_address;
+         
+  if( argc != 3 )
+    {
+    printf( "Usage:  %s <IP> <PORT>\n", argv[0] );
+    exit( EXIT_FAILURE );
+    }
+          
+  if( 0 == inet_aton( argv[1], &target_address ) )
+    {
+    printf( "Invalid IP.\n" );
+    printf( "Usage:  %s <IP> <PORT>\n", argv[0] );
+    exit( EXIT_FAILURE );
+    }
+  
+  target_port = atoi( argv[2] );]]></pre>
+
+<pre><![CDATA[  if( 0 == target_port )
+    {
+    printf( "Invalid Port number.\n" );
+    printf( "Usage:  %s <IP> <PORT>\n", argv[0] );
+    exit( EXIT_FAILURE );
+    }
+  
+  Listen( target_address, target_port );
+  return( EXIT_SUCCESS );
+  } /* main */]]></pre>
+</example>
+
+<p>One more note regarding the Retarget message: there are NetBIOS
+name issues to consider. The <code>CALLED NAME</code> must be in the
+name table of the node that sends the <code>RETARGET SESSION
+RESPONSE</code><idx>RETARGET SESSION RESPONSE</idx> message, but it
+must also be accepted by the node to which the session is
+retargeted. That may take some juggling to get right.</p>
+
+<fig id="NBT13">
+<img dk:width="220" loc="NBT13"/>
+<caption>Naming and session retargeting</caption>
+                                                                     
+<subcaption><p>Node <code>Ruby</code> is trying to open a connection
+to a service named <code>ANDOR&lt;20&gt;</code>. Node
+<code>Teru</code> has the name <code>ANDOR&lt;20&gt;</code> in its
+local name table, so <code>Ruby</code> tries to connect to node
+<code>Teru</code>. <code>Teru</code> retargets <code>Ruby</code> to IP
+address 192.168.208.43 which (we hope) will accept the connection from
+<code>Ruby</code>.</p>
+
+<p>The <code>RETARGET SESSION RESPONSE</code> message does not work
+well with normal NetBIOS name management.</p></subcaption>
+</fig>
+
+<p>For those interested in playing with retargeting, it is fairly
+easily done. Samba's <code>smbd</code><idx>smbd</idx> daemon can be told to listed
+on a non-standard port and, as a bonus, it ignores the <code>CALLED
+NAME</code> in the session request. You can run the retarget daemon
+listed above in combination with the Samba <code>nmbd</code><idx>nmbd</idx> Name
+Service daemon, and retarget connections to <code>smbd</code>
+running on a high port on the same machine, or running on a remote
+machine.</p>
+</dd>
+</dl>
+
+</h1s><h1>Maintaining an NBT Session</h1><h1s>
+
+<p>There are two more Session Service message types to
+cover:</p>
+
+<dl>
+<dt><code>0x00: SESSION MESSAGE</code></dt>
+
+<dd><p>Once you have established a session (by sending a
+<code>SESSION REQUEST</code> and receiving a <code>POSITIVE SESSION
+RESPONSE</code>) you are ready to send messages. Each message is
+prefixed with a <code>SESSION MESSAGE</code> header, which looks
+like this:</p>
+
+<pre><![CDATA[HEADER
+  {
+  TYPE   = 0x00
+  LENGTH = <Length of data to follow>
+  }]]></pre>
+
+<p>Since the <code>TYPE</code> byte has a value of <code>0x00</code>, and the next
+seven bits are always supposed to be zero as well, the Session
+Message header may be viewed simply as a long integer length
+value.</p>
+
+<pre><![CDATA[length  = ntohl( *(ulong *)packet );]]></pre>
+
+<p>It might be wise to mask out the unused <code>FLAGS</code> bits,
+just in case.</p>
+</dd>
+
+<dt><code>0x85: SESSION KEEPALIVE</code></dt>
+
+<dd><p>The Keepalive is used to detect a lost connection. Basically,
+if one node hasn't sent anything to the other node for a while
+(typically five to six minutes), it will send a <code>SESSION
+KEEPALIVE</code>, just to make sure the remote end is still
+listening. The receiver simply discards the message.</p>
+
+<pre><![CDATA[HEADER
+  {
+  TYPE   = 0x85
+  LENGTH = 0
+  }]]></pre>
+
+<p>TCP<idx>TCP</idx> is a connection-oriented protocol, so the
+Keepalive should generate an
+<code>ACK</code>nowledgement<idx>ACK</idx>, or possibly a series of
+retries if the TCP <code>ACK</code> doesn't show up right away. The
+Keepalive message forces TCP to verify that the connection is still
+working, and to report back if there is a problem. If a problem
+<em>is</em> detected, the client or server can gracefully shut down
+its end of the connection.</p>
+
+<p>RFC 1001 makes it clear that sending the NBT Session Service
+Keepalive message is optional. TCP itself also has a keepalive
+mechanism, which should be used instead, if possible.<idx
+end="6-nbt-ss">NBT<sidx>Session Service</sidx></idx></p>
+</dd>
+</dl>
+
+</h1s><h1>Closing an NBT Session</h1><h1s>
+
+<p>Nothing to it. Once all activity across the session has stopped,
+simply shut down the TCP connection. At the NBT level, there are no
+special messages to send when closing the session.</p>
+
+</h1s></chapter></oim>

@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="US-ASCII"?>
+<!DOCTYPE oim SYSTEM "oimxml.dtd" [
+  <!ENTITY nbsp  "&#160;">
+  <!ENTITY lsquo "&#8216;">
+  <!ENTITY rsquo "&#8217;">
+  <!ENTITY minus "&#8211;">
+  <!ENTITY mdash "&#8212;">
+  <!ENTITY times "&#xd7;">
+  <!ENTITY copy "&#xa9;">
+] >
+<oim xmlns:dk="http://www.kirsanov.com">
+<chapter id="SMB2.11">
+<chapopen><title>That Just about Wraps Things Up for SMB</title>
+
+<epigraph dk:padding-top="36">
+<p>
+<line>Let's just get rid of these</line>
+<line>horrible protocols.</line>
+</p>
+<attribution><line>Andrew Tridgell,<idx>Tridge</idx></line>
+<line>Samba Team Leader </line></attribution>
+</epigraph>
+
+</chapopen>
+
+<p>If the Internet has proven anything, it's that a very large number
+of primates<idx>primates</idx> banging randomly on keyboards over a
+long enough period of time can and will produce some amazingly useful
+software.  On the other hand, if you gather some of those primates
+together, place them into cubicles, and train them to perform like
+circus animals...
+</p>
+
+<p>...well, we've just put a lot of effort into cleaning up the mess
+that was made in those cubicles. A shame, really. It was a nice little
+protocol when it started out.</p>
+
+<p>Although the SNIA<idx>SNIA</idx> gave it their best shot, there are
+currently no industry committees or standards groups writing <em>bona
+fide</em> specifications to be reviewed and voted on, and no standard
+test suites to verify conformity. That's not to say that
+specifications and test suites don't exist - quite the contrary. The
+problem is that they have no teeth. With no real standards and no real
+enforcement, the only measure of correctness for an SMB implementation
+is whether or not it works <em>most</em> of the time.  Since
+<em>most</em> of the clients out there are Windows clients, the
+formula simplifies down to whether or not an implementation works with
+Windows. An additional problem is that SMB itself is not enough for
+true interoperability with Windows systems - particularly if you want
+to write a workable server.</p>
+
+<p>In San Jose, California, there is a mansion known as the Winchester
+Mystery House. It started out as a simple farmhouse, but it was
+expanded over a period of thirty-eight years by a millionaire widow
+with an obsessive compulsion to keep on adding new rooms. It has
+stairways that rise directly into the ceiling, windows in the floor,
+doors that open to solid walls... and that's just for starters. The
+building covers four and a half acres and has an estimated 160&nbsp;rooms.</p>
+
+<p>CIFS is like that.</p>
+
+<p>The original SMB protocol was simple and well suited to its
+environment. Over the years, however, it has been greatly expanded.
+Several sub-protocols have been added on as well. These subprotocols
+(which include the Extended Security protocols, RAP<idx>RAP</idx>,
+MS-RPC<idx>MS-RPC</idx>, etc.) are implemented by Windows - so, if you
+want to build something truly compatible, SMB alone just isn't
+enough.</p>
+
+<p>...but don't go away feeling that it is all just a hopeless
+mess. It is really a question of how much effort you are willing to
+put into solving the problems you will encounter. Take it one step
+at a time, because the individual pieces are much less daunting
+than the whole.</p>
+
+</chapter>
+</oim>

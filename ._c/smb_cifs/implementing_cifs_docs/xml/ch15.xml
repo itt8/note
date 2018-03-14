@@ -1,0 +1,2775 @@
+<?xml version="1.0" encoding="US-ASCII"?>
+<!DOCTYPE oim SYSTEM "oimxml.dtd" [
+  <!ENTITY nbsp  "&#160;">
+  <!ENTITY lsquo "&#8216;">
+  <!ENTITY rsquo "&#8217;">
+  <!ENTITY minus "&#8211;">
+  <!ENTITY mdash "&#8212;">
+  <!ENTITY times "&#xd7;">
+  <!ENTITY copy "&#xa9;">
+  <!ENTITY auml "&#228;">
+] >
+<oim xmlns:dk="http://www.kirsanov.com">
+<chapter id="SMB2.8">
+<chapopen><title>Authentication</title>
+
+<epigraph dk:padding-top="36">
+<p><line>Car locks are there</line>
+<line>to keep the honest people honest.</line></p>
+<attribution><line>Something my brother Robert</line>
+<line>once told me. (He sells cars.)</line></attribution>
+</epigraph>
+
+</chapopen>
+
+<p><idx start="c15-authentication">authentication</idx>Now for the big one...</p>
+
+<p>If you are familiar with authentication schemes, then this
+section should be comfortable for you. If not, then perhaps it's
+time for a fresh pot of tea<idx>tea</idx>. Some people find their first
+experience with the innards of password security to be a bit
+intimidating, possibly because the encryption formulae are
+sometimes made to look a lot like mathematics. Authentication
+itself isn't really that complex, though. The basic idea is that
+the would-be users need to prove that they are who they say they
+are in order to get what they want. The proof is usually in the
+form of something private or secret - something that only the user
+has or knows.</p>
+
+<p>Consider, for example, the key to an automobile (something you
+have). With the key in hand, you are able to unlock the door, turn the
+ignition switch, and start the engine. As far as the car is concerned,
+you have proven that you have the right to drive.  Likewise with the
+password you use to access your computer (something you know). If you
+enter a valid username/password pair at the login prompt, then you can
+access the system. Unfortunately passwords, like keys, can be stolen
+or forged or copied. Just as locks can be picked, so passwords can be
+cracked.<fn>In addition to "something you have" and "something you
+know" there is another class of access tokens sometimes
+described as "something you are." This latter class, also known as
+"biometrics," includes such things as your fingerprints, your DNA
+pattern, your brainwaves, and your karmic aura. Some folks have argued
+that these features are simply "something you have" that is a little
+harder (or more painful) to steal. There was great hope that
+biometrics would offer improvements over the other authentication
+tokens, but it seems that they may be just as easy to crack. For
+example, a group of researchers in Japan was able to fool fingerprint
+scanners using fake fingertips created from gelatin and other common
+ingredients.</fn></p>
+
+<p>In the early days of SMB, when the LANs were small and sheltered,
+there was very little concern for the safety of the password
+itself. It was sent in plaintext (unencrypted) over the wire from the
+client to the server. Eventually, though, corporate networks got
+bigger, modems were installed to provide access from home and on the
+road, the "disgruntled employee" boogeyman learned how to use a
+keyboard, and everything got connected to the Internet. These were
+hard times for plaintext passwords, so a series of schemes was
+developed to keep the passwords safe - each more complex than its
+predecessor.</p>
+
+<p>For SMB, the initial attempt was called LAN Manager<idx>LM</idx>
+Challenge/Response<idx>challenge/response</idx> authentication, often
+simply abbreviated "LM."  The LM scheme turned out to be too simple
+and too easy to crack, and was replaced with something stronger called
+Windows NT Challenge/Response (known as
+"NTLM").<idx>NTLM<sidx>challenge/response</sidx></idx> NTLM was
+superseded by NTLMv2 which has, in turn, been replaced with a modified
+version of MIT's Kerberos<idx>Kerberos</idx> system.</p>
+
+<p>Got that?</p>
+
+<p>We'll go through them all in various degrees of detail. The LM
+algorithm is fairly simple, so we can provide a thorough
+description. At the other extreme, Kerberos is an entire system unto
+itself and anything more than an overview would be overkill.
+</p>
+
+<h1 id="SMB2.8.1">Anonymous and Guest Login</h1><h1s>
+
+<p>Gather and study piles of SMB packet captures and you will notice
+that some <code>SESSION SETUP</code><idx>SESSION SETUP</idx> requests
+contain no username and password at all. These are <em>anonymous</em>
+logins, and they are used to access special-purpose SMB shares such as
+the hidden "<code>IPC$</code>" share<idx>IPC$</idx> (the
+<b>I</b>nter-<b>P</b>rocess <b>C</b>ommunications share). You can
+learn more about <code>IPC$</code> in <ref refid="Browsing"/>. Put
+simply, though, this share allows one system to query another using
+RAP<idx>RAP</idx> function calls.</p>
+
+<p>Anonymous login may be a design artifact; something created in the
+days of Share Level security<idx>Share Level Security</idx> when it
+seemed safe to leave a share unprotected, and still with us today
+because it cannot easily be removed. Maybe not. One guess is as good
+as another.</p>
+
+<p>"GUEST" account logons are also often sent sans password. 
+The guest login is sometimes used in the same way as
+the anonymous login, but there are additional permissions which a
+guest account may have. Guest accounts are maintained like other
+"normal" accounts, so they can be a security problem and are commonly
+disabled. When SMB is doing its housekeeping, the anonymous login is
+generally preferred over the guest login. </p>
+
+</h1s><h1 id="SMB2.8.2">Plaintext Passwords</h1><h1s>
+
+<p>This is the easiest SMB authentication mechanism to
+implement - and the least secure. It's roughly equivalent to leaving
+your keys in the door lock after you've parked the car. Sure, the
+car is locked, but...</p>
+
+<p>Plaintext passwords may still be sufficient for use in small,
+isolated networks, such as home networks or small office environments
+(assuming no disgruntled employees and a well-configured firewall on
+the uplink - or no Internet connection at all). Plaintext passwords
+also provide us with a nice opportunity to get our feet wet in the
+mired pool of authentication. We can look at the packets and clearly
+see what is happening on the wire. Note, however, that many newer
+clients are configured to prevent the use of plaintext. Windows
+clients have registry entries that must be twiddled in order to permit
+plaintext passwords, and jCIFS<idx>jCIFS</idx> did not support them at
+all until version&nbsp;0.7.</p>
+
+<p>In order to set up a workable test environment you will need a
+server that does not expect encrypted passwords, and a client that
+doesn't mind sending the passwords in the clear. That is <em>not</em>
+an easy combination to come by. Most contemporary SMB clients and
+servers disable plaintext by default. It is easy, however, to
+configure Samba<idx>Samba</idx> so that it requests unencrypted passwords. Just
+change the <code>encrypt passwords</code> parameter to <code>no</code> in
+the <code>smb.conf</code><idx>smb.conf</idx> file, like so:</p>
+
+<pre>; Disable encrypted passwords.
+encrypt passwords = no</pre>
+
+<p>Don't forget to signal <code>smbd</code><idx>smbd</idx> to reload
+the configuration file after making this change.</p>
+
+<p>On the client side we will, once again, use the jCIFS
+<code>Exists</code><idx>Exists.java</idx> utility in our examples. If
+you would rather use a Windows client for your own tests, you can find
+a collection of helpful registry settings in the
+<code>docs/Registry/</code> subdirectory of the Samba
+distribution. You will probably need to change the registry settings
+to permit the Windows client to send plaintext passwords. Another
+option as a testing tool is Samba's
+<code>smbclient</code><idx>smbclient</idx> utility, which does not
+seem to argue if the server tells it not to encrypt the passwords.</p>
+
+<p>This is what our updated <code>Exists</code> test looks like:<idx>disablePlainTextPasswords</idx></p>
+
+<screenshot type="unix">$ java -DdisablePlainTextPasswords=false Exists \
+&gt; smb://pat:p%40ssw0rd@smedley/home
+smb://pat:p%40ssw0rd@smedley/home exists
+$</screenshot>
+
+<p>A few things to note:</p>
+
+<ul>
+<li><p>The <code>-DdisablePlainTextPasswords=false</code> command-line
+option tells jCIFS that it should permit the use of
+plaintext.</p></li>
+
+<li><p>The username and password are passed to jCIFS via the SMB
+URL.<idx>SMB<sidx>URL</sidx></idx> The syntax is fairly common for
+URLs.<fn>...sort of. Support for inclusion of a password within a URL
+is considered very dangerous. The recommendation from the authors of
+RFC 2396 is that new applications should not recognize the password
+field and that the application should instead prompt for both the
+username and password.</fn> Basically, it looks like this:</p>
+
+<pre>smb://[[user[:password]@]host[:port]]</pre>
+
+<p dk:indent="no">The username in our example is <code>pat</code>.</p></li>
+
+<li><p>The password in our example is <code>p@ssw0rd</code>, but the
+&lsquo;@&rsquo; in the password conflicts with the &lsquo;@&rsquo;
+used to separate the <code>userinfo</code> field from the
+<code>hostport</code> field.<fn>Yet again we seek the wisdom of the
+RFCs. See Appendix&nbsp;A of RFC 2396 for the full generic syntax of URLs,
+and RFC 2732 for the IPv6 update.</fn> To resolve the conflict we
+encode the &lsquo;@&rsquo; in <code>p@ssw0rd</code> using the URL
+escape sequence "<code>%40</code>", which gives us
+<code>p%40ssw0rd</code>.</p></li>
+
+<li><p>If at all possible, applications should be written to request
+the password in a more secure fashion, and to hide it once it has been
+given. The <code>[:password]</code> syntax is not part of the general
+URL syntax definition, and its use is highly discouraged.  Having the
+password display on the screen is as naughty as sending it across the
+wire in plaintext.</p></li>
+</ul>
+
+<h2>User Level Security with Plaintext Passwords</h2><h2s>
+
+<p>User and Share Level security<idx>User Level
+Security</idx><idx>Share Level Security</idx> were described back in
+<ref refid="SMB2.5.4"/>, along with the <code>TID</code><idx>TID</idx>
+and [<code>V</code>]<code>UID</code><idx>UID</idx> header fields. The
+<code>SecurityMode</code><idx>SecurityMode</idx> field of the
+<code>NEGOTIATE PROTOCOL RESPONSE</code><idx>NEGOTIATE PROTOCOL</idx>
+SMB will indicate the authentication expectations of the server. For
+User Level plaintext passwords, the value of the
+<code>SecurityMode</code> field will be <code>0x01</code>.</p>
+
+<p>Below is an example <code>SESSION_SETUP_ANDX.SMB_DATA</code> block
+such as would be generated by the jCIFS<idx>jCIFS</idx>
+<code>Exists</code><idx>Exists.java</idx> tool. Note, once again, that
+the discussion is focused on the NT&#160;LM&#160;0.12<idx>NT LM
+0.12</idx> dialect.<idx>dialect</idx></p>
+
+<pre>SMB_DATA
+ {
+ ByteCount = 27
+ Bytes
+   {
+   CaseInsensitivePassword = "p@ssw0rd"
+   CaseSensitivePassword   = &lt;NULL&gt;
+   Pad                     = &lt;NULL&gt;
+   AccountName             = "PAT"
+   PrimaryDomain           = "?"
+   NativeOS                = "Linux"
+   NativeLanMan            = "jCIFS"
+   }
+ }</pre>
+
+<p>There are always fiddly little details to consider when working
+with SMB. In this case, we need to talk about upper- and
+lowercase. (bLeCH.) The example above shows that the
+<code>AccountName</code> field has been converted to uppercase. This
+is common practice, but it is not really necessary and some
+implementations don't bother. It is a holdover from the early days of
+SMB when lots of things (filenames, passwords, share names, NetBIOS
+names<idx>NetBIOS<sidx>name</sidx></idx>, bagels, and pop singers)
+were converted to uppercase as a matter of course. Some older servers
+(pre-NT&#160;LM&#160;0.12) may require uppercase usernames, but newer
+servers shouldn't care. Converting to uppercase is probably the safest
+option, just <dk:nobr>in case...</dk:nobr></p>
+
+<p>Although the <code>AccountName</code> in the example is uppercase,
+the
+<dk:nobr><code>CaseInsensitivePassword</code><idx>CaseInsensitivePassword</idx></dk:nobr>
+is not. Hmmm... Odd, eh? The situation here is that some server
+operating systems (e.g. most Unixy OSes) use case-sensitive password
+verification algorithms. If the password is sent all uppercase it
+probably won't match what the OS expects, resulting in a login failure
+even though the user entered the correct password. The field may be
+labeled case-insensitive (and that really is what it is
+<em>intended</em> to be) but some server OSes prefer to have the
+original password, case preserved, just as the user entered it.</p>
+
+<p>This is a sticky problem, though, because some clients
+<em>insist</em> on converting passwords to uppercase before sending
+them to the server. Windows 95 and '98 may do this, for example. As
+you might have come to expect by now, the reason for this odd behavior
+is backward compatibility. There are older
+<dk:nobr>(pre-NT&#160;LM&#160;0.12<idx>NT LM 0.12</idx>)</dk:nobr>
+servers still running that will reject passwords that are not all
+uppercase. Windows 9x systems solve the problem by forcing all
+passwords to uppercase even when the NT&#160;LM&#160;0.12 dialect has
+been selected. Samba's<idx>Samba</idx>
+<code>smbd</code><idx>smbd</idx> server, which generally runs on
+case-sensitive platforms, must go through a variety of contortions to
+get uppercase plaintext passwords to be accepted.<fn>See the
+discussion of the <code>password level</code> parameter in Samba's
+<code>smb.conf(5)</code><idx>smb.conf</idx> documentation for more
+information about these problems.</fn></p>
+
+<p>Another annoyance is that Windows 98 will pad the plaintext
+password string to 24 bytes, filling the empty space with
+semi-random garbage. This behavior was noted in testing, but there
+wasn't time to investigate the problem in-depth so it may or may
+not be wide-spread. Still, it's the odd case that will break
+things. Server implementors should be careful to both check the
+field length <em>and</em> look for the first terminating nul byte
+when reading the <dk:nobr>plaintext password.</dk:nobr></p>
+
+<p>In short, client-side handling of the plaintext
+<code>CaseInsensitive<dk:hyphen/>Password</code> is inconsistent and
+problematic - and the server has to compensate. That's why you need
+piles of SMB packet captures and lots of different clients to test
+against when writing a server implementation. It <em>can</em> be done,
+but it takes a bit of perseverance. When writing a new client, ensure
+that the client sends the password as the user intended. If that
+fails, and the dialect is pre-NT&#160;LM&#160;0.12, then convert to
+uppercase and try again.  Believe it or not, the use of
+challenge/response<idx>challenge/response</idx> authentication
+bypasses much of this trouble.</p>
+
+<p>...but that's only half the story. In addition to the
+<code>Case<u>In</u>sensitivePassword</code><idx>CaseInsensitivePassword</idx>
+field there is also a
+<code>Case<u>Sensitive</u>Password</code><idx>CaseSensitivePassword</idx>
+field in the data block, and we haven't even touched on that yet. This
+latter field is only used if Unicode<idx>Unicode</idx> has been negotiated, and it is
+rare that both Unicode and plaintext will be used simultaneously. It
+can happen, though.  As mentioned earlier, Samba<idx>Samba</idx> can be easily
+configured to provide support for Unicode plaintext passwords.<fn>I
+don't know whether a Windows server can be configured to support
+Unicode plaintext passwords. To test against Samba, however, you need
+to use Samba version 3.0 or above. On the client side,
+Microsoft<idx>Microsoft</idx> has a Knowledge Base article - and a
+patch - that addresses some of the message formatting problems in
+Windows 2000 (see <cite>Microsoft Knowledge Base Article
+#257292</cite>). Thanks to Nir Soffer<idx>Soffer, Nir</idx> for
+finding this article.</fn> In theory, this should be a simple switch
+from ASCII to Unicode. In practice, no client really supports it yet -
+and weird things have been seen on the wire. For example:</p>
+
+<ul>
+<li><p>Clients disagree on the length of the Unicode password string
+in <dk:nobr><code>CaseSensitivePassword</code>.</dk:nobr> Some count the pair of nul
+bytes that terminate the string, others do not. (For comparison, the
+length of the ASCII <code>Case<u>In</u>sensitivePassword</code> string
+does include the terminating nul, so it seems there is
+precedent.)</p></li>
+
+<li><p>In testing, more than one client stored the length of the
+Unicode password in the
+<code>Case<u>In</u>sensitivePassword<u>Length</u></code> field... but
+that's where the ASCII password length is supposed to go. The Unicode
+password length should be in the
+<code>Case<u>Sensitive</u>Password<u>Length</u></code> field. How
+should the server interpret the password in this situation - as ASCII
+or Unicode?</p></li>
+
+<li><p>One client added a nul byte at the beginning of the Unicode
+password string, probably intended as a padding byte to force word
+alignment. <dk:nobr>The extra nul byte</dk:nobr> was being read as the
+first byte of the
+<dk:nobr><code>CaseSensitivePassword</code>,</dk:nobr> thus
+misaligning the Unicode string. Another client went further and
+counted the extra byte in the total length of the Unicode password
+string. As a result, the password length was given as an odd number of
+bytes (which should never happen).</p></li>
+</ul>
+
+<p>Empirically, it would seem that Unicode plaintext passwords were
+never meant to be.</p>
+
+<p>An interesting fact-ette that can be gleaned from this discussion
+is that there is a linkage between the password fields and the
+negotiation of Unicode. Simply put:</p>
+
+<p dk:displayed="yes"><line>ASCII (OEM character set)&#160;&lt;==&gt;&#160;<code>CaseInsensitivePassword</code></line>
+<line>Unicode&#160;&lt;==&gt;&#160;<code>CaseSensitivePassword</code></line></p>
+
+<p>That is, ASCII plaintext passwords are stored in the
+<code>Case<u>In</u>sensitivePassword</code><idx>CaseInsensitivePassword</idx>
+field, and Unicode plaintext passwords should be placed into the
+<code>Case<u>Sensitive</u>Password</code><idx>CaseSensitivePassword</idx>
+field. Indeed, Ethereal<idx>Ethereal</idx> names these two fields,
+respectively, "ANSI Password" and "Unicode Password" instead of using
+the longer names shown above. This relationship carries over to the
+challenge/response passwords as well, as we shall soon see. </p>
+
+</h2s><h2>Share Level Security with Plaintext Passwords</h2><h2s>
+
+<p>We won't spend too much time on this. It is easy to see by looking
+at packet captures. Basically, in Share Level security<idx>Share Level
+Security</idx> mode the plaintext password is passed to the server in
+the <code>TREE CONNECT ANDX</code><idx>TREE CONNECT</idx>
+request instead of the <code>SESSION SETUP ANDX</code>.<idx>SESSION
+SETUP</idx> In the NT&#160;LM&#160;0.12<idx>NT LM 0.12</idx> dialect,
+however, a valid username should also be placed into the <code>SESSION
+SETUP AccountName</code> field if at all possible. Doing so allows the
+server to map Share Level security to its own user-based
+authentication system.</p>
+
+<alert type="Interesting Implementation">
+<p>Samba<idx>Samba</idx> does not completely implement Share Level security. Though
+all of the required SMBs are supported, Samba does not provide any way
+to assign a password to a share.</p>
+
+<p>Many SMB clients will provide a username (if one is available) in
+the <code>SESSION SETUP ANDX</code> SMB even though it is not
+(technically) required at Share Level. If there is no username
+available, however, Samba will attempt (through various methods - some
+of which might be considered kludgey) to guess an appropriate username
+for the connection. Read through the
+<code>smb.conf(5)</code><idx>smb.conf</idx> manual page if you are
+interested in the details.</p>
+</alert>
+
+</h2s></h1s><h1 id="SMB2.8.3">LM Challenge/Response</h1><h1s>
+
+<p><idx start="c15-ch-r">challenge/response</idx><idx start="c15-lm-ch-r">LM<sidx>challenge/response</sidx></idx>In plaintext mode,
+the client proves that it knows the password by sending the password
+itself to the server. In challenge/response mode, the goal is to prove
+that the password is known without risking any exposure. It's a bit of
+a magic trick. Here's how it's done:</p>
+
+<ol>
+<li><p>The server generates a random string of bytes - random enough
+that it is not likely to come up again in a very, very long time (thus
+preventing replay attacks). This string is called the
+<em>challenge</em>.</p></li>
+
+<li><p>The challenge is sent to the client.</p></li>
+
+<li><p>Both the client and server encrypt the challenge using a key
+that is derived from the user's password. The client sends its result
+back to the server. This is the <em>response</em>.</p></li>
+
+<li><p>If the client's response matches the server's result, then the
+server knows (beyond a reasonable doubt) that the client knows the
+correct key. If they don't match, authentication fails.</p></li>
+</ol>
+
+<fig id="Figure2.11">
+<img dk:width="220" loc="SMB11"/>
+<caption>Challenge/response</caption>
+<subcaption><p>The server generates a random challenge, which it sends
+to the client.  Both systems encrypt the challenge using the secret
+encryption key.  The client sends its result (<code>rc</code>) to the
+server. If the client's result matches the server's result
+(<code>rs</code>), then the two nodes have matching
+keys.</p></subcaption>
+</fig>
+
+<p>That's a rough, general overview of challenge/response. The details
+of its use in LAN Manager<idx>LM</idx> authentication are a
+bit more involved, but are fairly easy to explain. As we dig deeper,
+keep in mind that the goal is to protect the password while still
+allowing authentication to occur. Also remember that LM
+challenge/response was the first attempt to add encrypted password
+support <dk:nobr>to SMB.</dk:nobr> </p>
+
+<h2>DES</h2><h2s>
+
+<p><idx start="c15-DES">DES</idx>The formula used to generate the LM
+response makes use of the U.S. Department of Commerce <b>D</b>ata
+<b>E</b>ncryption <b>S</b>tandard (DES) function, in block mode. DES
+has been around a long time. There are a lot of references which
+describe it and a good number of implementations available, so we will
+not spend a whole lot of time studying DES itself.<fn>If you are
+interested in the workings of DES, Bruce Schneier's<idx>Schneier,
+Bruce</idx> <cite>Applied Cryptography, Second Edition</cite> provides
+a very complete discussion. See the References section.</fn> For our
+purposes, the important thing to know is that the DES function - as
+used with SMB - takes two input parameters and returns a result, like
+so:</p>
+
+<pre>result = DES( key, source );</pre>
+
+<p>The <code>source</code> and <code>result</code> are both eight-byte
+blocks of data, the <dk:nobr><code>result</code></dk:nobr> being the
+DES encryption of the <code>source</code>. In the SNIA
+doc<idx>SNIA<sidx>CIFS Technical Reference</sidx></idx>, as in the
+Leach/Naik draft<idx>Leach/Naik Internet Drafts</idx>, the
+<code>key</code> is described as being seven bytes (56 bits) long.
+Documentation on DES itself gives the length of the <code>key</code>
+as eight bytes (64&nbsp;bits), but each byte contains a parity bit so
+there really are only 56 bits worth of "<code>key</code>" in the
+64-bit <code>key</code>. As shown in <ref refid="Figure2.12"/>, there
+is a simple formula for mapping 56 bits into the required 64-bit
+format. The seven byte string is simply copied, seven <em>bits</em> at
+a time, into an eight byte array. A parity bit (odd parity) is
+inserted following each set of seven bits (but some existing DES
+<dk:nobr>implementations</dk:nobr> use zero and ignore the parity
+bit).</p>
+
+<fig id="Figure2.12">
+<img dk:width="220" loc="SMB12"/>
+<caption>DES key manglement</caption>
+
+<subcaption><p>Converting a seven byte key (56 bits) into an eight
+byte key with odd parity for use with DES. Some DES implementations
+perform this step internally.</p></subcaption>
+</fig>
+
+<p>The <code>key</code> is used by the DES algorithm to encrypt the
+<code>source</code>. Given the same <code>key</code> and
+<code>source</code>, DES will always return the same
+<code>result</code>. </p>
+
+</h2s><h2>Creating the Challenge</h2><h2s>
+
+<p>The challenge needs to be very random, otherwise the logon process
+could be made vulnerable to "replay" attacks.</p>
+
+<p>A replay attack is fairly straightforward. The attacker captures
+the exchange between the server and the client and keeps track of the
+challenge, the response, and the username. The attacker then tries to
+log on, hoping that the challenge will be repeated (this step is
+easier if the challenge is at all predictable). <dk:nobr>If the server
+sends</dk:nobr> a challenge that is in the stored list, the attacker
+can <dk:nobr>use the recorded username</dk:nobr> and response to fake
+a logon. No password <dk:nobr>cracking required.</dk:nobr></p>
+
+<p>Given that the challenge is eight bytes (64 bits) long, and that
+random number generators are pretty good these days, it is probably
+best to create the challenge using a random number function. The
+better the random number generator, the lower the likelihood
+(approaching 1 in 2<sup>64</sup>) that a particular challenge will be
+repeated.</p>
+
+<p>The X/Open doc<idx>X/Open SMB Documentation</idx> (which was
+written a long time ago) briefly describes a different approach to
+creating the challenge. According to that document, a seven-byte
+pseudo-random number is generated using an internal counter and the
+system time. That value is then used as the <code>key</code> in a call
+to <code>DES()</code>, <dk:nobr>like so:</dk:nobr></p>
+
+<pre>Ckey = fn( time( NULL ), counter++ );
+challenge = DES( Ckey, "????????" );</pre>
+
+<p dk:indent="no">(The <code>source</code> string is
+honest-to-goodnessly given as eight question marks.)</p>
+
+<p>That formula actually makes a bit of sense, though it's probably
+overkill. The pseudo-random <code>Ckey</code> is non-repeating
+(because it's based on the time), so the resulting
+<code>challenge</code> is likely to be non-repeating as well. Also
+note that the pseudo-random value is passed as the <code>key</code>,
+not the <code>source</code>, in the call to <code>DES()</code>. That
+makes it much more difficult to reverse and, since it changes all the
+time, reversing it is probably not useful anyway.
+</p>
+
+<p>As Andrew Bartlett<idx>Bartlett, Andrew</idx><fn>...without whom
+the Authentication section would never have been written.</fn> points
+out, however, the time and counter inputs are easily guessed so the
+challenge is predictable, which is a potential weakness. Adding a byte
+or two of truly random "salt" to the <code>Ckey</code> in the recipe
+above would prevent such predictability.</p>
+
+<email> 
+<pre>   From: Andrew Bartlett
+     To: Chris Hertel
+Subject: SMB Challenge...
+
+Actually, given comments I've read on some SMB cracking sites, it
+would not surprise me if MS still does (or at least did) use exactly
+this for the challenges.
+
+I still think you should address the X/Open function not as 
+'overkill' but as 'flawed'.</pre>
+</email>
+
+<p>Using a plain random number generator is probably faster,
+easier, <dk:nobr>and safer.</dk:nobr></p>
+
+</h2s><h2>Creating the LM Hash</h2><h2s>
+
+<p>LM<idx start="c15-hash">LM<sidx>Hash</sidx></idx>
+challenge/response authentication prevents password theft by ensuring
+that the plaintext password is never transmitted across a network or
+stored on disk. Instead, a separate value known as the "LM Hash" is
+generated. It is the LM Hash that is stored on the server side for use
+in authentication, and used on the client side to create the response
+from the challenge.</p>
+
+<p>The LM Hash is a sixteen byte string, created as follows:</p>
+
+<ol>
+<li><p>The password, as entered by the user, is either padded with
+nuls (<code>0x00</code>) or trimmed to fourteen (14) bytes.<fn>Both
+the the X/Open doc<idx>X/Open SMB Documentation</idx> and the expired
+Leach/Naik draft<idx>Leach/Naik Internet Drafts</idx> state that the
+padding character is a space, not a nul. They are incorrect. It really
+is a nul.</fn></p>
+
+<ul>
+<li><p>Note that the 14-byte password string is not handled as a
+nul-terminated string. If the user enters 14 or more bytes, the last
+byte in the modified string will <em>not</em> be nul.</p></li>
+
+<li><p>Also note that the password is given in the 8-bit OEM character
+set (extended ASCII), not Unicode.</p></li>
+</ul>
+</li>
+
+<li><p>The 14-byte password string is converted to all
+uppercase.</p></li>
+
+<li><p>The uppercase 14-byte password string is chopped into two
+<dk:nobr>7-byte</dk:nobr> keys.</p></li>
+
+<li><p>The seven-byte keys are each used to DES-encrypt the string
+constant "<code>KGS!@#$%</code><idx>KGS!@#$%</idx>", which is known as
+the "magic" string.<fn>The magic string was considered secret, and was
+not listed in the Leach/Naik draft.<idx>Leach/Naik Internet
+Drafts</idx> The story of Tridge<idx>Tridge</idx> and
+Jeremy's<idx>Allison, Jeremy</idx> (pre-DMCA<idx>DMCA</idx>)
+successful effort to reverse-engineer this value is quite
+entertaining.</fn></p></li>
+
+<li><p>The two 8-byte results are then concatenated together
+to form the <dk:nobr>16-byte</dk:nobr> LM Hash.</p></li>
+</ol>
+
+<p>That outline would make a lot more sense as code, wouldn't it?
+Well, you're in luck. <ref refid="Listing2.6"/> shows how the steps
+given above might be <dk:nobr>implemented.</dk:nobr></p>
+
+<example id="Listing2.6">
+<caption>LM Hash function</caption>
+<pre dk:break="after"><![CDATA[static const uchar SMB_LMHash_Magic[8] =
+  { 'K', 'G', 'S', '!', '@', '#', '$', '%' };
+
+uchar *smb_LMHash( const uchar *password, uchar *result )
+  /* ---------------------------------------------------- **
+   * Generate an LM Hash.
+   * password - pointer to the raw password string.
+   * result   - pointer to at least 16 bytes of memory
+   *            into which the LM Hash will be written.
+   * Returns a pointer to the LM Hash (== result).
+   * ---------------------------------------------------- **
+   */
+  {
+  uchar  tmp_pass[14] = { 0,0,0,0,0,0,0,0,0,0,0,0,0,0 };
+  uchar *hash;
+  uchar  K1[7];
+  uchar  K2[7];
+  int    i;
+
+  /* Copy at most 14 bytes of password to tmp_pass.
+   * If the string is shorter, the unused bytes will
+   * be nul-filled.
+   */
+  (void)strncpy( tmp_pass, password, 14 );
+
+  /* Convert to uppercase.
+   */
+  for( i = 0; i < 14; i++ )
+    tmp_pass[i] = toupper( tmp_pass[i] );]]></pre>
+
+<pre><![CDATA[  /* Split tmp_pass into two 7-byte keys.
+   */
+  (void)memcpy( K1, tmp_pass, 7 );
+  (void)memcpy( K2, (tmp_pass + 7), 7 );
+
+  /* Use the keys to encrypt the 'magic' string.
+   * Place each encrypted half into the result
+   * buffer.
+   */
+  hash = DES( K1, SMB_LMHash_Magic );
+  (void)memcpy( result, hash, 8 );
+  hash = DES( K2, SMB_LMHash_Magic );
+  (void)memcpy( (result + 8), hash, 8 );
+
+  /* Return a pointer to the result.
+   */
+  return( result );
+  } /* smb_LMHash */]]></pre>
+</example>
+
+</h2s><h2>Creating the LM Response</h2><h2s>
+
+<p>Now we get to the actual logon. When a <code>NEGOTIATE PROTOCOL
+REQUEST</code><idx>NEGOTIATE PROTOCOL</idx> arrives from the client,
+the server generates a new challenge on the fly and hands it back in
+the <code>NEGOTIATE PROTOCOL RESPONSE</code>.</p>
+
+<p>On the client side, the user is prompted for the password. The
+client generates the LM Hash from the password, and then uses the hash
+to <dk:nobr>DES-encrypt</dk:nobr> the challenge. Of course, it's not a
+straightforward DES operation. As you may have noticed, the LM Hash is
+16 bytes but the <code>DES()</code> function requires 7-byte keys. Ah,
+well... Looks as though there's a bit more padding and chopping to
+do.</p>
+
+<ol>
+<li><p>The password entered by the user is converted to a 16-byte LM
+Hash as described above.</p></li>
+
+<li><p>The LM Hash is padded with five nul bytes, resulting in a
+string that is 21 bytes long.</p></li>
+
+<li><p>The 21 byte string is split into three 7-byte keys.</p></li>
+
+<li><p>The challenge is encrypted three times, once with each of the
+three keys derived from the LM Hash.</p></li>
+
+<li><p>The results are concatenated together, forming a 24-byte string
+which is returned to the server. This, of course, is the
+response.</p></li>
+</ol>
+
+<p>Once again, we provide demonstrative code. <ref
+refid="Listing2.7"/> shows how the LM Response would be generated.</p>
+
+<example id="Listing2.7">
+<caption>LM Response function</caption>
+<pre><![CDATA[uchar *smb_LMResponse( const uchar *LMHash,
+                             uchar *chal,
+                             uchar *resp )
+  /* ---------------------------------------------------- **
+   * Generate an LM Response
+   * LMHash - pointer to the LM Hash of the password.
+   * chal   - Pointer to the challenge.
+   * resp   - pointer to at least 24 bytes of memory
+   *          into which the LM response will be written.
+   * Returns a pointer to the LM response (== resp).
+   * ---------------------------------------------------- **
+   */
+  {
+  uchar  P21[21];
+  uchar  K[7];
+  uchar *result;
+  int    i;
+
+  /* Copy the LM Hash to P21 and pad with nuls to 21 bytes.
+   */
+  (void)memcpy( P21, LMHash, 16 );
+  (void)memset( (P21 + 16), 0, 5 );
+
+  /* A compact method of splitting P21 into three keys,
+   * generating a DES encryption of the challenge for
+   * each key, and combining the results.
+   * (i * 7) will give 0, 7, 14 and
+   * (i * 8) will give 0, 8, 16.
+   */
+  for( i = 0; i < 3; i++ )
+    {
+    (void)memcpy( K, (P21 + (i * 7)) , 7 );
+    result = DES( K, chal );
+    (void)memcpy( (resp + (i * 8)), result, 8 );
+    }
+
+  /* Return the response.
+   */
+  return( resp );
+  } /* smb_LMResponse */]]></pre>
+</example>
+
+<p>The server, which has the username and associated LM Hash tucked
+away safely in its authentication database, also generates the 24-byte
+response string. When the client's response arrives, the server
+compares its own value against the client's. If they match, then the
+client has authenticated.</p>
+
+<p>Under User Level security<idx>User Level Security</idx>, the client
+sends its LM Response in the
+<dk:nobr><code>SESSION_SETUP_ANDX.CaseInsensitivePassword</code><idx>CaseInsensitivePassword</idx><idx>SESSION
+SETUP</idx></dk:nobr> field of the <code><dk:nobr>SESSION</dk:nobr>
+SETUP</code> request (yes, the LM <em>response</em> is in the
+<code>SESSION SETUP <u>REQUEST</u></code>). With Share Level
+security,<idx>Share Level Security</idx> the LM Response is placed in
+the <dk:nobr><code>TREE_CONNECT_ANDX.Password</code></dk:nobr>
+field. </p>
+
+</h2s><h2>LM Challenge/Response: Once More with Feeling</h2><h2s>
+
+<p>The details sometimes obfuscate the concepts, and vice versa. We
+have presented a general overview of the challenge/response mechanism,
+as well as the particular formulae of the LAN Manager scheme. Let's go
+through it once again, quickly, just to put the pieces together and
+cover anything that we may <dk:nobr>have missed.</dk:nobr></p>
+
+<dl>
+<dt>The LM Hash</dt>
+
+<dd><p>The LM Hash is derived from the password. It is used instead of
+the password so that the latter won't be exposed. A copy of the LM
+Hash is stored on the server (or Domain Controller<idx>DC</idx>) in
+the authentication database.</p>
+
+<p>On the down side, the LM Hash is <em>password equivalent</em>.
+Because of the design in the LM challenge/response mechanism, a
+cracker<fn>A "cracker," not a "hacker." The former is someone who
+cracks passwords or authentication schemes with the goal of cracking
+into a system (naughty). The latter is one who studies and fiddles
+with software and systems to see how they work and, possibly, to make
+them work better (nice). The popular media has mangled the
+distinction. Don't make the same mistake. If you are reading this
+book, you most likely are a hacker (and that's good).</fn> can use the
+LM Hash to break into a system. The password itself is not, in fact,
+needed.  Thus, the LM Hash must be protected as if it were the
+password.</p>
+</dd>
+
+<dt>The Challenge</dt>
+
+<dd><p>If challenge/response is required by the server, the
+<code>SecurityMode</code><idx>SecurityMode</idx> <dk:nobr>field of the
+<code>NEGOTIATE PROTOCOL RESPONSE</code><idx>NEGOTIATE
+PROTOCOL</idx></dk:nobr> will have bit <code>0x02</code> <dk:nobr>set,
+and the challenge</dk:nobr> will be found in the
+<code>EncryptionKey</code> field.
+<dk:nobr>Challenge/response</dk:nobr> may be used with either User
+Level or Share Level security.<idx>User Level Security</idx><idx>Share
+Level Security</idx></p></dd>
+
+<dt>The Logon</dt>
+
+<dd><p>On the client side, the user will - at some point - be prompted
+for a password. The password is converted into the LM Hash.
+Meanwhile, the server (or NT Domain Controller) has its own copy of
+the LM Hash, stored in the authentication database. Both systems
+use the LM Hash to generate the LM Response from the
+challenge.</p></dd>
+
+<dt>The LM Response</dt>
+
+<dd><p>The client sends the LM Response to the server in either the
+<dk:nobr><code>SESSION_SETUP_ANDX.CaseInsensitivePassword</code></dk:nobr>
+<idx>CaseInsensitivePassword</idx><idx>SESSION SETUP</idx>field or the
+<code>TREE_CONNECT_ANDX.Password</code> field, depending upon the
+security level of the server. The server compares the client's
+response against its own to see if they match.</p></dd>
+
+<dt>The <code>SESSION SETUP ANDX RESPONSE</code></dt>
+
+<dd><p>To finish up, the server will send back a <code>SESSION SETUP
+ANDX <dk:nobr>RESPONSE</dk:nobr></code>. The <code>STATUS</code> field
+will indicate whether the logon was successful or not.</p></dd>
+</dl>
+
+<p>Well, that's a lot of work and it certainly goes a long way towards
+looking complicated. Unfortunately, looking complicated isn't enough
+to truly protect a password. LM challenge/response is an improvement
+over plaintext, but there are some problems with the formula and it
+turns out that it is not, in fact, a very <em>big</em> improvement.
+</p>
+
+<p>Let's consider what an attacker might do to try and break into a
+system. We've already explained the replay attack. Other common garden
+varieties include the "dictionary" and the "brute force" attack, both
+of which simply try pushing possible passwords through the algorithm
+until one of them returns the same response as seen on the wire. The
+dictionary attack is typically faster because it uses a database of
+likely passwords, so tools tend to try this first.  The brute force
+method tries all (remaining) possible combinations of bytes, which is
+usually a longer process. Unfortunately, all of the upper-casing,
+nul-padding, chopping, and concatenating used in the LM algorithm
+makes LM challenge/response very susceptible to these attacks. Here's
+why:</p>
+
+<p>The LM Hash formula pads the original password with nul bytes.  If
+the password is short enough (seven or fewer characters) then, when
+the 14-byte padded password is split into two seven-byte DES keys, the
+second key will always be a string of seven nuls. Given the same
+input, DES produces the <dk:nobr>same output:</dk:nobr></p>
+
+<pre>0xAAD3B435B51404EE = DES( "\0\0\0\0\0\0\0", "KGS!@#$%" )<idx>KGS!@#$%</idx></pre>
+
+<p dk:indent="no">which results in an LM Hash in which the second
+set of eight bytes are known:</p>
+
+<table colwidths="6.25* 6.25* 6.25* 6.25* 6.25* 6.25* 6.25* 6.25* 6.25* 6.25* 6.25* 6.25* 6.25* 6.25* 6.25* 6.25*" dk:type="centered" dk:borders="all">
+<tbody>
+<tr dk:border="after">
+<td dk:border="right"><p><code>0</code></p></td>
+<td dk:border="right"><p><code>1</code></p></td>
+<td dk:border="right"><p><code>2</code></p></td>
+<td dk:border="right"><p><code>3</code></p></td>
+<td dk:border="right"><p><code>4</code></p></td>
+<td dk:border="right"><p><code>5</code></p></td>
+<td dk:border="right"><p><code>6</code></p></td>
+<td dk:border="right"><p><code>7</code></p></td>
+<td dk:border="right"><p><code>8</code></p></td>
+<td dk:border="right"><p><code>9</code></p></td>
+<td dk:border="right"><p><code>10</code></p></td>
+<td dk:border="right"><p><code>11</code></p></td>
+<td dk:border="right"><p><code>12</code></p></td>
+<td dk:border="right"><p><code>13</code></p></td>
+<td dk:border="right"><p><code>14</code></p></td>
+<td><p><code>15</code></p></td>
+</tr>
+<tr dk:border="after">
+<td colspan="8" dk:border="right"><p>result 0</p></td>
+<td colspan="8"><p>result 1</p></td>
+</tr>
+<tr>
+<td dk:border="right"><p>??</p></td>
+<td dk:border="right"><p>??</p></td>
+<td dk:border="right"><p>??</p></td>
+<td dk:border="right"><p>??</p></td>
+<td dk:border="right"><p>??</p></td>
+<td dk:border="right"><p>??</p></td>
+<td dk:border="right"><p>??</p></td>
+<td dk:border="right"><p>??</p></td>
+<td dk:border="right"><p><code>AA</code></p></td>
+<td dk:border="right"><p><code>D3</code></p></td>
+<td dk:border="right"><p><code>B4</code></p></td>
+<td dk:border="right"><p><code>35</code></p></td>
+<td dk:border="right"><p><code>B5</code></p></td>
+<td dk:border="right"><p><code>14</code></p></td>
+<td dk:border="right"><p><code>04</code></p></td>
+<td><p><code>EE</code></p></td>
+</tr>
+</tbody>
+</table>
+
+<p>To create the LM Response, the LM Hash is padded with nuls to
+21&nbsp;bytes, and then split again into three DES keys:</p>
+
+<table colwidths="4.5* 4.5* 4.5* 4.5* 4.5* 4.5* 4.5* 4.5* 4.5* 4.5* 5* 5* 5* 5* 5* 5* 5* 5* 5* 5*" dk:type="centered" dk:borders="all">
+<tbody>
+<tr dk:border="after">
+<td dk:border="right"><p><code>0</code></p></td>
+<td dk:border="right"><p><code>1</code></p></td>
+<td dk:border="right"><p><code>2</code></p></td>
+<td dk:border="right"><p><code>3</code></p></td>
+<td dk:border="right"><p><code>4</code></p></td>
+<td dk:border="right"><p><code>5</code></p></td>
+<td dk:border="right"><p><code>6</code></p></td>
+<td dk:border="right"><p><code>7</code></p></td>
+<td dk:border="right"><p><code>8</code></p></td>
+<td dk:border="right"><p><code>9</code></p></td>
+<td dk:border="right"><p><code>10</code></p></td>
+<td dk:border="right"><p><code>11</code></p></td>
+<td dk:border="right"><p><code>12</code></p></td>
+<td dk:border="right"><p><code>13</code></p></td>
+<td dk:border="right"><p><code>14</code></p></td>
+<td dk:border="right"><p><code>15</code></p></td>
+<td dk:border="right"><p><code>16</code></p></td>
+<td dk:border="right"><p><code>17</code></p></td>
+<td dk:border="right"><p><code>18</code></p></td>
+<td dk:border="right"><p><code>19</code></p></td>
+<td><p><code>20</code></p></td>
+</tr>
+<tr dk:border="after">
+<td colspan="7" dk:border="right"><p>key 0</p></td>
+<td colspan="7" dk:border="right"><p>key 1</p></td>
+<td colspan="7"><p>key 2</p></td>
+</tr>
+<tr>
+<td dk:border="right"><p>??</p></td>
+<td dk:border="right"><p>??</p></td>
+<td dk:border="right"><p>??</p></td>
+<td dk:border="right"><p>??</p></td>
+<td dk:border="right"><p>??</p></td>
+<td dk:border="right"><p>??</p></td>
+<td dk:border="right"><p>??</p></td>
+<td dk:border="right"><p>??</p></td>
+<td dk:border="right"><p><code>AA</code></p></td>
+<td dk:border="right"><p><code>D3</code></p></td>
+<td dk:border="right"><p><code>B4</code></p></td>
+<td dk:border="right"><p><code>35</code></p></td>
+<td dk:border="right"><p><code>B5</code></p></td>
+<td dk:border="right"><p><code>14</code></p></td>
+<td dk:border="right"><p><code>04</code></p></td>
+<td dk:border="right"><p><code>EE</code></p></td>
+<td dk:border="right"><p><code>00</code></p></td>
+<td dk:border="right"><p><code>00</code></p></td>
+<td dk:border="right"><p><code>00</code></p></td>
+<td dk:border="right"><p><code>00</code></p></td>
+<td><p><code>00</code></p></td>
+</tr>
+</tbody>
+</table>
+
+<p>Now the problem is obvious. If the original password was
+seven bytes or less, then almost two-thirds of the encryption key used
+to generate the LM Response will be a known, constant value.  The
+password cracking tools leverage this information to reduce the size
+of the <em>keyspace</em> (the set of possible passwords) that needs to
+be tested to find the password. Less obvious, but clear enough if you
+study the LM Response algorithm closely, is that short passwords are
+only part of the problem. Because the hash is created in pieces, it is
+possible to attack the password in 7-byte chunks even if it is longer
+than 7 bytes.</p>
+
+<p>Converting to uppercase also diminishes the keyspace, because
+lowercase characters do not need to be tested at all. The smaller the
+keyspace, the faster a dictionary or brute-force attack can run
+through the possible options and discover the original
+password.<fn>Jeremy Allison<idx>Allison, Jeremy</idx> proved it could
+be done with a little tool called
+<code>PWdump</code>.<idx>PWdump</idx> Mudge<idx>Mudge</idx> and other
+folks at the L0pht then expanded on the idea and built the now
+semi-infamous <code>L0phtCrack</code><idx>L0phtCrack</idx> tool. In
+July of 1997, Mudge posted a long and detailed description of the
+decomposition of LM challenge/response, a copy of which can be found
+at:
+<url>http://www.insecure.org/<dk:br/>sploits/l0phtcrack.lanman.problems.html</url>. For
+a curious counterpoint, see <cite>Microsoft Knowledge Base Article
+#147706</cite>.</fn></p>
+
+</h2s></h1s><h1 id="SMB2.8.4">NTLM Challenge/Response</h1><h1s>
+
+<p>At some point in the evolution of Windows NT a new, improved
+challenge/response<idx>NTLM<sidx>challenge/response</sidx></idx>
+formula was introduced. It was similar to the LAN Manager<idx>LM</idx>
+version, with the following changes:</p>
+
+<ol>
+<li><p>Instead of using the uppercase ASCII (OEM character set)
+password, NTLM challenge/response generates the hash from the
+mixed-case Unicode<idx>Unicode</idx> (UCS-2LE<idx>UCS-2LE</idx>) representation of the password. This
+change alone makes the password much more difficult to crack.</p></li>
+
+<li><p>Instead of the <code>DES()</code> function, NTLM uses the
+<code>MD4()</code><idx>MD4</idx> message digest function described in
+RFC 1320. This function produces a 16-byte hash (the NTLM
+Hash)<fn>Andrew Bartlett<idx>Bartlett, Andrew</idx> prefers to call
+this the "NT Hash," stating that the NT Hash<idx>NT Hash</idx> is
+passed through the LM response algorithm to produce the NTLM (NT+LM)
+response.</fn> but requires no padding or trimming of the input
+(though the resulting 16-byte NTLM
+Hash<idx>NTLM<sidx>Hash</sidx></idx> is still padded with nuls to 21
+bytes for use in generating the NTLM Response.)</p></li>
+
+<li><p>The NTLM Response is sent to the server in the
+<code>SESSION_SETUP_ANDX.Case<u>Sensitive</u>Password</code><idx>SESSION
+SETUP</idx><idx>CaseSensitivePassword</idx> field.</p></li>
+</ol>
+
+<p dk:indent="no">...and that's basically it. The rest of the formula is the
+same.</p>
+
+<p>So what does it buy us?</p>
+
+<p>The first advantage of NTLM is that the passwords are more
+complex. They're mixed case and in Unicode, which means that the
+keyspace is much larger. The second advantage over LM is that the
+<code>MD4()</code> function doesn't require fixed length input. That
+means no padding bytes and no chopping to over-simplify the keys.  The
+NTLM Hash itself is more robust than the LM Hash, so the NTLM Response
+is much more difficult to reverse.</p>
+
+<p>Unfortunately, the NTLM Response is still created using the same
+algorithm as is used with LM, which provides only 56-bit
+encryption. Worse, clients often include <em>both</em> the NTLM
+Response <em>and</em> the LM Response (derived from the weaker LM
+Hash) in the <code>SESSION SETUP ANDX REQUEST</code>. They do this to
+maintain backward compatibility with older servers. Even if the server
+refuses to accept the LM Response, the client has sent it.  Ouch.<idx
+end="c15-hash">LM<sidx>Hash</sidx></idx></p>
+
+<alert type="Brain Overflow">
+
+<p>The next section describes the NTLMv2 algorithm. It's not really
+that difficult, but it can get tedious - especially if your head is
+still swimming from the LM and NTLM algorithms. Jerry
+Carter<idx>Carter, Gerald (Jerry)</idx> of the Samba Team<idx>Samba<sidx>Team</sidx></idx> warns that your brain
+may explode if you try to understand it all the first time
+through. (Most veteran CIFS engineers have had this happen at least
+twice.)</p>
+
+<p>You may want to skim through <snumref refid="SMB2.8.5"/> and
+possibly <snumref refid="SMB2.8.9"/>, which describes <b>M</b>essage
+<b>A</b>uthentication <b>C</b>odes (MACs<idx>MAC</idx>).  You can
+always come back and read them again after you've iced your cranium.
+</p>
+</alert>
+
+</h1s><h1 id="SMB2.8.5">NTLM Version 2</h1><h1s>
+
+<p>NTLMv2, as it's called, has some additional safeguards thrown into
+the recipe that make it more complex - and hopefully more secure -
+than its predecessors. There are, however, two small problems with
+NTLMv2:</p>
+
+<ul>
+<li><p>Good documentation on the inner workings of NTLMv2 is
+rare.</p></li>
+
+<li><p>Although it is widely available, NTLMv2 does not seem to be
+widely used.</p></li>
+</ul>
+
+<p>Regarding the first point, Appendix B of Luke K. C. Leighton's
+book<idx>Leighton, Luke Kenneth Casson</idx> <cite>DCE/RPC over SMB:
+Samba<idx>Samba</idx> and Windows NT Domain Internals</cite> provides a recipe for
+NTLMv2 authentication. We'll do our best to expand on Luke's
+description. The other option, of course, is to look at available Open
+<dk:nobr>Source code.</dk:nobr></p>
+
+<p>The second point is really a conjecture, based in part on the fact
+that it took a very long time to get NTLMv2 implemented in Samba and
+few seemed to care. Indeed, NTLMv2 support had already been added to
+Samba-TNG<idx>Samba-TNG</idx> by Luke and crew, and needed only to be copied over. It
+seems that the delay in adding it to Samba was not a question of
+know-how, but of priorities.</p>
+
+<p>Another factor is that NTLMv2 is not required by default on most
+Windows systems. When
+challenge/response<idx>NTLM<sidx>challenge/response</sidx></idx> is
+negotiated, even newer Windows versions will default to using the
+LM/NTLM combination unless they are specifically configured not
+to.<idx end="c15-lm-ch-r">LM<sidx>challenge/response</sidx></idx> </p>
+
+<h2 id="SMB2.8.5.1">The NTLMv2 Toolbox</h2><h2s>
+
+<p>We have already fussed with the DES algorithm and toyed with the
+MD4<idx>MD4</idx> algorithm. Now we get to use the HMAC-MD5<idx
+start="c15-HMAC-MD5">HMAC-MD5</idx> Message Authentication Code
+hash.<idx>LM<sidx>Hash</sidx></idx> This one's a power tool with
+razor-sharp keys and swivel-action hashing. The kind of thing your Dad
+would never let you play with when you were a kid. Like all good
+tools, though, it's neither complex nor dangerous once you learn how
+it works.</p>
+
+<fig id="Figure2.13">
+<img dk:width="240" loc="SMB13"/>
+<caption>HMAC-MD5</caption>
+<subcaption><p>The HMAC-MD5 is a popular tool for use in message
+authentication.  It is lightweight, <dk:nobr>powerful,</dk:nobr> efficient, and
+ergonomic.<idx>Sharpe<sidx>Thang</sidx></idx></p></subcaption>
+</fig>
+
+<p>HMAC-MD5 is actually a combination of two different algorithms:
+HMAC and MD5<idx>MD5</idx>. HMAC is a <b>M</b>essage
+<b>A</b>uthentication <b>C</b>ode (MAC<idx>MAC</idx>) algorithm that
+takes a hashing function (such as MD5) and adds a secret key to the
+works so that the resulting hash can be used to verify the
+<em>authenticity</em> of the data. The MD5 algorithm is basically an
+industrial-strength version of MD4. Put them together and you get
+HMAC-MD5.</p>
+
+<p>HMAC-MD5 is quite well documented,<fn>MD4 is explained in RFC 1320
+and MD5 is in RFC 1321; HMAC in general, and
+<dk:nobr>HMAC-MD5</dk:nobr> in particular, is written up in RFC 2104 -
+an embarrassment of riches! As usual with this sort of thing, a deeper
+understanding can be gained by reading about it in Bruce
+Schneier's<idx>Schneier, Bruce</idx> <cite>Applied Cryptography,
+Second Edition</cite> (see the References section).</fn> and there are
+a lot of implementations available. It's also much less complicated
+than it appears in <dk:nobr><ref refid="Figure2.13"/>,</dk:nobr> so we
+won't need to go into any of the details. For our purposes, what you
+need to know is that the <code>HMAC_MD5()</code> function takes a key
+and some source data as inputs, and returns a 16-byte
+<dk:nobr>(128-bit)</dk:nobr> output.</p>
+
+<p>Hmmm... Well, it's not actually quite that simple. See, MD4, MD5,
+and HMAC-MD5 all work with variable-length input, so they also need to
+know how big their input parameters are. The function call winds up
+looking <dk:nobr>something</dk:nobr> like this:</p>
+
+<pre>hash16 = HMAC_MD5( Key, KeySize, Data, DataSize );</pre>
+
+<p>There is, as it turns out, more than one way to skin an
+HMAC-MD5. Some implementations use a whole set of functions to compute
+the result:</p>
+
+<ul>
+<li><p>the first function accepts the key and creates an initial
+<em>context</em>,</p></li>
+
+<li><p>the second function may be called repeatedly, each time passing
+the context and the next block of data,</p></li>
+
+<li><p>and the final function is used to close the context and return
+the resulting hash.</p></li>
+</ul>
+
+<p>Conceptually, though, the multi-function approach is the same as
+the simpler example shown above. That is: <code>Key</code> and
+<code>Data</code> in, 16-byte hash out.</p>
+
+<alert type="Not Quite Entirely Unlike Standard">
+
+<p>The HMAC-MD5 function can handle very large <code>Key</code>
+inputs.  Internally, though, there is a maximum keysize of 64
+bytes. If the key is too long, the function uses the MD5 hash of the
+key instead.  In other words, inside the <code>HMAC_MD5()</code>
+function there is some code that does this:</p>
+
+<pre>if( KeySize &gt; 64 )
+  {
+  Key = MD5( Key, KeySize );
+  KeySize = 16;
+  }</pre>
+
+<p>In his book, Luke explains that the function used by Windows
+systems is actually a variation on HMAC-MD5 known as
+HMACT64<idx>HMACT64</idx>, which can be quickly defined <dk:nobr>as
+follows:</dk:nobr></p>
+
+<pre>#define HMACT64( K, Ks, D, Ds ) \
+        HMAC_MD5( K, ((Ks &gt; 64)?64:Ks), D, Ds )
+</pre>
+
+<p>In other words, the <code>HMACT64()</code> function is the same as
+<code>HMAC_MD5()</code> except that it truncates the input
+<code>Key</code> to 64 bytes rather than hashing it down to 16&nbsp;bytes
+using the <code>MD5()</code> function as prescribed in the
+specification.</p>
+
+<p>As you read on, you will probably notice that the keys used by the
+NTLMv2
+challenge/response<idx>NTLMv2<sidx>challenge/response</sidx></idx>
+algorithm are never more that 16 bytes, so the distinction is moot for
+our purposes. We bother to explain it only because
+<code>HMACT64()</code> may be used elsewhere in CIFS (in some dark
+corner that we have not visited) and it might be a useful tidbit of
+information for you to have.</p>
+</alert>
+
+<p>Another important tool is the older NTLM
+hash<idx>NTLM<sidx>Hash</sidx></idx> algorithm. It was described
+earlier but it is simple enough that we can present it again, this
+time in pseudo-code:</p>
+
+<pre>uchar *NTLMhash( uchar *password )
+  {
+  UniPasswd = UCS2LE( password );
+  KeySize   = 2 * strlen( password );
+  return( MD4( UniPasswd, KeySize ) );
+  }
+</pre>
+
+<p>The ASCII password is converted to Unicode<idx>Unicode</idx>
+UCS-2LE<idx>UCS-2LE</idx> format, which requires two bytes per
+character. The <code>KeySize</code> is simply the length of that
+(Unicode) password string, which we calculate here by doubling the
+ASCII string length (which is probably cheating). Finally, we generate
+the MD4 hash (that's MD<em>4</em>, not MD<em>5</em>) of the password,
+and that's all there is to it.</p>
+
+<p>Note that the string terminator is not counted in the
+<code>KeySize</code>. That is common behavior for
+NTLM<idx>NTLM<sidx>challenge/response</sidx></idx> and NTLMv2
+challenge/response when working with Unicode strings.</p>
+
+<p>The NTLM Hash is of interest because the SMB/CIFS designers at
+Microsoft<idx>Microsoft</idx> (if indeed such people truly exist any
+more, except in legend) used it to cleverly avoid upgrade
+problems. With LM and NTLM, the hash is created from the
+password. Under NTLMv2, however, the older NTLM (v1) Hash is used
+<em>instead of the password</em> to generate the new hash. A server or
+Domain Controller being upgraded to use NTLMv2 may already have the
+older NTLM hash values in its authentication database. The stored
+values can be used to generate the new hashes - no password
+required. That avoids the nasty chicken-and-egg problem of trying to
+upgrade to NTLMv2 Hashes on a system that only allows NTLMv2
+authentication.<idx end="c15-DES">DES</idx></p>
+
+</h2s><h2 id="SMB2.8.5.2">The NTLMv2 Password Hash</h2><h2s>
+
+<p>The NTLMv2 Hash<idx>NTLMv2<sidx>hash</sidx></idx> is created from:</p>
+
+<ul>
+<li><p>the NTLM Hash<idx>NTLM<sidx>challenge/response</sidx></idx>
+(which, of course, is derived from the password),</p></li>
+
+<li><p>the user's username, and</p></li>
+
+<li><p>the name of the logon destination.</p></li>
+</ul>
+
+<p>The process works as shown in the following pseudo-code
+example:</p>
+
+<pre>v1hash  = NTLMhash( password );
+UniUser = UCS2LE( upcase( user ) );
+UniDest = UCS2LE( upcase( destination ) );
+data    = uni_strcat( UniUser, UniDest );
+datalen = 2 * (strlen( user ) + strlen( destination ));
+v2hash  = HMAC_MD5( v1hash, 16, data, datalen );
+</pre>
+
+<p>Let's clarify that, shall we?</p>
+
+<dl>
+<dt><code>v1hash</code></dt>
+
+<dd><p>The NTLM Hash, calculated as described previously.</p></dd>
+
+<dt><code>UniUser</code></dt>
+
+<dd><p>The username, converted to uppercase UCS-2LE<idx>UCS-2LE</idx> Unicode.<idx>Unicode</idx></p></dd>
+
+<dt><code>UniDest</code></dt>
+
+<dd><p>The NetBIOS name<idx>NetBIOS<sidx>name</sidx></idx> of either
+the SMB server or NT Domain<idx>NT Domain</idx> against which the user
+is trying to authenticate.</p></dd>
+
+<dt><code>data</code></dt>
+
+<dd><p>The two Unicode strings are concatenated and passed as the
+<code>Data</code> <dk:nobr>parameter</dk:nobr> to the <code>HMAC_MD5()</code> function.</p></dd>
+
+<dt><code>datalen</code></dt>
+
+<dd><p>The length of the concatenated Unicode strings, excluding the
+nul termination. Once again, doubling the ASCII string lengths is
+probably <dk:nobr>cheating.</dk:nobr></p></dd>
+
+<dt><code>v2hash</code></dt>
+
+<dd><p>The NTLM Version 2 Hash.</p></dd>
+</dl>
+
+<p>A bit more explanation is required regarding the
+<code>destination</code> value (which gets converted to
+<code>UniDest</code>).</p>
+
+<p>In theory, the client can use NTLMv2
+challenge/response<idx>NTLMv2<sidx>challenge/response</sidx></idx> to
+log into a standalone server <em>or</em> to log into an NT Domain. In
+the former case, the server will have an authentication database of
+its very own, but an NT Domain logon requires authentication against
+the central database maintained by the <dk:nobr>Domain
+Controllers.<idx>DC</idx></dk:nobr></p>
+
+<p>So, in theory, the destination name could be either the NetBIOS
+name of the standalone server <em>or</em> the NetBIOS name of the NT
+Domain (no NetBIOS suffix byte<idx>suffix byte</idx> in either
+case). In practice, however, the server logon doesn't seem to work
+reliably. The Windows systems used in testing were unable to use
+NTLMv2 authentication with one another when they were in standalone
+mode, but once they joined the NT Domain NTLMv2 logons worked just
+fine.<fn>The lab in the basement is somewhat limited which, in turn,
+limits my ability to do rigorous testing of esoteric CIFS nuances. You
+should probably verify these results yourself. Andrew Bartlett (him
+again!) turned up an interesting quirk regarding the NTLMv2 Response
+calculation when authenticating against a standalone server. It seems
+that the NT Domain name is left blank in the v2hash calculation. That
+is: <code>destination = "";</code></fn></p>
+
+</h2s><h2 id="SMB2.8.5.3">The NTLMv2 Response</h2><h2s>
+
+<p>The NTLMv2 Response is calculated using the NTLMv2 Hash as the
+<code>Key</code>. The <code>Data</code> parameter is composed of the
+challenge plus a blob of data which we will refer to as "the blob."
+The blob will be explained shortly. For now, just think of it as a
+mostly-random bunch of garblement. The formula is shown in this
+pseudo-code example:</p>
+
+<pre>blob = RandomBytes( blobsize );
+data = concat( ServerChallenge, 8, blob, blobsize );
+hmac = HMAC_MD5( v2hash, 16, data, (8 + blobsize) );
+v2resp = concat( hmac, 16, blob, blobsize );
+</pre>
+
+<p>Okay, let's take a closer look at that and see if we can force it to
+make some sense.</p>
+
+<ol>
+<li><p>The first step is blob generation. The blob is normally around
+64 bytes in size, give or take a few bytes. The pseudo-code above
+suggests that the bytes are entirely random, but in practice there is
+a formula (explained below) for creating the blob.</p></li>
+
+<li><p>The next step is to append the blob to the end of the
+challenge. This, of course, is the same challenge sent by the server
+and used by all of the other challenge/response mechanisms.</p>
+
+<table colwidths="6.25* 6.25* 6.25* 6.25* 6.25* 6.25* 6.25* 6.25* 6.25* 6.25* 6.25* 6.25* 6.25* 6.25* 6.25* 6.25*" dk:type="centered" dk:borders="all">
+<tbody>
+<tr dk:border="after" dk:display-align="after">
+<td dk:border="right"><p><code>0</code></p></td>
+<td dk:border="right"><p><code>1</code></p></td>
+<td dk:border="right"><p><code>2</code></p></td>
+<td dk:border="right"><p><code>3</code></p></td>
+<td dk:border="right"><p><code>4</code></p></td>
+<td dk:border="right"><p><code>5</code></p></td>
+<td dk:border="right"><p><code>6</code></p></td>
+<td dk:border="right"><p><code>7</code></p></td>
+<td dk:border="right"><p><code>8</code></p></td>
+<td dk:border="right"><p><code>9</code></p></td>
+<td dk:border="right"><p><code>10</code></p></td>
+<td dk:border="right"><p><code>11</code></p></td>
+<td dk:border="right"><p><code>12</code></p></td>
+<td dk:border="right"><p><code>.</code></p></td>
+<td dk:border="right"><p><code>.</code></p></td>
+<td><p><code>.</code></p></td>
+</tr>
+<tr>
+<td colspan="8" dk:border="right"><p><code>challenge</code></p></td>
+<td colspan="8"><p><code>blob...</code></p></td>
+</tr>
+</tbody></table>
+
+</li>
+
+<li><p>The challenge and blob are HMAC'd using the NTLMv2
+Hash<idx>NTLMv2<sidx>challenge/response</sidx></idx> as <dk:nobr>the
+key.</dk:nobr></p></li>
+
+<li><p>The NTLMv2 Response is created by appending the blob to the
+tail <dk:nobr>of the <code>HMAC_MD5()</code><idx
+end="c15-HMAC-MD5">HMAC-MD5</idx> result.</dk:nobr> That's 16 bytes of
+HMAC followed by <dk:nobr><code>blobsize</code></dk:nobr> bytes of
+blob.</p>
+
+<table colwidths="4.165* 4.165* 4.165* 4.165* 4.165* 4.165* 4.165* 4.165* 4.165* 4.165* 4.165* 4.165* 4.16* 4.16* 4.16* 4.16* 4.16* 4.16* 4.16* 4.16* 4.16* 4.16* 4.16* 4.16*" dk:type="centered" dk:borders="all">
+<tbody>
+<tr dk:border="after" dk:display-align="after">
+<td dk:border="right"><p><code>0</code></p></td>
+<td dk:border="right"><p><code>1</code></p></td>
+<td dk:border="right"><p><code>2</code></p></td>
+<td dk:border="right"><p><code>3</code></p></td>
+<td dk:border="right"><p><code>4</code></p></td>
+<td dk:border="right"><p><code>5</code></p></td>
+<td dk:border="right"><p><code>6</code></p></td>
+<td dk:border="right"><p><code>7</code></p></td>
+<td dk:border="right"><p><code>8</code></p></td>
+<td dk:border="right"><p><code>9</code></p></td>
+<td dk:border="right"><p><line><code>1</code></line>
+<line><code>0</code></line></p></td>
+<td dk:border="right"><p><line><code>1</code></line>
+<line><code>1</code></line></p></td>
+<td dk:border="right"><p><line><code>1</code></line>
+<line><code>2</code></line></p></td>
+<td dk:border="right"><p><line><code>1</code></line>
+<line><code>3</code></line></p></td>
+<td dk:border="right"><p><line><code>1</code></line>
+<line><code>4</code></line></p></td>
+<td dk:border="right"><p><line><code>1</code></line>
+<line><code>5</code></line></p></td>
+<td dk:border="right"><p><line><code>1</code></line>
+<line><code>6</code></line></p></td>
+<td dk:border="right"><p><line><code>1</code></line>
+<line><code>7</code></line></p></td>
+<td dk:border="right"><p><line><code>1</code></line>
+<line><code>8</code></line></p></td>
+<td dk:border="right"><p><line><code>1</code></line>
+<line><code>9</code></line></p></td>
+<td dk:border="right"><p><line><code>2</code></line>
+<line><code>0</code></line></p></td>
+<td dk:border="right"><p><code>.</code></p></td>
+<td dk:border="right"><p><code>.</code></p></td>
+<td><p><code>.</code></p></td>
+</tr>
+<tr>
+<td colspan="16" dk:border="right"><p><code>hmac</code></p></td>
+<td colspan="8"><p><code>blob...</code></p></td>
+</tr>
+</tbody></table>
+
+</li>
+</ol>
+
+<p>If the client sends the NTLMv2 Response, it will take the place of
+<dk:nobr>the NTLM Response in the</dk:nobr>
+<code>SESSION_SETUP_ANDX.Case<u>Sensitive</u><dk:hyphen/><dk:nobr>Password</dk:nobr></code> field.<idx>CaseSensitivePassword</idx>
+Note that, unlike the older NTLM Response, the NTLMv2 Response
+algorithm uses 128-bit encryption all the way through. </p>
+
+</h2s><h2 id="SMB2.8.5.4">Creating the Blob</h2><h2s>
+
+<p>If you have ever taken a college-level Invertebrate
+Zoology course, you may find the dissection of the
+blob to be nauseatingly familiar. The rest of you... try not to be
+squeamish. One more warning before we cut into this: The blob's
+structure may not matter at all. We'll explain why a little later
+on.</p>
+
+<p>Okay, now that the disclaimers are out of the way, we can get back
+to work. The blob does have a structure, which is more or less as
+follows:</p>
+
+<dl>
+<dt>4 bytes</dt>
+
+<dd><p>The value seen in testing is consistently
+<code>0x01010000</code>. (Note that those are nibbles, not bits.) The
+field is broken out as follows:</p>
+
+<dl>
+<dt>1&#160;byte</dt>
+
+<dd><p>Response type identification number. The only known value is
+<code>0x01</code>.</p></dd>
+
+<dt>1&#160;byte</dt>
+
+<dd><p>The identification number of the maximum response type that the
+client understands. Again, the only known value is
+<code>0x01</code>.</p></dd>
+
+<dt>2&#160;bytes</dt>
+<dd><p>Reserved. Must be zero (<code>0x0000</code>).</p></dd>
+</dl>
+</dd>
+
+<dt>4 bytes</dt>
+
+<dd><p>The value seen in testing is always <code>0x00000000</code>.
+This field may, however, be reserved for some purpose.</p></dd>
+
+<dt>8 bytes</dt>
+
+<dd><p>A timestamp, in the same 64-bit format as described back in
+<ref refid="SMB2.6.3.1"/>.</p></dd>
+
+<dt>8 bytes</dt>
+<dd><p>The "blip": An eight-byte random value, sometimes
+referred to as the "Client Challenge." More on this later, when we
+talk about LMv2<idx>LMv2</idx> <dk:nobr>challenge/response.</dk:nobr></p></dd>
+
+<dt>4 bytes</dt>
+<dd><p>Unknown.</p>
+
+<p>Comments in the Samba-TNG<idx>Samba-TNG</idx> code and other sources suggest that this
+is meant to be either a 4-byte field or a pair of 2-byte fields.
+These fields should contain offsets to other data. That
+interpretation is probably based on empirical observation, but in
+the testing done for this book there was no pattern to the data in
+these fields. It may be that some implementations provide offsets
+and others just fill this space with left-over buffer garbage.
+Variety is the spice of life.</p></dd>
+
+<dt>variable&#160;length</dt>
+<dd><p>A list of structures containing NetBIOS names in Unicode.</p></dd>
+
+<dt>4 bytes</dt>
+<dd><p>Unknown. (Appears to be more buffer garbage.)</p></dd>
+</dl>
+
+<p>The list of names near the end of the blob may contain the NT
+Domain<idx>NT Domain</idx> and/or the server name. As with the names
+used to generate the NTLMv2 Hash,<idx>NTLMv2<sidx>hash</sidx></idx>
+these are NetBIOS names in uppercase UCS-2LE<idx>UCS-2LE</idx> Unicode with no string
+termination and no suffix byte<idx>suffix byte</idx>. The name list
+also has a structure:</p>
+
+<dl>
+<dt>2 bytes</dt>
+<dd><p>Name type.</p>
+
+<dl>
+<dt><code>0x0000</code></dt>
+
+<dd><p>Indicates the end of the list.</p></dd>
+
+<dt><code>0x0001</code></dt>
+<dd><p>The name is a NetBIOS machine name (e.g. a server
+name).</p></dd>
+
+<dt><code>0x0002</code></dt> 
+
+<dd><p>The name is an NT Domain NetBIOS
+name.<idx>NetBIOS<sidx>name</sidx></idx></p></dd>
+
+<dt><code>0x0003</code></dt>
+<dd><p>The name is the server's DNS hostname.<idx>DNS</idx></p></dd>
+
+<dt><code>0x0004</code></dt>
+<dd><p>The name is a W2K Domain<idx>W2K Domain</idx> name (a DNS name).</p></dd>
+</dl>
+</dd>
+
+<dt>2 bytes</dt>
+<dd><p>The length, in bytes, of the name. If the name
+type is <code>0x0000</code>, then this field will also be
+<code>0x0000</code>.</p></dd>
+
+<dt>variable&#160;length</dt>
+<dd><p>The name, in uppercase UCS-2LE<idx>UCS-2LE</idx> Unicode<idx>Unicode</idx> format.</p></dd>
+</dl>
+
+<p>The blob structure is probably related to (the same as?) data
+formats used in the more advanced security systems available under
+Extended Security.<fn>Luke Kenneth Casson Leighton's<idx>Leighton,
+Luke Kenneth Casson</idx> book <cite>DCE/RPC over SMB:
+Samba<idx>Samba</idx> and Windows NT Domain<idx>NT Domain</idx>
+Internals</cite> gives an outline of the structure of the data blob
+used in NTLMv2 Response creation. Using Luke's book as a starting
+point, the details presented above were worked out during a late-night
+IRC session. My thanks to Andrew Bartlett<idx>Bartlett, Andrew</idx>,
+Richard Sharpe<idx>Sharpe<sidx>Richard</sidx></idx>, and Vance
+Lankhaar<idx>Lankhaar, Vance</idx> for their patience, commitment, and
+sudden flashes of insight. Thanks also to Luke Howard<idx>Howard,
+Luke</idx> for later clarifying some of the finer points.</fn>
+</p>
+
+</h2s><h2 id="SMB2.8.5.5">Improved Security Through Confusion</h2><h2s>
+
+<p>Now that we have the formula worked out, let's take a closer look
+at the NTLMv2
+challenge/response<idx>NTLMv2<sidx>challenge/response</sidx></idx>
+algorithm and see how much better it is <dk:nobr>than
+NTLM.<idx>NTLM<sidx>challenge/response</sidx></idx></dk:nobr></p>
+
+<p>With the exception of the password itself, all of the inputs to
+NTLMv2 are known or knowable from a packet capture. Even the blob can
+be read off the wire, since it is sent as part of the response.  That
+means that the problem is still a not-so-simple case of solving for a
+single variable: the password.</p>
+
+<p>The NTLMv2 Hash is derived directly from the NTLM (v1) Hash.  Since
+there is no change to the initial input (the password), the keyspace is
+exactly the same. The only change is that the increased complexity of
+the algorithm means that there are more encryption hoops through which
+to jump compared to the simpler NTLM process. It takes more computer time
+to generate a v2 response, which doesn't impact a normal login but
+will slow down dictionary and brute force attacks against NTLMv2
+(though Moore's Law may compensate). Weak passwords (those that are
+near the beginning of the password dictionary) are still
+vulnerable.</p>
+
+<p>Another thing to consider is the blob. If the blob were zero length
+(empty), the NTLMv2 Response formula would reduce to:</p>
+
+<pre>v2resp = HMAC_MD5( v2hash, ServerChallenge );<idx>HMAC-MD5</idx></pre>
+
+<p dk:indent="no">which would still be pretty darn secure. So the
+question is this: Does the inclusion of the blob improve the NTLMv2
+algorithm and, if so, how?</p>
+
+<p>Well, see, it's like this... Instead of being produced by the
+key and challenge alone, the NTLMv2 Response involves the hash of a
+chunk of semi-random data. As a result, the same challenge will
+<em>not</em> always generate the same response. That's good, because
+it prevents replay attacks... in theory.</p>
+
+<p>In practice, the randomness of the challenge should be enough to
+prevent replay attacks. Even if that were not the case, the only way
+that the blob could help would be if it, too, were non-repeating
+<em>and</em> if the server could somehow verify that the blob was not
+a repeat. That, quite possibly, is why the timestamp is included.</p>
+
+<p>The timestamp could be used to let the server know that the blob is
+"fresh" - that is, that it was created a reasonably short amount of
+time before it was received. Fresh packets can't easily be forged
+because the response is HMAC-signed using the v2hash as the key (and
+that's based on the password which is the very thing the cracker
+doesn't know). Of course, the timestamp test won't work unless the
+client and server clocks are synchronized, which is not always the
+case.</p>
+
+<p>In all likelihood the contents of the blob are never tested at
+all. There is code and commentary in the Samba-TNG<idx>Samba-TNG</idx> source showing
+that they have done some testing, and that their results indicate that
+a completely random blob of bytes works just fine. If that's true,
+then the blob does little to improve the security of the algorithm
+except perhaps by adding a few more CPU cycles to the processing
+time.</p>
+
+<p>Bottom line: NTLMv2
+challenge/response<idx>NTLMv2<sidx>challenge/response</sidx></idx>
+provides only a minimal improvement over its predecessor.</p>
+
+<p>This isn't the first time that we have put a lot of effort into
+figuring out some complex piece of the protocol only to discover that
+it's almost pointless, and it probably won't be the last time
+either. </p>
+
+<email>
+<pre>   From: Ronald Tschal&auml;r<idx>Tschal&auml;r, Ronald</idx>
+     To: Chris Hertel
+Subject: The point of client nonces
+
+In section 15.5.5 you talk about the "client challenge" a bit, but 
+miss the point of it: the client nonce (as it should really more 
+correctly be called) is there to prevent precomputed dictionary 
+attacks by the server, and has nothing to do with replay attacks 
+against the server (which, as you correctly state, is what the 
+server-challenge is for).
+
+If there's no client nonce, then a rogue server can pick a fixed
+server-nonce (server-challenge), take dictionary, and precompute all 
+the responses. Then any time a client connects to it it sends the 
+fixed challenge, and upon receipt of the client's response it can do 
+a simple database lookup to find the password (assuming the password 
+was in the dictionary). However, if the client adds its own bit of 
+random stuff to the response computation, then this attack (by the 
+server) is not possible. Hence the client-nonce.
+
+Even with client nonces a rogue server can still try to use a
+dictionary to figure out your password, but the server has to run 
+the complete dictionary on each response, instead of being able to
+precompute and use the results for all responses.</pre>
+</email>
+
+</h2s><h2 id="SMB2.8.5.6">Insult to Injury: LMv2</h2><h2s>
+
+<p><idx
+start="c15-lm-ch-r-2">LM<sidx>challenge/response</sidx></idx><idx
+start="c15-lmv2">LMv2</idx>There is yet one more small problem with
+the NTLMv2 Response,<idx>NTLMv2<sidx>challenge/response</sidx></idx>
+and that problem is known as <em>pass-through</em> authentication.
+Simply put, a server can <em>pass</em> the authentication process
+<em>through</em> to an NT Domain Controller.<idx>DC</idx> The trouble
+is that some servers that use pass-through assume that the response
+string is only 24 bytes long.</p>
+
+<p>You may recall that both the LM and NTLM responses are, in fact, 24
+bytes long. Because of the blob, however, the NTLMv2 response is much
+longer. If a server truncates the response to 24 bytes before
+forwarding it to the NT Domain Controller almost all of the blob will
+be lost. Without the blob, the Domain Controller will have no way to
+verify the response so authentication will fail.</p>
+
+<p>To compensate, a simpler response - known as the LMv2 response - is
+also calculated and returned alongside the NTLMv2 response. The
+formula is identical to that of NTLMv2, except that the blob is really
+small.</p>
+
+<pre>blip = RandomBytes( 8 );
+data = concat( ServerChallenge, 8, blip, 8 );
+hmac = HMAC_MD5( v2hash, 16, data, 16 );<idx>HMAC-MD5</idx>
+LMv2resp = concat( hmac, 16, blip, 8 );
+</pre>
+
+<p>The "blip," as we've chosen to call it, is sometimes referred to as
+the "Client Challenge." If you go back and look, you'll find that the
+blip value is also included in the blob, just after the timestamp. It
+is fairly easy to spot in packet captures. The blip is 8 bytes long so
+that the resulting LMv2 Response will be 24 bytes, exactly the size
+needed for pass-through authentication.</p>
+
+<p>If it is true that the contents of the blob are not checked, then
+the LMv2 Response isn't really any less secure than the NTLMv2
+Response - even though the latter is bigger.</p>
+
+<p>The LMv2 Response takes the place of the LM Response in the
+<dk:nobr><code>SESSION_SETUP_ANDX.CaseInsensitivePassword</code>
+<idx>CaseInsensitivePassword</idx>field.</dk:nobr></p>
+
+</h2s><h2 id="SMB2.8.5.7">Choosing NTLMv2</h2><h2s>
+
+<p>The use of NTLMv2 is <em>not</em> negotiated between the client and
+the server. There is nothing in the protocol to determine which
+challenge/response algorithms should be used.</p>
+
+<p>So, um... how does the client know what to send, and how does the
+server know what to expect?</p>
+
+<p>The default behavior for Windows clients is to send the LM and NTLM
+responses, and the default for Windows servers is to accept
+them. Changing these defaults requires fiddling in the Windows
+registry. Fortunately, the fiddles are well known and documented so we
+can go through them quickly and get them out of the way.<fn>A quick
+web search for "LMCompatibility" will turn up a lot of references,
+<cite>Microsoft Knowledge Base Article #147706</cite> among them.</fn></p>
+
+<p>The registry path to look at is:</p>
+
+<pre>HKEY_LOCAL_MACHINE\System\CurrentControlSet\Control\LSA</pre>
+
+<p>On Windows 9x the variable is called
+<code>LMCompatibility</code>, but on Windows NT and 2000 it is
+<code>LMCompatibilityLevel</code>. That variable may not be present
+in the registry, so you might have to add it. In general, it's best
+to follow Microsoft's<idx>Microsoft</idx> instructions when editing the
+registry.<fn>...so that if something goes wrong you can blame them,
+and not me.</fn></p>
+
+<p>The settings for <code>LMCompatibilityLevel</code> are as
+follows:</p>
+
+<table colwidths="7.5* 15* 39* 38.5*">
+<thead>
+<tr dk:border="after">
+<th><p>Level</p></th>
+<th><p>Description</p></th>
+<th><p>Client Implications</p></th>
+<th><p>Server Implications</p></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><p><b>0</b></p></td>
+<td><p><b>The Default</b></p></td>
+<td dk:padding-right="8pt"><p>LM and NTLM responses are sent by the client.</p></td>
+<td><p>The server or Domain Controller<idx>DC</idx> will compare the client's
+responses against the LM, NTLM, LMv2, and NTLMv2 responses. Any valid
+response is acceptable.</p></td>
+</tr>
+<tr>
+<td><p><b>1</b></p></td>
+<td><p><b>NTLMv2 Session Security</b></p></td>
+
+<td colspan="2" dk:align="left"><p>This level does nothing to change the algorithm
+used to generate the response. Instead, at this level and higher a
+feature called NTLMv2 Session Security is supported.  Session Security
+is only used with Extended Security, and must be negotiated between
+the client and the server. Session Security is an advanced topic, and
+won't be covered here.</p></td>
+</tr>
+<tr>
+<td><p><b>2</b></p></td>
+<td><p><b>NTLM Authenti<dk:hyphen/>cation</b></p></td>
+
+<td dk:padding-right="8pt"><p>The LM Response is not sent by the
+client.  Instead, the NTLM Response is sent in both password fields.
+Replacing the LM Response with the NTLM Response facilitates
+pass-through authentication. Servers need only hand the 24-byte
+contents of the
+<code>SESSION_SETUP_ANDX.Case<dk:hyphen/>InsensitivePassword</code>
+<idx>CaseInsensitivePassword</idx>field along to the Domain
+Controller.</p></td>
+
+<td><p>The server or Domain Controller will accept a
+valid LM, NTLM, LMv2, or NTLMv2 response.</p></td>
+</tr>
+<tr>
+<td><p><b>3</b></p></td>
+<td><p><b>NTLMv2 Authenti<dk:hyphen/>cation</b></p></td>
+
+<td dk:padding-right="8pt"><p>The client sends the LMv2 and NTLMv2 responses in place of the
+older LM and NTLM values.</p></td>
+
+<td><p>The server or Domain Controller will accept a valid LM, NTLM,
+LMv2, or NTLMv2 response.</p></td>
+</tr>
+<tr>
+<td><p><b>4</b></p></td>
+<td><p><b>NTLM Required</b></p></td>
+<td dk:padding-right="8pt"><p>The client sends the LMv2 and NTLMv2
+responses.</p></td>
+<td><p>At this level, the server or Domain Controller
+will not check LM Responses. It will compare responses using the
+NTLM, LMv2, and/or NTLMv2 algorithms.</p></td>
+</tr>
+<tr>
+<td><p><b>5</b></p></td>
+<td><p><b>NTLMv2 Required</b></p></td>
+<td dk:padding-right="8pt"><p>The client sends the LMv2 and NTLMv2 responses.</p></td>
+<td><p>The server or Domain Controller will compare the
+client's responses using the LMv2 and NTLMv2 algorithms only.</p></td>
+</tr>
+</tbody>
+</table>
+
+<p>That's just a quick overview of the settings and
+their meanings.  The important points are these:</p>
+
+<ul>
+<li><p>The password hash type is <em>not</em> negotiated on the wire,
+but determined by client and/or server configuration. If the client
+and server configurations are incompatible, authentication will
+fail.</p></li>
+
+<li><p>The SMB server or Domain Controller may try several comparisons
+in order to determine whether or not a given response is valid.<idx
+end="c15-ch-r">challenge/response</idx><idx
+end="c15-lm-ch-r-2">LM<sidx>challenge/response</sidx></idx><idx
+end="c15-lmv2">LMv2</idx></p></li>
+</ul>
+
+</h2s></h1s><h1 id="SMB2.8.6">Extended Security: That Light at the End of&nbsp;the&nbsp;Tunnel</h1><h1s>
+
+<p>Our discussion of SMB authentication mechanisms is winding down
+now. There are a few more topics to be covered and a few others that
+will be carefully, but purposefully, avoided. Extended Security falls
+somewhere in between. We will dip our toes into its troubled waters,
+but we won't wade in too deep (or the monsters might get us).</p>
+
+<p>One reason for trepidation is that - as of this writing - Extended
+Security is still an area of active research and development for the
+Samba Team<idx>Samba<sidx>Team</sidx></idx> and others. Though much
+has been learned, and much has been implemented, the dark pools are
+still being explored and the fine points are still being
+examined. Another deterrent is that Extended Security represents a
+full set of sub-protocols - a whole, vast world of possibilities to be
+explored... some other day. As with MS-RPC<idx>MS-RPC</idx> (which we
+touched on just long enough to get our fingers burned), the topic is
+simply too large to cover here.</p>
+
+<p>As suggested in <ref refid="Figure2.14"/>, Extended Security makes
+use of nested <dk:nobr>protocols.</dk:nobr> Go back to <ref
+refid="SMB2.6.3.2"/> and take a look at the
+<dk:nobr><code>NEGOTIATE_PROTOCOL_RESPONSE.SMB_DATA</code><idx>NEGOTIATE
+PROTOCOL</idx></dk:nobr> structure. Note that the
+<code>ext_sec.SecurityBlob</code><idx>SecurityBlob</idx> field is
+nothing more than a block of bytes - and it's what's inside that block
+that matters. If the client and server agree to use Extended Security,
+then the whole <code>NEGOTIATE PROTOCOL RESPONSE</code> /
+<code>SESSION SETUP REQUEST</code><idx>SESSION SETUP</idx> business
+becomes a transport for the authentication protocol.</p>
+
+<fig id="Figure2.14">
+<img dk:width="200" loc="SMB14"/>
+<caption>Protocols nested like Russian dolls</caption>
+
+<subcaption><p>CIFS sub-protocols may be nested several layers
+deep. Extended Security, for example, is carried within SMB within NBT
+within TCP within IP.</p></subcaption>
+</fig>
+
+<p>In some cases the security exchange may require several packets and
+a few round trips to complete. When that happens, a single
+<code>NEGOTIATE PROTOCOL RESPONSE</code> / <code>SESSION SETUP
+REQUEST</code> pair will not be sufficient to handle it all. The
+solution to this dilemma is fairly simple: The server sends an error
+message to force the client to send another <code>SESSION SETUP
+REQUEST</code> containing the next chunk of data.
+</p>
+
+<p>The process is briefly (and incompletely) described in Section
+4.1.2 of the SNIA doc<idx>SNIA<sidx>CIFS Technical
+Reference</sidx></idx> as part of the discussion of the <code>SESSION
+SETUP RESPONSE</code>. Simply put, as long as there are more Extended
+Security packets required, the server will reply to the <code>SESSION
+SETUP REQUEST</code> by sending a <code>NEGATIVE SESSION SETUP
+RESPONSE</code> with an NT_STATUS<idx>NT_STATUS</idx> value of
+<code>0xC0000016</code> (which is known as
+<code>STATUS_MORE_PROCESSING_REQUIRED</code>). The client then sends
+another <code>SESSION SETUP REQUEST</code> containing the additional
+data. This continues until the authentication protocol has
+completed.</p>
+
+<p>There is no DOS error code<idx>DOS<sidx>error codes</sidx></idx>
+equivalent for <code>STATUS_MORE_PROCESSING_REQUIRED</code>, something
+we have already whined about in the <i>Strange Behavior Alert</i> back
+in <ref refid="SMB2.5.1"/>. It seems that Extended Security expects
+that the client can handle NT_STATUS codes, which may be a significant
+issue for anyone trying to implement an SMB client.<fn>It might be
+worth doing some testing if you really want to use DOS
+codes<idx>DOS<sidx>error codes</sidx></idx> in your implementation,
+but also want Extended Security. It may be possible to use the
+NT_STATUS<idx>NT_STATUS</idx> codes for this exchange only, or you
+might try interpreting any unrecognized DOS error code as if it were
+<code>STATUS_MORE_PROCESSING_REQUIRED</code>.</fn> </p>
+
+<h2>The Extended Security Authentication Toolkit</h2><h2s>
+
+<p>There are several different authentication protocols which may be
+carried within the
+<code>SecurityBlob</code><idx>SecurityBlob</idx>. Those protocols, in
+turn, are built on top of a whole pile of different languages and APIs
+and data transfer formats. The result is an alphabet soup of
+acronyms. Here's a taste:</p>
+
+<dl>
+<dt>ASN.1: Abstract Syntax Notation One</dt>
+
+<dd><p>ASN.1<idx>ASN.1</idx> is a language used to define the
+structure and content of objects such as data records and protocol
+messages. If you are not familiar with ASN.1, you might think of it as
+a super-duper-hyper version of the <code>typedef</code> in C - only a
+lot more powerful.  ASN.1 was developed as part of the Open Systems
+Interconnection (OSI) environment, and was originally used for writing
+specifications. More recently, though, tools have been developed that
+will generate software from ASN.1.</p>
+
+<p>The development and promotion of the ASN.1 language is managed
+by the ASN.1 Consortium.</p></dd>
+
+<dt>DER: Distinguished Encoding Rules of ASN.1</dt>
+
+<dd><p>DER is a set of rules for encoding and decoding ASN.1 data. It
+provides a standard format for transport of data over a network so
+that the receiving end can convert the data back into its correct
+ASN.1 format. DER is a specialized form of a more general encoding
+known as BER (<b>B</b>asic <b>E</b>ncoding <b>R</b>ules). DER is
+designed to work well with security protocols, and is used for
+encoding Kerberos and LDAP exchanges.</p></dd>
+
+<dt>GSS-API<idx>GSS-API</idx>: Generic Security Service Application
+Program Interface</dt>
+
+<dd><p>As the name suggests, GSS-API is a generic interface to a set of
+security services. It makes it possible to write software that does
+not care what the underlying security mechanisms actually are.
+GSS-API is documented in RFC 2078.</p></dd>
+
+<dt>Kerberos<idx>Kerberos</idx></dt> 
+
+<dd><p>("Kerberos" is a name, not an acronym.)</p> <p>Kerberos is
+<em>the</em> preferred authentication system for SMB over naked TCP/IP
+transport. The use of Kerberos with CIFS is also tied in with GSS-API
+and SPNEGO<idx>SPNEGO</idx>.</p></dd>
+
+<dt>LDAP<idx>LDAP</idx>: Lightweight Directory Access Protocol</dt> 
+
+<dd><p>Some folks at the University of Michigan realized that the
+DAP<idx>DAP</idx> protocol (which was designed as part of the the Open
+Systems Interconnection (OSI) environment for use with the
+X.500<idx>X.500</idx> directory system) was just too big and hairy for
+general-purpose use, so they came up with a "lightweight" version,
+known as LDAP. LDAP was popularized in the mid-1990's, and support was
+included with directory service implementations such as Novell's NDS
+(<b>N</b>ovell <b>D</b>irectory <b>S</b>ervice). When
+Microsoft<idx>Microsoft</idx> created their Active Directory system
+they followed Novell's lead and added LDAP support as well.</p></dd>
+
+<dt>MIDL<idx>MIDL</idx>: Microsoft Interface Definition Language</dt> 
+
+<dd><p>MIDL is Microsoft's version of the <b>I</b>nterface
+<b>D</b>efinition <b>L</b>anguage <dk:nobr>(IDL). It</dk:nobr> is used
+to specify the parameters to function calls, particularly function
+calls made across a network - things like Remote Procedure Call
+<dk:nobr>(RPC). MIDL</dk:nobr> is also used to define the interfaces
+to Microsoft DLL <dk:nobr>library functions.</dk:nobr></p></dd>
+
+<dt>MS-RPC<idx>MS-RPC</idx>: Microsoft Remote Procedure Call</dt> 
+
+<dd><p>Paul Leach<idx>Leach, Paul</idx> was one of the founders of
+Apollo Computer. At Apollo, he worked on a system for distributed
+computing that eventually became the DCE/RPC<idx>DCE/RPC</idx>
+system. When Hewlett-Packard purchased Apollo, Leach went to
+Microsoft. That's probably why the MS-RPC system is so remarkably
+similar to the DCE/RPC system.</p></dd>
+
+<dt>NDR: Network Data Representation</dt> 
+
+<dd><p>NDR is to DCE/RPC as DER (or BER) is to ASN.1. That is, NDR is
+an on-the-wire encoding for parameters passed via RPC. When an MS-RPC
+call is made on the client side, the parameters are converted into NDR
+format (<em>marshaled</em>) for transmission over the network. On the
+server side, the NDR formatted data is <em>unmarshaled</em> and passed
+into the called function. The process is then reversed to return the
+results.</p></dd>
+
+<dt>NTLMSSP<idx>NTLMSSP</idx>: NTLM Security Support Provider</dt>
+
+<dd><p>It seems there are a few variations on the interpretation of
+the acronym. A quick web search for "NTLMSSP" turns up <i>NTLM
+<u>Security</u> Service Provider</i> and <i>NTLM <u>Secure</u> Service
+Provider</i> in addition to <i>NTLM <u>Security Support</u>
+Provider</i>. No matter. They all amount to the same thing.</p>
+
+<p>NTLMSSP is a Windows authentication service that is accessed in
+much the same way as MS-RPC services. NTLMSSP authentication
+requests are formatted into a record structure and converted to NDR
+format for transport to the NTLMSSP authentication service
+provider. In addition to Extended Security, NTLMSSP authentication
+shows up in lots of odd places. It is even used by Microsoft
+Internet Explorer to authenticate HTTP (web) connections.</p></dd>
+
+<dt>SPNEGO: Simple, Protected Negotiation</dt> 
+
+<dd><p>Also known as "The Simple and Protected GSS-API Negotiation
+Mechanism," SPNEGO is a protocol that underlies GSS-API. It is used to
+negotiate the security mechanism to be used between two systems.
+SPNEGO is documented in RFC 2478.</p></dd>
+</dl>
+
+<p>Quite a list, eh?</p>
+
+<p>As you can see, there is a lot going on below the surface of
+Extended Security. We could try diving into a few of the above topics,
+but the waters are deep and the currents are strong and we would
+quickly be swept away. Out of necessity, we will spend a little time
+talking about Kerberos, but we won't swim out too far and we will be
+wearing a PFD (<b>P</b>ersonal <b>F</b>loatation <b>D</b>evice -
+don'cha just love acronyms?). </p>
+
+</h2s></h1s><h1 id="SMB2.8.7">Kerberos</h1><h1s>
+
+<p><idx start="c15-kerberos">Kerberos</idx>As already stated, we won't
+be going into depth about Kerberos.  There is a lot of documentation
+available on the Internet and in print, so the wiser course is to
+suggest some starting points for research. There are, of course,
+several starting points presented in the References section of this
+very book. A good place to get your feet wet is Bruce
+Schneier's<idx>Schneier, Bruce</idx> <cite>Applied Cryptography,
+Second Edition</cite>.</p>
+
+<p>Kerberos version 5 is specified in RFC 1510, but this is CIFS we're
+talking about. Microsoft<idx>Microsoft</idx> has made a few
+"enhancements" to the standard. The best known is probably the
+inclusion of a proprietary <b>P</b>rivilege <b>A</b>ccess
+<b>C</b>ertificate (PAC<idx>PAC</idx>) which carries Windows-specific
+authorization<idx>authorization</idx> information. Microsoft heard a
+lot of grumbling about the PAC, and in the end they did publish the
+information required by third-party implementors. They even did so
+under acceptable licensing terms (and the CIFS community sighed a
+collective <dk:nobr>sigh of relief).</dk:nobr> The PAC information is
+available in a <b>M</b>icro<b>s</b>oft <b>D</b>eveloper
+<dk:nobr><b>N</b>etwork (MSDN)</dk:nobr> document entitled
+<cite>Windows 2000 Authorization Data in <dk:nobr>Kerberos
+Tickets</dk:nobr></cite>.</p>
+
+<p>There are a lot of Kerberos-related RFCs. The interesting ones
+for our purposes are:</p>
+
+<ul>
+<li><p>RFC 1964, which provides information about the use of Kerberos
+<dk:nobr>with GSS-API,<idx>GSS-API</idx></dk:nobr></p></li>
+
+<li><p>RFC 3244, which covers Microsoft's Kerberos password-set and
+password-change protocols.</p></li>
+</ul>
+
+<p>There is also (as of this writing) a set of Internet Drafts that
+cover Microsoft Kerberos features, including a draft for Kerberos
+authentication <dk:nobr>over HTTP.</dk:nobr></p>
+
+<p>Finally, a web search for "Microsoft" and "Kerberos" will toss
+up an abundant salad of opinions and references, both historical
+and contemporary. Where CIFS is concerned, it seems that there is
+always either too little or too much information.
+Microsoft-compatible Kerberos falls under the latter curse. There
+is a lot of stuff out there, and it is easy to get overwhelmed. If
+you plan to dive in, find a buddy. Don't swim alone. </p>
+
+</h1s><h1 id="SMB2.8.8">Random Notes on W2K and NT Domain Authentication</h1><h1s>
+
+<p>We have been delicately dancing around the role of the Domain
+Controller<idx start="c15-dc">DC</idx> in authentication. It's time to face the
+music.</p>
+
+<p>The concept is fairly simple: Take the password database that is
+normally kept locally by a standalone server and move it to a
+central authority so that it can be shared by multiple servers,
+then call the whole thing a "Domain." The central authority that
+stores the shared database is, of course, the Domain Controller. As
+shown in <ref refid="Figure2.15"/>, the result is that the SMB fileserver must
+now consult the Domain Controller when a user tries to access SMB
+services.</p>
+
+<fig id="Figure2.15">
+<img dk:width="250" loc="SMB15"/>
+<caption>Centralized authentication</caption>
+<subcaption><p>The <b>D</b>omain <b>C</b>ontroller (DC) wears a special hat. It
+keeps track of the common authentication database that is shared by
+the SMB servers in the Domain. The SMB servers query the DC when a
+client requests access to SMB services.  </p></subcaption>
+</fig>
+
+<p>That general description applies to both NT and W2K Domains<idx
+start="c15-w2k">W2K Domain</idx>, even though the two are implemented
+in very different ways.  Windows 2000 Domains are based on Active
+Directory and Kerberos, while Windows NT Domains make use of a
+<b>S</b>ecurity <b>A</b>ccounts <b>M</b>anager (SAM<idx>SAM</idx>)
+Database and MS-RPC<idx>MS-RPC</idx>.</p>
+
+<p>Let's see what bits of wisdom we can pull out of the hat
+regarding these two Domain systems... </p>
+
+<h2>A Quick Look at W2K Domains</h2><h2s>
+
+<p>As with Microsoft's<idx>Microsoft</idx> Kerberos implementation,
+there is probably too much information available on this topic. A full
+description would also be very much beyond the stated scope of this
+book. So, as briefly as possible, here are some notes about W2K
+Domains and Domain Controllers:</p>
+
+<ul>
+<li><p>Windows 2000 Domains are based on the real thing: The Internet
+Domain Name Service (DNS).<idx>DNS</idx> The DNS provides a
+hierarchical namespace<idx>NBT<sidx>namespace</sidx></idx>, and W2K
+can take advantage of the DNS hierarchy to form collections of related
+W2K domains called "trees."  Groups of separate W2K Domain trees are
+known as "forests."</p></li>
+
+<li><p>W2K Domain Controllers run the Active Directory
+service.<idx>Active Directory</idx> <b>A</b>ctive <b>D</b>irectory
+(AD) is a database system that can be used to store all sorts of
+information, including user account data. The design of AD owes a lot
+to Novell's NDS architecture which, in turn, is based on OSI
+X.500.<idx>X.500</idx></p></li>
+
+<li><p>Data stored in the Active Directory may be accessed using the
+LDAP<idx>LDAP</idx> protocol.</p></li>
+
+<li><p>Microsoft's Kerberos<idx end="c15-kerberos">Kerberos</idx>
+implementation relies upon the data stored in the Active
+Directory. The two services are closely linked.</p></li>
+</ul>
+
+<p dk:indent="no">...and that barely begins to scratch the
+surface. CIFS client and server participation in a W2K Domain requires
+Kerberos support, but does not require a detailed understanding of
+Active Directory architecture. The above points are given here
+primarily for comparison with the NT Domain system notes, <dk:nobr>presented
+below.</dk:nobr> </p>
+
+</h2s><h2>A Few Notes about NT Domains</h2><h2s>
+
+<p>In contrast to W2K Domains, NT Domains have the following
+features:</p>
+
+<ul>
+<li><p>Windows NT Domains are built upon
+NetBIOS<idx>NetBIOS</idx>. The NetBIOS name<dk:hyphen/>space is flat,
+not hierarchical, so there is no natural way to build relationships
+among NT Domains. Conceptually, NT Domains are standalone.</p></li>
+
+<li><p>NT authentication information is stored in the <b>S</b>ecurity
+<b>A</b>ccounts <b>M</b>anager (SAM<idx>SAM</idx>) Database. The SAM
+is an extension of the Windows NT Registry database, and it is
+accessed using a Windows DLL.</p></li>
+
+<li><p>In an NT Domain, the shared SAM database is stored on the
+Domain Controller and may be accessed using RPC function calls.
+(Windows 2000, of course, stores the SAM data in the Active
+Directory,<idx>Active Directory</idx> but it can also respond to the
+RPC calls for compatibility with the NT <dk:nobr>Domain
+system</dk:nobr>.)</p></li>
+</ul>
+
+<p>There are two mechanisms that an SMB Server can use to ask a Domain
+Controller to validate a client logon attempt. These are known as
+<em>pass-through</em> and <em>NetLogon</em> authentication.  The
+NetLogon mechanism uses MS-RPC<idx>MS-RPC</idx>, so we won't cover it
+here except to say that it provides a more intimate relationship
+between the SMB server and the Domain Controller than does the
+pass-through mechanism. There are several good sources for further
+reading listed in the References section. In particular:</p>
+
+<ul>
+<li><p>Start with the whitepaper <cite>More Than You Ever Wanted to
+Know about NT Login Authentication</cite>, by Philip Cox<idx>Cox,
+Philip</idx> and Paul Hill<idx>Hill, Paul</idx>. It provides a clear
+and succinct introduction to the Windows NT authentication
+system.</p></li>
+
+<li><p>Another good overview from a different perspective is provided
+in the whitepaper <cite>CIFS Authentication and Security</cite> by
+Bridget Allison<idx>Allison, Bridget</idx> (now Bridget
+Warwick).</p></li>
+
+<li><p>...and once you're read that you'll be ready for the more
+in-depth <dk:nobr>NetLogon</dk:nobr> coverage in Luke's
+Leighton's<idx>Leighton, Luke Kenneth Casson</idx> book.</p></li>
+</ul>
+
+<p>Pass-through, in contrast to NetLogon, is really quite simple.  It
+is also documented in (yet) an(other) expired Leach/Naik IETF
+draft<idx>Leach/Naik Internet Drafts</idx>, titled <cite>CIFS Domain
+Logon and Pass Through Authentication</cite>, which can be found on
+<dk:nobr>Microsoft's</dk:nobr> CIFS FTP site (under the name
+<code>cifslog.txt</code><idx>cifslog.txt</idx>).</p>
+
+<p>Basically, pass-through authentication is a man-in-the-middle
+mechanism. It goes like this:</p>
+
+<ul>
+<li><p>The client attempts to log on to the server, but the server has
+no SAM<idx>SAM</idx> database so it, in turn, attempts to create an
+SMB session with the <dk:nobr>Domain Controller.</dk:nobr></p></li>
+
+<li><p>The server sends a <code>NEGOTIATE PROTOCOL
+REQUEST</code><idx>NEGOTIATE PROTOCOL</idx> to the DC. The DC returns
+a challenge<idx>LM<sidx>challenge/response</sidx></idx> which the
+server passes back to the client.</p></li>
+
+<li><p>The client does the hard work and generates the various
+responses (LM, NTLM, etc.), which are sent to the server. The server
+simply passes them through to the DC in its own <code>SESSION SETUP
+REQUEST</code>.</p></li>
+
+<li><p>If the DC returns a <code>POSITIVE SESSION SETUP
+RESPONSE</code><idx>SESSION SETUP</idx> to the server, then the server
+will return a <code>POSITIVE SESSION SETUP RESPONSE</code> to the
+client. Likewise with a negative response.</p></li>
+</ul>
+
+<p>It should be easy to capture an example of pass-through
+authentication using your network sniffer. Windows 9x systems (and
+possibly other Windows varieties) do not support NetLogon so they
+always use the pass-through method if they are part of an NT
+Domain. Samba<idx>Samba</idx> can be configured to use <dk:nobr>either method.</dk:nobr></p>
+
+<alert type="Radical Rodent">
+
+<p>There is an obscure Windows SMB file transfer mode implemented by
+Windows 98, Windows Me, and possibly other Windows flavors. This mode
+is known in the community as "rabbit-pellet"<idx>rabbit-pellet</idx>
+mode, and it is triggered by various subtle combinations of
+conditions. In testing, it appears as though delays in pass-through
+authentication <em>may</em> <dk:nobr>be a factor.</dk:nobr></p>
+
+<p>In rabbit-pellet mode the client will send a file to the server in
+very small chunks, somewhere between 512 and 1536 bytes each (give or
+take). The client will wait for a reply to each write, and will also
+send a flush request after every one or two writes.  This slows down
+file transfers considerably.</p>
+
+<p>The condition is rare, which is good because it's really
+annoying when it happens. It's also bad because it has been a very
+difficult problem to track down.
+</p>
+</alert>
+
+</h2s><h2>It's Good to Have a Backup</h2><h2s>
+
+<p>In the NT Domain system, there is a single Domain Controller that
+is <em>primarily</em> responsible for the maintenance of the domain's
+SAM<idx>SAM</idx> database. This Domain Controller is known as the
+(surprise) <b>P</b>rimary <b>D</b>omain <b>C</b>ontroller
+(PDC<idx>PDC</idx>).</p>
+
+<p>The domain may also have zero or more <b>B</b>ackup <b>D</b>omain
+<b>C</b>ontrollers (BDCs<idx>BDC</idx>). The BDCs keep read-only
+replicas of the PDC's SAM database. BDCs can be used for
+authentication just as the PDC can, and if the PDC is accidentally
+thrown out of a twelfth-story window into an active volcano, a BDC can
+be "promoted" to fill the role of the dearly departed PDC.</p>
+
+<p>Windows 2000 Domains do things differently. They do not distinguish
+between Primary and Backup DCs. Instead, Active Directory makes use of
+something called "multimaster replication."  Updates to any replica
+are propagated to all of the other replicas, so there is no need any longer
+to specify one copy of the database as the primary. </p>
+
+</h2s><h2>Trust Me on This</h2><h2s>
+
+<p>This is one of those concepts that we have to cover because -
+unless you're already familiar with it - you'll read about it
+somewhere else and think to yourself "What the heck is that all
+about?"</p>
+
+<p>Somewhere back a few paragraphs it was stated that NT Domains are,
+conceptually, standalone entities... and so they are, but it is
+possible to introduce them to one another and get them to
+cooperate. The agreements forged between the domains are known as
+"Inter-Domain Trust Relationships."</p>
+
+<p>Let's use an example to explain what this is all about.</p>
+
+<p>Consider a large corporate organization with several divisions,
+departments, committees, consultants, and such-like. In this
+corporation, the Business Units Reassignment Planning Division runs
+the <code>BURP_DIV</code> domain, and the Displacement Entry
+Department calls theirs the <code>DISENTRY</code> domain.</p>
+
+<p>Now, let's say that the <code>BURP_DIV</code> folks need access to
+files stored on <code>DISENTRY</code> servers (so they can move the
+files around a bit). One way to handle this would be to create
+accounts for the <code>BURP_DIV</code> users in the
+<dk:nobr><code>DISENTRY</code></dk:nobr> domain. That would cause a
+bit of a problem, however, because the <code>BURP_DIV</code> users
+would need two accounts, one per domain.  That is likely to result in
+things like passwords, preferences, and web browser<idx>web
+browser</idx> bookmarks getting a bit out of sync. Also, the Benefits
+Reduction Committee will want to know why all of the
+<code>BURP_DIV</code> employees are moonlighting in the
+<dk:nobr><code>DISENTRY</code></dk:nobr> department and how they could
+possibly be doing two jobs at once. It could become quite a mess,
+resulting in the hiring of dozens of consultants to ensure that the
+problem is properly ignored.</p>
+
+<p>The better way to handle this situation is to create a <em>trust
+relationship</em> between the <code>DISENTRY</code> and
+<code>BURP_DIV</code> domains. With inter-domain trust established,
+the <code>BURP_DIV</code> folks can log on to <code>DISENTRY</code>
+servers using their <code>BURP_DIV</code> credentials. As shown in
+<ref refid="Figure2.16"/>, the <code>DISENTRY</code> Domain
+Controller<idx end="c15-dc">DC</idx> will ask the
+<code>BURP_DIV</code> Domain Controllers to validate the logon.</p>
+
+<fig dk:pos="top" id="Figure2.16">
+<img dk:width="250" loc="SMB16"/>
+<caption>Inter-domain trust</caption>
+<subcaption>
+<ol>
+<li><p>A client in the <code>BURP_DIV</code> domain tries to access
+services on a <code>DISENTRY</code> server.</p></li>
+
+<li><p>The server requests authentication services from a
+<code>DISENTRY</code> Domain Controller.</p></li>
+
+<li><p>The <code>DISENTRY</code> Domain Controller trusts the
+<code>BURP_DIV</code> domain, so it requests authentication services
+from a <code>BURP_DIV</code> Domain Controller.</p></li>
+
+<li><p>The <code>BURP_DIV</code> Domain Controller replies to the
+<code>DISENTRY</code> Domain Controller...</p></li>
+
+<li><p>...which replies to the server...</p></li>
+
+<li><p>...which replies to the client.</p></li>
+</ol>
+</subcaption>
+</fig>
+
+<p>Note that, in the non-extended-security version of the
+<code>SESSION SETUP REQUEST</code> message, there is a field called
+<code>PrimaryDomain</code>.<idx>PrimaryDomain</idx> This field
+identifies the NT domain against which the client wishes to
+authenticate. That is, the <code>PrimaryDomain</code> field should
+contain the name of the NT Domain to which the user belongs.</p>
+
+<p>Windows 2000 domains also support trust relationships. This is
+useful for creating trust between two separate W2K Domain trees, or
+between W2K Domains<idx end="c15-w2k">W2K Domain</idx> and NT Domains.</p>
+
+<p>The mechanisms used to support inter-domain trust are very advanced
+topics, and won't be covered here. </p>
+
+</h2s></h1s><h1 id="SMB2.8.9">Random Notes on Message Authentication Codes</h1><h1s>
+
+<p><idx start="c15-mac">MAC</idx><b>M</b>essage <b>A</b>uthentication
+<b>C</b>odes (MACs) are used to prevent "pickle-in-the-middle" attacks
+(more commonly known as "<u>man</u>-in-the-middle" attacks).<fn>The
+latter name - though decidedly less Freudian - is somewhat
+gender-biased.</fn> This form of attack is simple to describe, but it
+can be difficult to pull off in practice (though wireless LAN
+technology has the potential to make it much easier). <ref
+refid="Figure2.17"/> provides some visuals.</p>
+
+<fig dk:pos="top" id="Figure2.17">
+<fig-part part="a">
+<img dk:width="200" loc="SMB17a"/>
+<caption>Attempting a man-in-the-middle attack</caption>
+
+<subcaption><p>The evil interloper attempts to interpose itself
+between the legitimate client and server.</p></subcaption>
+</fig-part>
+
+<fig-part part="b">
+<img dk:width="200" loc="SMB17b"/>
+<caption>A successful man-in-the-middle attack</caption>
+
+<subcaption><p>If the evil interloper succeeds, the server will not
+notice that the "real" client is gone. The evil interloper may also
+try to impersonate the server to the client.</p></subcaption>
+</fig-part>
+</fig>
+
+<p>Generally speaking, in the pickle-in-the-middle attack an evil
+interloper allows the "real" client to authenticate with the server
+and then assumes ownership of the TCP/IP<idx>TCP</idx> connection,
+thus bypassing the whole problem of needing to know the password.</p>
+
+<p>There are a number of ways to hijack the TCP session, but with SMB
+that step isn't necessary. Instead, the evil interloper can simply
+impersonate the server to fool the client. For instance, if the evil
+interloper is on the same IP subnet as both the client and server (a
+B-mode<idx>B</idx> network) then it can usurp the server's name
+by responding to broadcast name queries sent by the client faster than
+the server does. Server identity theft can also be accomplished by
+"poisoning"<idx>NBNS<sidx>poisoning</sidx></idx> the NBNS database
+(or, possibly, the DNS<idx>DNS</idx>) - that is, by somehow forcing it
+to swallow false information. A simple way to do that is to register
+the server's name - with the interloper's IP address - in the NBNS
+before the server does (perhaps by registering the name while the
+server is down for maintenance or something).
+</p>
+
+<p>In any case, when the client tries to open an SMB session with the
+server it may wind up talking to the evil interloper instead.  The
+evil interloper will pass the authentication request through to the
+real server, then pass the challenge back to the client, and then pass
+the client's response to the server... and that... um...
+um... um... <em>that looks exactly like pass-through
+authentication</em>. In fact, the basic difference between
+pass-through authentication and this type of attack is the ownership
+of the box that is relaying the authentication. If the crackers
+control the box, consider it an attack.</p>
+
+<p>This authentication stuff is fun, isn't it?</p>
+
+<p>So, given a situation in which you are concerned about evil
+interlopers gaining access to your network, you need a mechanism that
+allows the client and server to prove to one another <em>on an ongoing
+basis</em> that they are the <em>real</em> client and server.  That's
+what the MACs are supposed to do.</p>
+
+<alert type="Caveat Emptor">
+
+<p>As of this writing, SMB MAC signing is an active area of research
+for the Samba Team<idx>Samba<sidx>Team</sidx></idx>. </p>
+
+<p>The available documentation regarding <b>M</b>essage
+<b>A</b>uthentication <b>C</b>odes (MACs) disagrees to some extent
+with empirical results. The information presented in this section
+is the best currently available, derived from both the
+documentation <em>and</em> the testing being done by the Samba Team.
+As such, it is <em>probably</em> (but <em>not necessarily</em>) very
+close to reality. Doveryay, no proveryay.
+</p>
+</alert>
+
+<h2>Generating the Session Key</h2><h2s>
+
+<p>The server and client each generate a special key, known as the
+<em>Session Key</em>. There are several potential uses for the Session
+Key, but we will only be looking at its use in MAC signing.</p>
+
+<p><idx>LM<sidx>Hash</sidx></idx>The Session Key is derived from the
+password hash - something that only the client and server should
+know. There are several hash types available: LM,
+NTLM,<idx>NTLM<sidx>Hash</sidx></idx> LMv2,<idx>LMv2</idx> and
+NTLMv2.<idx>NTLMv2<sidx>hash</sidx></idx> The hash chosen is probably
+the most advanced hash that the two systems know they share. So, if
+the client sent an LM Response - but did <em>not</em> send an NTLM
+Response - then the Session Key will be based on the LM Hash. The LM
+Session Key is calculated as follows:</p>
+
+<pre>char eightnuls[8] = { 0, 0, 0, 0, 0, 0, 0, 0 };
+LM_Session_Key = concat( LM_Hash, 8, eightnuls, 8 );
+</pre>
+
+<p>That is, take the first eight bytes of the LM Hash and add eight
+nul bytes to the end for a total of 16 bytes. Note that the resulting
+Session Key is not the same as the LM Hash itself. As stated earlier,
+the password hashes can be used to perform all of the authentication
+functions we have covered so far, so they must be protected as if they
+were the actual password. Overwriting the last eight bytes of the hash
+with zeros serves to obfuscate the hash (though this method is rather
+weak).</p>
+
+<p>A different formula is used if the client <em>did</em> send an NTLM
+Response. The NTLM Session Key is calculated like so:</p>
+
+<pre>NTLM_Session_Key = MD4( NTLM_Hash );</pre>
+
+<p dk:indent="no">which means that the NTLM Session Key is the
+MD4<idx>MD4</idx> of the MD4 of the Unicode<idx>Unicode</idx> password. The SNIA
+doc<idx>SNIA<sidx>CIFS Technical Reference</sidx></idx> says there's
+only one MD4, but that would make the NTLM Session Key the same as the
+NTLM Hash.  Andrew Bartlett<idx>Bartlett, Andrew</idx> of the Samba
+Team<idx>Samba<sidx>Team</sidx></idx> says there are two MD4s; the
+second does a fine job of protecting the password-equivalent NTLM Hash
+from exposure.</p>
+
+<p>Moving along to LMv2 and NTLMv2, we find that the Session Key
+recipe is slightly more complex, but it's all stuff we have seen
+before. We need the following ingredients:</p>
+
+<dl>
+<dt><code>v2hash</code></dt>
+
+<dd><p>The NTLM Version 2 Hash, which we calculated back in 
+<ref refid="SMB2.8.5.2"/>.</p></dd>
+
+<dt><code>hmac</code></dt>
+
+<dd><p>The result of the <code>HMAC_MD5()</code> function using the
+<code>v2hash</code> as the key and the server challenge plus the blob
+(or blip) as the input data. The NTLMv2 <code>hmac</code> was
+calculated in <snumref refid="SMB2.8.5.3"/> and sent as the first 16
+bytes of the response. The LMv2 <code>hmac</code> was calculated in
+<snumref refid="SMB2.8.5.6"/>.</p></dd>
+</dl>
+
+<p>The LMv2 and NTLMv2 session keys are computed as follows:</p>
+
+<pre>LMv2_Session_Key   = HMAC_MD5( v2hash, 16,   lmv2_hmac, 16 );
+NTLMv2_Session_Key = HMAC_MD5( v2hash, 16, ntlmv2_hmac, 16 );</pre>
+
+<p>The client is able to generate the Session Key because it knows the
+password and other required information (because the user entered the
+required information at the logon prompt). If the server is
+standalone, it will have the password hash and other required
+information in its local SAM<idx>SAM</idx> database, and can generate
+the Session Key as well. On the other hand, if the server relies upon
+a Domain Controller<idx>DC</idx> for authentication then it won't have
+the password hash and won't be able to generate the Session Key.</p>
+
+<p>What's a server to do?</p>
+
+<p>As we have already pointed out, the MAC protocol is designed to
+prevent a situation that looks exactly like pass-through
+authentication, so a pass-through server simply cannot do MAC
+signing. A NetLogon-capable server, however, has a special
+relationship with the Domain Controller. The NetLogon protocol is
+secured, so the Domain Controller can generate the Session Key and
+send it to the server. That's how an NT Domain member server gets hold
+of the Session Key without ever knowing the user's password or
+password hash. </p>
+
+</h2s><h2>Sequence Numbers</h2><h2s>
+
+<p>The client and server each maintain an integer counter which they
+initialize to zero.  Both counters are incremented for every SMB
+message - that's once for a request and once for a reply.  As a result,
+requests always have an even sequence number and replies always have
+an odd.</p>
+
+<p>The zero-eth message is always a <code>SESSION SETUP
+ANDX</code><idx>SESSION SETUP</idx> message, but it may not be the
+<em>first</em> <code>SESSION SETUP ANDX</code> of the session. Recall,
+from near the beginning of the Authentication section, that the client
+sometimes uses an anonymous or guest logon to access server
+information. Watch enough packet captures and you will see that MAC
+signing doesn't really start until after a real user logon occurs.</p>
+
+<p>Also, it appears from testing that the MAC Signature in the
+zero-eth message is never checked (and that existing clients send a
+bogus MAC Signature in the zero-eth packet). That's okay, since the
+authenticity of the zero-eth message can be verified by the fact that
+it contains a valid response to the server challenge.</p>
+
+<p>Once the MAC signing has been initialized within a session, all
+messages are numbered using the same counters and signed using the
+same Session Key. This is true even if additional <code>SESSION SETUP
+ANDX</code> exchanges occur. </p>
+
+</h2s><h2>Calculating the MAC</h2><h2s>
+
+<p>The MAC itself is calculated using the MD5<idx>MD5</idx>
+function. That's the plain MD5, not HMAC-MD5 and not
+MD4<idx>MD4</idx>. The input to the MD5 function consists of three
+concatenated blocks of data:</p>
+
+<ul>
+<li><p>the Session Key,</p></li>
+<li><p>the response, and</p></li>
+<li><p>the SMB message.</p></li>
+</ul>
+
+<p>We start by combining the Session Key and the response into a
+single value known as the MAC Key. For LM, NTLM, and LMv2 the MAC Key
+is created like so:</p>
+
+<pre>MAC_Key = concat( Session_Key, 16, Response, 24 );</pre>
+
+<p>The thing to note here is that all of the responses, with the
+exception of the NTLMv2 Response, are 24 bytes long. So, except for
+NTLMv2, all auth mechanisms produce a MAC Key that is 40 bytes
+long. <dk:nobr>(16 + 24 = 40).</dk:nobr> Unfortunately, the formula
+for creating the NTLMv2 MAC Key is not yet known. It is probably
+similar to the above, however. Possibly identical to the calculation
+of the LMv2<idx>LMv2</idx> MAC Key, or possibly the concatenation of
+the Session Key with the first 28 bytes of the blob.</p>
+
+<p>Okay, now you need to pay careful attention. The last few steps of
+MAC Signature calculation are a bit fiddly.</p>
+
+<ol>
+<li><p>Start by re-acquainting yourself with the structure of the
+<dk:nobr><code>SMB_HEADER.EXTRA</code></dk:nobr> field, as described in <ref
+refid="SMB2.4.2.1"/>. We are particularly interested in the eight
+bytes labeled <code>Signature</code>.</p></li>
+
+<li><p>The sequence number is written as a longword into the first
+four bytes of the <code>SMB_HEADER.EXTRA.Signature</code> field.  The
+remaining four bytes are zeroed.</p></li>
+
+<li><p>The MAC Signature is calculated as follows:</p>
+
+<pre>data = concat( MAC_Key, MAC_Key_Len, SMB_Msg, SMB_Msg_Len );
+hash = MD5( data );
+MAC  = head( hash, 8 );</pre>
+
+<p dk:indent="no">In words: the MAC Signature is the first eight bytes
+of the MD5 of the MAC_Key plus the entire SMB message.</p></li>
+
+<li><p>The eight bytes worth of MAC Signature are copied
+into the <code>SMB_HEADER.EXTRA.Signature</code> field, overwriting the
+sequence number.</p></li>
+</ol>
+
+<p dk:indent="no">...and that, to the best of our knowledge, is how
+it's done. </p>
+
+</h2s><h2>Enabling and Requiring MAC Signing</h2><h2s>
+
+<p>Windows NT systems offer four registry keys to control the use
+of SMB MAC signing. The first two manage server behavior, and the
+others represent <dk:nobr>client settings.</dk:nobr></p>
+
+<dl>
+<dt>Server: 
+<code>HKEY_LOCAL_MACHINE\System\CurrentControlSet<dk:br/>\Services\LanManServer\Parameters</code></dt>
+
+<dd>
+<dl>
+<dt><code>EnableSecuritySignature</code><idx>EnableSecuritySignature</idx></dt>
+
+<dd><p>The valid values are zero (<code>0</code>) and one
+(<code>1</code>).  If zero, then MAC signing is disabled on the server
+side.  If one, then the server will support MAC signing.</p></dd>
+
+<dt><code>RequireSecuritySignature</code><idx>RequireSecuritySignature</idx></dt>
+
+<dd><p>The valid values are zero (<code>0</code>) and one
+(<code>1</code>).  This parameter is ignored unless MAC signing is
+enabled via the
+<code>EnableSecurity<dk:hyphen/><dk:nobr>Signature</dk:nobr></code>
+parameter.  If zero, then MAC signing is optional and will only be
+used if the client also supports it.  If one, then MAC signing is
+required. If the client does not support MAC signing then
+authentication will fail.</p></dd>
+</dl>
+</dd>
+
+<dt>Client:
+<code>HKEY_LOCAL_MACHINE\System\CurrentControlSet<dk:br/>\Services\Rdr\Parameters</code></dt>
+
+<dd>
+<dl>
+<dt><code>EnableSecuritySignature</code></dt>
+
+<dd><p>The valid values are zero (<code>0</code>) and one
+(<code>1</code>).  If zero, then MAC signing is disabled on the client
+side.  If one, then the client will support MAC signing.</p></dd>
+
+<dt><code>RequireSecuritySignature</code></dt>
+
+<dd><p>The valid values are zero (<code>0</code>) and one
+(<code>1</code>).  This parameter is ignored unless MAC signing is
+enabled via the
+<code>EnableSecurity<dk:br/><dk:nobr>Signature</dk:nobr></code>
+parameter.  If zero, then MAC signing is optional and will only be
+used if the server also supports it.  If one, then MAC signing is
+required. If the server does not support MAC signing then
+authentication will fail.</p></dd>
+</dl>
+</dd>
+</dl>
+
+<p>Study those closely and you may detect some small amount of
+similarity between the client and server parameter settings. (Well,
+okay, they are mirror images of one another.) Keep in mind that the
+client and server must have compatible settings or the <code>SESSION
+SETUP</code> will fail.</p>
+
+<p>These options are also available under Windows 2000, but are
+managed using security policy settings.<fn>Jean-Baptiste
+Marchand<idx>Marchand, Jean-Baptiste</idx> has done some digging and
+reports that starting with Windows 2000 the SMB
+redirector<idx>redirector</idx> (rdr) has been redesigned, which may
+impact which registry keys are fiddled. The preferred way to configure
+SMB MAC signing in Windows 2000 is to use the Local Security
+Settings/Group Policy Management Console (whatever that
+is). Basically, this means that Windows 2000 and Windows XP have MAC
+signing settings comparable to those in Windows NT, but they are
+handled in a different way.<idx end="c15-mac">MAC</idx></fn></p>
+
+</h2s></h1s><h1 id="SMB2.8.10">Non Sequitur Time</h1><h1s>
+
+<p>A mathematician, a physicist, and an engineer were sitting together
+in a teashop<idx>teashop</idx>, sharing a pot of Lapsang
+Souchong<idx>Lapsang Souchong</idx> and discussing the relationship
+between theory and practice. The mathematician said, "One of my
+students asked me today whether all odd numbers greater than one were
+prime numbers, so I provided this simple proof:</p>
+
+<p dk:displayed="yes"><line>Stated: All odd numbers greater than one are
+prime.</line>
+<line>3 is prime,</line>
+<line>5 is prime,</line>
+<line>7 is prime,</line>
+<line>9 is divisible by three, so it is odd but not prime.</line>
+<line>Contradiction; the statement is false."</line></p>
+
+<p>"Interesting," replied the physicist. "Perhaps I have the same
+student. I was asked the same question today. I solved the problem
+using a thought-<dk:br/><dk:nobr>experiment</dk:nobr>, as Galileo might have done. Our experiment
+was <dk:nobr>as follows:</dk:nobr></p>
+
+<p dk:displayed="yes"><line>By observation we can see that:</line>
+<line>3 is prime,</line>
+<line>5 is prime,</line>
+<line>7 is prime,</line>
+<line>9 is experimental error,</line>
+<line>11 is prime,</line>
+<line>13 is prime..."</line></p>
+
+<p>The engineer interrupted before the physicist could draw a
+conclusion, and said, "Out in the field we don't have time to mess with
+theory. We just define all odd numbers as prime and work from
+there. It's simpler that way."</p>
+
+<p>Consider this as you contemplate what you have learned about 
+SMB <dk:nobr>authentication.</dk:nobr> </p>
+
+</h1s><h1 id="SMB2.8.11">Further Study</h1><h1s>
+
+<p>You should now have all you need to create an SMB session with an
+SMB server. As you become more comfortable with the system, you will
+likely become curious about the vast uncharted jungle of Extended
+Security. Don't be afraid to go exploring. With the background
+provided here, and the guidebooks listed in the References section,
+you are well prepared. If you get it all mapped out, do us all a
+favor: write it up so that everyone can share what you've learned.</p>
+
+<p>A few more bits of advice before we move along...</p>
+
+<ol>
+<li><p><b>Know what you've got to work with.</b> This is one of Andrew
+Bartlett's rules of thumb. If you are trying to figure out how an
+encrypted token or key or somesuch is derived, consider the available
+functions and inputs. Existing tools and values are often
+reused. Just look through the calculation of the NTLMv2 Response and
+you'll see what we mean.</p></li>
+
+<li><p><b>Trust but verify.</b> Read the available documentation and
+make notes, but don't assume that the documentation is always
+right. The truth is on the wire. In some cases implementations stray
+from the specifications, and in other cases (e.g. this book) the
+documentation is a best-effort attempt at presenting what has been
+learned. There are few truly definitive sources. Another factor, as
+you are by now aware, is that there is a tremendous amount of
+variation in the CIFS world. Something may work correctly in one
+instance only to surprise you in another.</p></li>
+
+<li><p><b>Don't be surprised.</b> Don't go looking for weirdness in
+CIFS, but don't be surprised when you find it. If you expect bad
+behavior, you may miss the sane and obvious. A lot of CIFS does, in
+fact, make some sort of sense when you think about it. There are
+gotchas, though, so be prepared.</p></li>
+</ol>
+
+<p>These guidelines are quite general, but they apply particularly
+well to the study of SMB security and authentication.<idx end="c15-authentication">authentication</idx></p>
+
+</h1s></chapter>
+</oim>

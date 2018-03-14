@@ -1,0 +1,448 @@
+<?xml version="1.0" encoding="US-ASCII"?>
+<!DOCTYPE oim SYSTEM "oimxml.dtd" [
+  <!ENTITY nbsp  "&#160;">
+  <!ENTITY lsquo "&#8216;">
+  <!ENTITY rsquo "&#8217;">
+  <!ENTITY minus "&#8211;">
+  <!ENTITY mdash "&#8212;">
+  <!ENTITY times "&#xd7;">
+  <!ENTITY copy "&#xa9;">
+] >
+<oim xmlns:dk="http://www.kirsanov.com">
+<partopen dk:number="III" id="Browsing">
+<title><dk:line>The Browse</dk:line> <dk:line>Service</dk:line></title></partopen>
+
+<chapter id="Browsing3.1">
+<chapopen><title>A Beautiful Day
+<dk:nobr>in&nbsp;the&nbsp;Network</dk:nobr> Neighborhood</title>
+
+<epigraph dk:padding-top="60">
+<p>Keep off the grass!</p>
+<attribution>Suburban yard sign</attribution>
+</epigraph>
+</chapopen>
+
+<p>The houses are painted in cheerful colors, there are flowers in the
+window boxes, people greet you as you walk down the street, and the
+dogs never bark after sunset. It seems a lovely place in which to open
+a small teashop<idx>teashop</idx> and perhaps, someday, retire. Before
+you decide to move in, though, there are a few things you probably
+need to know about the Network Neighborhood.<idx>Network
+Neighborhood</idx></p>
+
+<p>Behind the picture-postcard facade there lies a complex political
+and social structure, collectively known as the <em>Browse
+Service</em>.<idx start="c19-bs">Browse Service</idx> Many people
+consider the Browse Service to be mysterious and secretive, perhaps
+because most of its business is handled discreetly, out of the view of
+the casual tourists. The Browse Service lurks in the background,
+gathering, maintaining, and distributing the <em>Browse
+List</em><idx>Browse List</idx> &mdash; the list of available servers
+and workgroups.</p>
+
+<p>You can sneak a peek at the Browse List by clicking the Network
+Neighborhood icon on a Microsoft<idx>Microsoft</idx> Windows
+desktop. If all is working as it should, you will be presented with a
+neatly organized graphical view of the available SMB filesharing
+environment. It will look something like the image in <dk:nobr><ref
+refid="Figure3.1"/>.</dk:nobr> By selecting icons you can traverse the
+SMB hierarchy and view workgroups, servers, print queues, shares,
+directories, and files. In CIFS terms, this is called "browsing" the
+network.<fn>IBM<idx>IBM</idx> and Microsoft should not be blamed for
+any confusion between Network Neighborhood browsing and Web
+browsing. They started using the term "browse" well before the advent
+of the web.</fn></p>
+
+<fig id="Figure3.1">
+<img dk:width="160" loc="BRO01"/>
+<caption>The Network Neighborhood</caption>
+<subcaption><p>A user's-eye-view of an SMB filesharing network.</p></subcaption>
+</fig>
+
+<h1 id="Browsing3.1.1">History: From Frontier Town to Bustling Metropolis</h1><h1s>
+
+<p>The original Browse Service staked its claim alongside the
+<code>LANMAN1.0</code> dialect<idx>dialect</idx>, back in the frontier
+days of OS/2<idx>OS/2</idx>. Its descendants stayed on and prospered
+through the <code>LM1.2X002</code> and <code>LANMAN2.1</code> days,
+and then quietly faded into legend.  There aren't many systems around
+today that still earn their keep by running LAN Manager style
+browsing, as it is known, yet the legacy lives on. Windows systems
+generally have a server configuration check-box to enable LAN Manager
+browser announcements, and Samba<idx>Samba</idx> has an
+<code>LM&#160;ANNOUNCE</code><idx>LM ANNOUNCE</idx> parameter for the
+same purpose.</p>
+
+<p>When Windows NT rode into town, it brought along a newfangled
+Browse Service. Like its predecessor, the new system was built upon
+the NetBIOS<idx>NetBIOS</idx> API.<idx>NetBIOS<sidx>API</sidx></idx>
+It was an improvement over the older version in that it could exchange
+and combine Browse Lists with remote Browsers on distant LANs, thus
+bringing the world a little closer together. That version of the
+Browse Service is the same one most folks still use today, and it is
+the one we will be studying in detail.</p>
+
+<p>Then came the Information Superhighway, and Windows 2000 arrived in
+a bright blue limousine with a fancy new Browse Service hanging on its
+arm. The W2K browsing system is designed to run on naked TCP
+transport<idx>naked transport</idx>, and it is built on top of Active
+Directory<idx>Active Directory</idx> and the LDAP<idx>LDAP</idx>
+protocol. As you may have come to expect by now, covering Directory
+Services is more than this book is trying to achieve so we won't spend
+a lot of time on W2K browsing. Besides, Windows 2000 and Windows XP
+are both backward compatible with previous Windows versions, and can
+still support the older NetBIOS-based Windows Browse Service.</p>
+
+<p>Another thing that has changed since Windows 2000 arrived is the
+name of the Network Neighborhood.<idx>Network Neighborhood</idx> These
+days, it is called "My Network Places." A discussion of the
+implications of the shift in metaphor from one relating the network
+environment to a cohesive and open community to one of self-centered
+virtual oligarchy is also way the heck beyond the scope of this
+book. </p>
+
+</h1s><h1 id="Browsing3.1.2">Sociology</h1><h1s>
+
+<p>The Browse Service, as was stated earlier, has a social
+structure. SMB servers and clients are expected to be members of
+cliques known as "workgroups"<idx
+start="c19-workgroup">Workgroup</idx> or "domains." The basic
+difference between a workgroup and a domain is that the latter
+provides central authentication<idx>authentication</idx> services via
+Domain Controllers.<idx>DC</idx></p>
+
+<p>Just to make life more interesting, there are two types of domain
+<dk:nobr>to consider:</dk:nobr></p>
+
+<dl>
+<dt>Windows 2000&#160;Domains</dt>
+
+<dd><p>As explained above, Windows 2000 provides a browse system that
+is based on Directory Services (Active Directory,<idx>Active
+Directory</idx> etc.). W2K Domains<idx>W2K Domain</idx> are not
+NBT-based, so they do not use NetBIOS names.<idx
+start="c19-NetBIOS-name">NetBIOS<sidx>name</sidx></idx> Instead, W2K
+Domains are closely aligned with the Domain Name System
+(DNS<idx>DNS</idx>) and rely on Kerberos for authentication. This is
+Microsoft's<idx>Microsoft</idx> way of grafting their domain
+architecture onto the Internet Domain Name System.</p></dd>
+
+<dt>Windows NT&#160;Domains</dt>
+
+<dd><p>NT Domains are glorified workgroups, but that's not a
+particularly helpful description since we haven't really explained
+what a workgroup is yet.</p></dd>
+</dl>
+
+<p>A workgroup, quite simply, is defined by its NetBIOS name. The
+workgroup name is typically assigned in the node's configuration,
+although utilities like <code>smbclient</code> and toolkits like
+jCIFS<idx>jCIFS</idx> allow the workgroup name to be specified at
+run-time. As with the node's machine name<idx>machine name</idx>, the
+workgroup name is used as the basis for NetBIOS names that are
+actually registered - just add the appropriate suffix byte<idx>suffix
+byte</idx>. Systems do not <em>need</em> to register any name based on
+the workgroup unless they are offering services to the workgroup as a
+whole. Some example workgroup names:<idx start="c19-group">group
+name</idx></p>
+
+<table colwidths="21* 19* 60*">
+<thead>
+<tr dk:border="after">
+<th><p>Name &amp; Suffix</p></th>
+<th><p>Group/Unique<idx>unique name</idx></p></th>
+<th><p>Service/Description</p></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><p><em>workgroup</em><code>&lt;00&gt;</code><idx type="00">workgroup</idx></p></td>
+<td><p>group</p></td>
+<td><p>This name is a remnant of the original LAN Manager browse service.</p></td>
+</tr>
+<tr>
+<td><p><em>workgroup</em><code>&lt;1D&gt;</code><idx type="1D">workgroup</idx></p></td>
+<td><p>unique</p></td>
+<td><p>This name identifies the Local Master Browser
+(LMB<idx>LMB</idx>, sometimes called simply "Master Browser") for a subnet.</p></td>
+</tr>
+<tr>
+<td><p><em>workgroup</em><code>&lt;1E&gt;</code><idx type="1E">workgroup</idx></p></td>
+<td><p>group</p></td>
+<td><p>Every node that is capable of acting as a
+"Browser" registers this group name so that it can listen for
+election<idx>election</idx> announcements. We'll explain what a "Browser" is in a
+moment.</p></td>
+</tr>
+</tbody>
+</table>
+
+<p>That just scratches the surface, and doesn't really tell us
+anything about NT Domains. Fully explaining what workgroups and NT
+Domains are all about and how the names listed above are used is
+something of a recursive problem because the sociology of the Browse
+Service is intertwined with <dk:nobr>the politics.</dk:nobr> </p>
+
+</h1s><h1 id="Browsing3.1.3">Politics</h1><h1s>
+
+<p><idx start="c19-dmb">DMB</idx>On the local level, the Windows
+Browse Service is a volunteer organization. Nodes that are willing and
+able to donate some memory and CPU cycles make themselves available to
+the community by registering a special NetBIOS group name with a
+suffix byte<idx>suffix byte</idx> value of <code>0x1E</code>, as shown
+in the table above. That name is then used to hold an
+election<idx>election</idx> and choose a workgroup
+leader.<fn>Mnemonic:
+<code>0x1E</code>lection.<idx>0x1Election</idx></fn> The election
+winner is given the title of "Master Browser," and it registers a
+unique<idx>unique name</idx> NetBIOS name with a suffix byte value of
+<code>0x1D</code>. It also registers the strangely-formatted group
+name
+"<code>\x01\x02__MSBROWSE__\x02\x01</code><idx>MSBROWSE&lt;01&gt;</idx>"
+(that last &lsquo;<code>\x01</code>&rsquo; is actually the suffix
+byte).</p>
+
+<p>As you may recall from the rant in <ref refid="NBT1.7"/>,
+Microsoft's<idx>Microsoft</idx> WINS<idx>WINS</idx> server provides
+special handling for unique names with the <code>0x1D</code>
+suffix. Though the Master Browser may register this name with the WINS
+server, WINS will deny knowledge of the name when queried. WINS also
+returns 255.255.255.255<idx>255.255.255.255</idx> in response to name
+queries for group names. Most third-party NBNS<idx
+start="c19-NBNS">NBNS</idx> implementations behave the same way in
+order to be <dk:nobr>WINS-compatible.</dk:nobr></p>
+
+<p>Two key things happen as a result:</p>
+
+<ul>
+<li><p>The NBNS provides no useful information when queried for either
+the <em>workgroup</em><code>&lt;1D&gt;</code><idx
+type="1D">workgroup</idx> name or the
+<code>MSBROWSE&lt;01&gt;</code><fn>From here on out, we use
+"<code>MSBROWSE&lt;01&gt;</code>" as a shorthand for
+"<code>\x01\x02__MSBROWSE__\x02\x01</code>" because it's really
+annoying to have to type all of those hex escapes and underscores
+every time.</fn> name, so Master Browsers can only be found using NBT
+Broadcast Name Queries.</p></li>
+
+<li><p>Each separate IP subnet may have a Master Browser with the same
+unique <code>0x1D</code> name. Even if there is an NBNS, there will be
+no name conflict.<idx>name conflict</idx>T</p></li>
+</ul>
+
+<p>This is highly unusual behavior for NetBIOS names but, on the plus
+side, each subnet in the Network Neighborhood<idx>Network
+Neighborhood</idx> gets to have its own elected leader. On the minus
+side, the Master Browsers cannot exchange information because they
+cannot talk to one another.</p>
+
+<fig dk:pos="top" id="Figure3.2">
+<img dk:width="280" loc="BRO02"/>
+<caption>Isolated Master Browsers</caption>
+
+<subcaption><p>Because they cannot "see" one another, Master Browsers
+on separate IP subnets register the same unique NBT name without
+conflict.</p></subcaption>
+</fig>
+
+<p><ref refid="Figure3.2"/> shows three separate workgroups, all with
+the same base name: "<code>WORKGROUP</code>". They are distinct
+because they cannot exchange and combine Browse Lists.<idx>Browse
+List</idx> In order to bring these three together, we need yet another
+special node: the "Domain Master Browser."  </p>
+
+<alert type="Pedantic Phrasing">
+<p>Just to make it absolutely clear that the elected Master Browser is
+LAN-locked, and to distinguish it from the Domain Master Browser, from
+this point forward we will use the term <b>L</b>ocal <b>M</b>aster
+<b>B</b>rowser (LMB<idx>LMB</idx>).</p>
+</alert>
+
+<p>The <b>D</b>omain <b>M</b>aster <b>B</b>rowser (DMB) is the
+workgroup president. Unlike the democratically elected LMB, the DMB is
+appointed. The Network Manager (that's a human being) must select and
+configure a node to serve as DMB. The DMB will register the unique
+NetBIOS name <em>workgroup</em><code>&lt;1B&gt;</code><idx
+type="1B">workgroup</idx> to identify itself. Since the goal here is
+to bring together Browse Lists from separate subnets, there must also
+be an NBNS available so that all of the LMBs on all of the subnets can
+find the DMB.</p>
+
+<fig dk:pos="top" id="Figure3.3">
+<img dk:width="280" loc="BRO03"/>
+<caption>A unified workgroup</caption>
+<subcaption><p>The existence of a Domain Master Browser <em>and</em> an NBNS allows
+the Local Master Browsers on each subnet to exchange Browse Lists.</p></subcaption>
+</fig>
+
+<p dk:break="after"><ref refid="Figure3.3"/> (which is, admittedly, a
+bit complex) shows a single, unified workgroup. Node <code>AMOS</code>
+has been designated to act as the NBNS, and node <code>DENNY</code>
+has been given the job of Domain Master Browser. Nodes
+<code>TZUKE</code> and <code>MCSHEE</code> are Local Master Browsers
+for their own subnets. They will query the NBNS for the name
+<code>WORKGROUP&lt;1B&gt;</code><idx type="1B">workgroup</idx>, and
+then contact the DMB in order to exchange Browse Lists. Note that the
+DMB takes on the role of LMB on its own subnet.<idx
+end="c19-NetBIOS-name">NetBIOS<sidx>name</sidx></idx></p>
+
+<h2 id="Browsing3.1.3.1">When Is a Workgroup not a Workgroup?</h2><h2s>
+
+<p>A workgroup is not a workgroup<idx>Workgroup</idx> when it is an NT
+Domain.</p>
+
+<p>The difference between a workgroup and an NT Domain is that the
+latter has a Domain Controller<idx>DC</idx>, which is an
+authentication<idx>authentication</idx> server.  The Domain Controller
+keeps track of usernames and passwords, and all of the SMB file
+servers within the NT Domain are expected to consult with the Domain
+Controller whenever a client sends a <code>SESSION SETUP
+REQUEST</code><idx>SESSION SETUP</idx> SMB.</p>
+
+<p>In the Windows world, the DMB service is always offered by a
+<b>P</b>rimary <b>D</b>omain <b>C</b>ontroller
+(PDC<idx>PDC</idx>). The two are considered inseparable, so if you are
+using Windows, you must set up a PDC in order to offer DMB services,
+and vice versa. This is probably why the DMB is called a
+<em>Domain</em> Master Browser.</p>
+
+<p>Samba<idx>Samba</idx>, on the other hand, lets you set up a DMB
+without the requirement that you also set up a PDC. Since DMB services
+do not, in fact, rely upon any NT Domain functionality, the DMB can
+operate independently. On the other hand, if you <em>do</em> wish to
+set up a PDC, then the PDC node <em>must</em> also be the DMB - even
+with Samba. This latter restriction is a bit goofy. The reason for the
+requirement is that Microsoft's<idx>Microsoft</idx>
+WINS<idx>WINS</idx> (and, therefore, any WINS-compatible NBNS)
+provides special handling for a group name registered by the Domain
+Controllers. Consider the following table:</p>
+
+<table colwidths="21* 21* 58*">
+<thead>
+<tr dk:border="after">
+<th><p>Name &amp; Suffix</p></th>
+<th><p>Group/Unique<idx>unique name</idx></p></th>
+<th><p>Service/Description</p></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><p><em>nt_domain</em><code>&lt;1B&gt;</code><idx type="1B">nt_domain</idx></p></td>
+<td><p>unique</p></td>
+<td><p>This name is registered by the Domain Master
+Browser. It must be registered with the NBNS in order to be of any
+real use.</p></td>
+</tr>
+<tr>
+<td><p><em>nt_domain</em><code>&lt;1C&gt;</code><idx type="1C">nt_domain</idx></p></td>
+<td><p>Internet&#160;group</p></td>
+<td><p>Registered by all Domain Controllers in the given
+NT Domain.</p></td>
+</tr>
+</tbody>
+</table>
+
+<p>The goofy bit, which has been described elsewhere in this book, is
+that the WINS server keeps track of up to 25 IPs for the
+<code>&lt;1C&gt;</code> group name. WINS also ensures that the IP
+address of the node registering the <code>&lt;1B&gt;</code> name is
+always the first in the <code>&lt;1C&gt;</code> name's IP list. That
+last quirk is the only real linkage between the DMB and PDC names:</p>
+
+<blockquote><p>Within the NBT
+namespace<idx>NBT<sidx>namespace</sidx></idx>, the <em>Primary</em>
+Domain Controller is distinguished from the Backup Domain
+Controllers<idx>BDC</idx> by the fact that it also runs the DMB
+service and, therefore, registers the <code>&lt;1B&gt;</code>
+name.</p></blockquote>
+
+<p>This all brings up a small nomenclature problem: If there is a DMB
+running without a PDC (as Samba allows), is the result a workgroup or
+a domain? That situation was not anticipated by
+Microsoft<idx>Microsoft</idx>, so the terminology doesn't quite
+work. (Can you call it a <em>Domain</em> Master Browser if there's no
+NT Domain?)<idx end="c19-NBNS">NBNS</idx><idx end="c19-group">group
+name</idx></p>
+
+<alert type="Careful Clarification">
+<p>For our purposes, we will use the term <em>workgroup</em> to
+specify the scope of the browsing environment even if the workgroup is
+also an NT Domain. We will use the term <em>NT Domain</em> when
+discussing an authentication domain.<idx
+end="c19-workgroup">Workgroup</idx>
+</p>
+</alert>
+
+</h2s><h2 id="Browsing3.1.3.2">Delegating Responsibility</h2><h2s>
+
+<p>So far, we have described Local Master Browsers and Domain
+Master Browsers. There are two additional types of browsers to consider.</p>
+
+<dl>
+<dt>Potential&#160;Browsers<idx>Potential Browser</idx></dt> 
+
+<dd><p>These are nodes which are willing and able to provide browse
+services. They have the <em>workgroup</em><code>&lt;1E&gt;</code><idx
+type="1E">workgroup</idx> name registered and they participate as
+candidates in browser elections.<idx>election</idx></p></dd>
+
+<dt>Backup&#160;Browsers<idx>Backup Browser</idx></dt>
+
+<dd><p>These are nodes that are selected by the Local Master Browser
+to assist in handing out the Browse List.<idx>Browse List</idx>
+Following the election, if there are other Potential Browsers
+available, the LMB<idx>LMB</idx> <em>may</em> choose one or more of
+them to be Backup Browsers.</p></dd>
+</dl>
+
+<p>Now we can explain that a "Browser" is any node that
+participates in the creation and maintenance of the Browse Service.
+As we have shown, browsers are categorized as <em>Potential</em>,
+<em>Backup</em>, <em>Local Master</em>, or <em>Domain Master</em>.
+Browser roles are cumulative, and the Domain Master is at the top of
+the heap.</p>
+
+<p>If the socio-political system seems overly complex, keep in mind
+that:</p>
+
+<ul>
+<li><p>The Windows Browse Service was developed in the days when 386-
+and 486-class processors were the top of the line.</p></li>
+
+<li><p>The Browse Service is run behind-the-scenes by systems that
+volunteer CPU time and a bit of memory.</p></li>
+
+<li><p>The more nodes there are on the subnet, the more work that must
+be done by the Local Master Browser.</p></li>
+
+<li><p>There may be several nodes on the network that are capable of
+acting as a Browser.</p></li>
+
+<li><p>If the nodes are unstable (frequently rebooted, shut down at
+the end of the day, etc.) a single copy of the Browse List may be
+lost.</p></li>
+</ul>
+
+<p>All of this plays into the design of the Windows Browse
+Service.<idx end="c19-bs">Browse Service</idx></p>
+
+<p>The key thing to remember is that the Local Master Browser (unless
+it is also the DMB) is a volunteer, and being a Browser is not its
+primary function. The LMB node is, most likely, running as an SMB
+server or desktop system, or doing some other work. Allowing the
+Browse Service to interfere with someone's word processing or
+spreadsheet recalculations would be a bad thing.</p>
+
+<p>So, on subnets with a lot of nodes, the LMB may select some of the
+Potential Browsers to act as Backup Browsers. When a client wants a
+copy of the Browse List, the LMB may direct the client to one or more
+Backup Browsers instead. The client will cache the IP addresses of the
+Backup Browsers, and from that point forward send all Browse List
+queries to one of those nodes. The Backup Browsers are also the most
+likely nodes to replace the current LMB if it goes down, and the
+backup copies of the Browse List that they maintain will ensure
+stability in the Network Neighborhood.<idx>Network
+Neighborhood</idx><idx end="c19-dmb">DMB</idx></p>
+
+</h2s></h1s></chapter>
+</oim>

@@ -1,0 +1,513 @@
+<?xml version="1.0" encoding="US-ASCII"?>
+<!DOCTYPE oim SYSTEM "oimxml.dtd" [
+  <!ENTITY nbsp  "&#160;">
+  <!ENTITY lsquo "&#8216;">
+  <!ENTITY rsquo "&#8217;">
+  <!ENTITY minus "&#8211;">
+  <!ENTITY times "&#xd7;">
+  <!ENTITY copy "&#xa9;">
+  <!ENTITY eacute "&#233;">
+] >
+<oim xmlns:dk="http://www.kirsanov.com">
+<chapter id="Appendix-D">
+<chapopen><title>The SMB URL</title>
+<epigraph dk:padding-top="36">
+<p>
+<line>There's a fly on the frog</line>
+<line>On the bump on the log</line>
+<line>In the hole in the middle of the sea.</line>
+</p>
+<attribution>Traditional Folk Song</attribution>
+</epigraph>
+</chapopen>
+
+<h1>The Origins of the SMB URL</h1><h1s>
+
+<p><idx start="c-smburl">SMB<sidx>URL</sidx></idx>The idea of a URL scheme
+designed specifically for use with CIFS had been kicked around before,
+but it was Richard Sharpe<idx>Sharpe<sidx>Richard</sidx></idx> of the
+Samba<idx>Samba<sidx>Team</sidx></idx> Team who finally pushed folks
+into digging a foundation and pouring concrete. Richard proposed the
+idea to the readership of the Samba Technical mailing
+list<idx>Samba<sidx>technical mailing list</sidx></idx>, and a lively
+discussion ensued. It took only a short while to work out the basic
+design of the SMB URL, and most of those involved agreed that the
+rough-draft plans were a good start. Richard then began work on a
+prototype implementation to be included in Samba's<idx>Samba</idx>
+<code>libsmbclient</code><idx>libsmbclient</idx> library, and yours
+truly started work on an Internet Draft for submission to the
+IETF.<idx>IETF</idx></p>
+
+<p>In the broader CIFS community, however, the idea received mixed
+reviews. Some thought that a URL scheme for use with SMB was a silly
+waste of time. Others liked the idea so much that they started
+construction before the foundation was complete, building their
+implementations on little more than the nominal "specification"
+hammered out in the mailing list discussions.</p>
+
+<p>So much for the standards process...</p>
+
+<p>Fortunately, the early adopters were also CIFS-savvy folk, so as
+<em>de facto</em> standards go, the SMB URL isn't all that bad. At the
+very least it can be said that the known problems with the SMB URL are
+rooted firmly in the bedrock of the CIFS suite itself, and that the
+URL scheme doesn't do anything to make matters worse.  </p>
+
+</h1s><h1>Of Round Pegs, Square Holes, and Big Mallets</h1><h1s>
+
+<p>The SMB URL might have turned out to be fairly simple and
+straight-forward, but this is CIFS we're talking about. CIFS is a
+complex protocol suite, and the requirements for the new URL scheme
+quickly became proportionally complex. Some of the things people
+wanted from the SMB URL included the ability to:</p>
+
+<ul>
+<li><p>specify SMB resources available via NBT <em>and</em> naked TCP
+transport,</p></li>
+
+<li><p>list all available NBT Workgroups,<idx>Workgroup</idx></p></li>
+
+<li><p>list the servers within an NBT Workgroup, and</p></li>
+
+<li><p>locate Active Directory<idx>Active Directory</idx> servers and
+list the file servers within an Active Directory (W2K)
+domain.</p></li>
+</ul>
+
+<p>In addition, there was a general hope that the SMB URL would look
+and feel a lot like the older UNC<idx>UNC</idx> format used by Windows
+and OS/2<idx>OS/2</idx>, while still retaining all of the virtues of
+the more modern, user-friendly, and familiar <dk:nobr>URL
+format.</dk:nobr></p>
+
+<p>That's a lot to cram into a single URL scheme.</p>
+ 
+<p>Although the basic design of the SMB URL took only a week or so to
+work out, some of the finer points required a lot more discussion. In
+fact, as of this writing the SMB URL Internet Draft is on its fourth
+revision and clearly needs to be overhauled at least one more
+time. The need for an update is due in part to the fact that the
+author didn't know much about writing IETF<idx>IETF</idx> Internet Drafts when he
+started. It is also true, however, that a number of fiddly issues
+needed to be addressed - things like ensuring that the SMB URL scheme
+conformed to the general URI syntax, and annoying stuff like that.</p>
+
+<p>The following discussion should, therefore, be considered
+unreliable. See the most current SMB URL Internet Draft or (some day,
+hopefully) SMB URL RFC.</p>  
+
+</h1s><h1>Form Versus Function</h1><h1s>
+
+<p>The basic syntax of an absolute SMB URL looks something like this:</p>
+
+<pre dk:type="small">smb://[[[authdomain;]user@]host[:port][/share[/path][/name]]][?context]</pre>
+
+<p>The stuff in brackets is optional, of course, and there are a lot
+of brackets. That means that there's a lot of potential variety in the
+formation of SMB URLs. Note, too, that this is the format for the
+<em>absolute</em> form of the URL. An implementation should also
+support relative URLs.<fn>This discussion assumes a basic knowledge of
+the workings of URLs and URIs (though it does not assume that you know
+the difference between a URL and a URI... I can't figure it out
+myself). For detailed information on URIs, URNs, and URLs see RFC 2396
+and RFC&nbsp;2732.</fn></p>
+
+<p>One of the fiddly bits that had to be handled when designing the
+SMB URL was whether the scheme identifier should be "SMB" or
+"CIFS". There wasn't a lot of argument over this. People just started
+using whichever they liked, so both were declared acceptable. In other
+words, "<code>smb://</code>" and
+"<code>cifs://</code><idx>CIFS<sidx>URL</sidx></idx>" both mean the
+same thing (and implementations should support both). We'll use
+"<code>smb</code>" here because it is more common (and because that's
+the one the author likes).</p>
+
+<dl>
+<dt><code>smb://</code></dt>
+
+<dd><p>With no host specified, this form of the SMB URL indicates the
+local SMB filesharing network. In practical terms, it means the set of
+NBT Workgroups<idx>Workgroup</idx> on the local subnet.</p>
+
+<p>The way to handle this is to send an NBT broadcast query for the
+<code>\x01\x02__MSBROWSE__\x02</code><idx>MSBROWSE&lt;01&gt;</idx>
+name, thus locating any Local Master Browsers on the subnet. Query one
+or more of the LMBs for the list of known Workgroups, and report the
+results.</p>
+
+<p dk:break="after">This form of the URL does not currently have a
+defined meaning in an Active Directory<idx>Active Directory</idx>
+environment. The suggestion is that it might be used to find an Active
+Directory server, using the client's own fully qualified DNS<idx>DNS</idx> domain
+name as a hint. If a server is found, then its W2K domain name would
+be returned.</p></dd>
+
+<dt><code>smb://netbios_name</code></dt>
+
+<dd><p>If the <code>host</code> is specified using a
+NetBIOS<idx>NetBIOS</idx> name,<idx>NetBIOS<sidx>name</sidx></idx>
+then it <em>might</em> be the name of a Workgroup, or it
+<em>might</em> be the name of an SMB fileserver. The only way to know
+which is to send a few queries. Three queries, in fact - one for each
+of three different versions of the name:</p>
+
+<ul>
+<li><p><code>host&lt;1B&gt;</code>  (unicast),</p></li>
+
+<li><p><code>host&lt;1D&gt;</code>  (broadcast), and</p></li>
+
+<li><p><code>host&lt;20&gt;</code>.</p></li>
+</ul>
+
+<p>The <code>&lt;20&gt;</code> names, of course, are registered by SMB
+fileservers. The <code>&lt;1B&gt;</code> and <code>&lt;1D&gt;</code>
+names are registered by the Domain Master Browser and Local Master
+Browser, respectively.</p>
+
+<p>Finding an SMB server is basic stuff; the browsers are a little bit
+trickier. LMBs<idx>LMB</idx> can only be discovered using a broadcast
+query, but there may not be an LMB for the desired Workgroup<idx>Workgroup</idx> on the
+local LAN.<idx>NBT<sidx>vLAN</sidx></idx> If the Workgroup has a
+DMB<idx>DMB</idx>, it can be found by sending a query to the
+NBNS<idx>NBNS</idx> (assuming that the address of the NBNS is
+known). Not all Workgroups have a Domain Master Browser, however, so
+the <code>&lt;1B&gt;</code> query may also fail. Querying for both
+browser types simply increases the odds of finding something
+usable.</p>
+
+<p>If, after all that, the <code>netbios_name</code> resolves to a
+Workgroup name, then the LMB or DMB should be asked for its list of
+member servers. If the URL resolves to an SMB fileserver, then the 
+fileserver should be queried for the list of shares offered by the
+server.</p>
+
+<p>There are rare cases in which the <code>netbios_name</code> may
+resolve to both a fileserver name and a Workgroup name. This is
+generally caused by a misconfigured NBT network. The recommended way
+to handle this situation is to issue a warning so that the user knows
+that there is a problem, but then go ahead and list both the
+servers in the Workgroup and the shares offered by the server. A tool
+with a graphical interface could, for example, provide different icons
+to distinguish the differnet object types as shown in <ref
+refid="FigureF.1"/>.<fn>The network depicted in <ref
+refid="FigureF.1"/> is obviously poorly managed. Coffee. Pthah.</fn></p>
+
+<fig dk:pos="top" id="FigureF.1">
+<img dk:width="160" loc="ApD01"/>
+<caption>Overloading in action</caption>
+
+<subcaption><p>It is rare, but possible in a misconfigured NBT
+network, that a Workgroup and an SMB fileserver will share the same
+NetBIOS base name. The client application should probably make an
+effort to help the user sort things out.</p></subcaption>
+</fig>
+</dd>
+
+<dt><code>smb://dns_name</code></dt>
+
+<dd><p>If the <code>host</code> is specified as a DNS<idx>DNS</idx> name or an IP
+address, then it can't represent an NBT Workgroup because Workgroups
+can only be identified by their NetBIOS names.<idx>NetBIOS<sidx>name</sidx></idx> It might, however, be
+an Active Directory<idx>Active Directory</idx> server (a W2K Domain
+name).</p>
+
+<p>Once again, the implementor is faced with having to go to the wire
+to discover the semantics of the URL. In this case, it may be
+necessary to send an LDAP<idx>LDAP</idx> query to the
+<code>host</code> in addition to attempting SMB connections. The
+<code>host</code> may be a W2K Domain Controller, an SMB server, or
+both.</p>
+
+<p>Isn't overloading fun?</p></dd>
+
+<dt><line><code>smb://host/share</code></line>
+<line><code>smb://host/share/path</code></line>
+<line><code>smb://host/share/name</code></line>
+<line><code>smb://host/share/path/name</code></line></dt>
+
+<dd><p>The share is the root of the shared directory tree, path is a
+subdirectory within the share, and name is a filename. That should all
+be fairly <dk:nobr>familiar stuff.</dk:nobr></p></dd>
+</dl>  
+
+</h1s><h1>Additional Parts</h1><h1s>
+
+<p>Those are the basics, but there are a few more fields that need
+explaining.</p>
+
+<dl>
+<dt><code>user</code></dt>
+
+<dd><p>If given as part of the URL string, the username is separated
+from the <code>host</code> field using an "at" symbol
+(&lsquo;@&rsquo;). For example:</p>
+
+<pre>smb://cue@cleden/corgi</pre>
+
+<p>The <code>user</code> field is typically included in an SMB URL as
+an authentication<idx>authentication</idx> shortcut, relieving the
+application from having to prompt for it. Note, though, that some SMB
+URL implementations support a further parsing of the user field into a
+username and password, e.g.:</p>
+
+<pre>smb://cue:p%40ssw0rd@cleden/corgi</pre>
+
+<p>This usage is considered bad practice, because it may encourage
+people to expose their passwords. Applications that handle SMB URLs
+should always prompt for a password, and should not support the use of
+the password field in the SMB URL.</p></dd>
+
+<dt><code>authdomain</code></dt>
+
+<dd><p>This is a further refinement of the authentication shortcut
+offered by the <code>user</code> field. The <code>authdomain</code> is
+separated from the user name with a semicolon, as shown in the syntax
+expression above. As the name suggests, the <code>authdomain</code>
+represents the authentication domain in which the username is
+valid. The authentication domain may be either a W2K or an NT Domain
+name.</p></dd>
+
+<dt><code>port</code></dt>
+
+<dd><p>This field, delimited by a colon, specifies the TCP port number
+to which to connect.</p></dd>
+
+<dt><code>context</code></dt>
+
+<dd><p>The NBT layer presents some unique problems with regard to the
+design of a URL scheme. URLs, of course, are intended for use on the
+Internet, which is an IP-based network. Internet naming is handled by
+the DNS,<idx>DNS</idx> and the addresses are all of the IPv4 or IPv6 variety. NBT
+adds a virtual NetBIOS layer,<idx>NetBIOS</idx> which brings with it a whole 'nother
+addressing system plus a set of mechanisms to map the NetBIOS layer
+onto IP. The mapping requires a bit of context. In particular, the
+client needs to know:</p>
+
+<ul>
+<li><p>the IP address of the NBNS (WINS<idx>WINS</idx> server), if
+there is one,</p></li>
+
+<li><p>the <code>CALLING</code> name (NetBIOS source address) to
+use, and</p></li>
+
+<li><p>the <code>CALLED</code> name (NetBIOS destination address) to
+use.</p></li>
+</ul>
+
+<p>Clients typically gather this information from a configuration
+file, local host name, or destination name, but these values can be
+overridden using the <code>context</code> field of the SMB URL. The
+<code>context</code> field is set up as a URL query string. It must be
+at the end of the URL, separated from the rest of the string by a
+single question mark character. The context is given as a set of
+keyword/value pairs, separated by semicolons. <dk:nobr>For example:</dk:nobr></p>
+
+<pre>smb://camarllyn/nell?called=nellie;calling=cue;nbns=10.9.7.3</pre>
+
+<p>The keywords defined in the fourth revision of the SMB URL IETF<idx>IETF</idx>
+Internet Draft are:</p>
+
+<ul>
+<li><p><code>NBNS</code><idx>NBNS</idx> (alias <code>WINS</code>),</p></li>
+
+<li><p><code>CALLED</code>,</p></li>
+
+<li><p><code>CALLING</code>, and</p></li>
+
+<li><p><code>WORKGROUP</code> (alias <code>NTDOMAIN</code>).</p></li>
+</ul>
+
+<p>There is little reason to specify a Workgroup<idx>Workgroup</idx> name in the <code>context</code>
+when it can be specified in the <code>host</code> field instead, so that one may be
+removed from the list. Others which may be added are:</p>
+
+<ul>
+<li><p><code>BROADCAST</code>, to specify the broadcast address for
+B-mode operations,</p></li>
+
+<li><p><code>NODETYPE</code>,<idx>node type</idx> to indicate B, P, M,
+or H mode behavior, and</p></li>
+
+<li><p><code>SCOPEID</code>, to specify the Scope ID.<idx>NBT<sidx>Scope ID</sidx></idx></p></li>
+</ul>
+
+<p>Putting the Scope ID into the context instead of including it as
+part of the NetBIOS<idx>NetBIOS<sidx>name</sidx></idx> name in the host field would greatly simplify the
+semantic interpretation of SMB URLs.</p></dd>
+</dl>
+
+</h1s><h1>A Simple SMB URL Parser</h1><h1s>
+
+<p><ref refid="ListingF.1"/> provides a simple, and not entirely robust,
+SMB URL parser. A better parser would consume a much larger portion of
+the time-space continuum than is available for example code. This one
+is a good place to start.</p>
+
+<example id="ListingF.1" part="a">
+<caption>A simple SMB URL parser: <code>SMB_URL.h</code></caption>
+<pre><![CDATA[/* Typedefs.
+ */
+
+typedef struct
+  {
+  uchar *ntdomain;
+  uchar *user;
+  uchar *server;
+  uchar *port;
+  uchar *share;
+  uchar *path;
+  uchar *context;
+  } smb_url;
+
+/* Function prototypes.
+ */
+
+smb_url *smb_urlParse( char *src, smb_url *url );
+  /* ---------------------------------------------------- **
+   * Parse an SMB URL string into an smb_url structure.
+   * The function returns NULL on error.
+   * ---------------------------------------------------- **
+   */
+
+void smb_urlContent( smb_url *url );
+  /* ---------------------------------------------------- **
+   * Dump the contents of an smb_url structure,
+   * representing a parsed SMB URL string.
+   * ---------------------------------------------------- **
+   */
+
+/* ------------------------------------------------------ */]]></pre>
+</example>
+
+<example dk:break="before" refid="ListingF.1" part="b">
+<caption>A simple SMB URL parser: <code>SMB_URL.c</code></caption>
+<pre dk:break="after"><![CDATA[#include <stdio.h>
+#include <string.h>
+
+#include "smb_url.h"
+
+smb_url *smb_urlParse( char *src, smb_url *url )
+  /* ---------------------------------------------------- **
+   * Parse an SMB URL string into an smb_url structure.
+   *
+   * This is a very, very simplistic URL parser... just
+   * enough for demonstration purposes.
+   * It does not handle the full syntax of SMB URLs.
+   * It only handles absolute URLs, and does not do
+   * enough error checking.  You can certainly do better,
+   * and superior examples can be found on on the web.
+   *
+   * The function returns NULL on error.
+   * ---------------------------------------------------- **
+   */
+  {
+  int    pos;
+  uchar *p;
+
+  /* Clear the smb_url structure first. */
+  (void)memset( url, 0, sizeof( smb_url ) );
+
+  /* Check for a correct prefix. */
+  pos = 0;
+  if( 0 == strncasecmp( "smb://", src, 6 ) )
+    pos = 6;
+  else
+    if( 0 == strncasecmp( "cifs://", src, 7 ) )
+      pos = 7;
+    else
+      return( NULL );
+
+  /* Check for an empty URL ("smb://"). */
+  if( '\0' == src[pos] )
+    return( url );
+
+  /* Copy the original string so that we can carve it up. */
+  src = strdup( &src[pos] );]]></pre>
+
+<pre dk:break="after"><![CDATA[  /* Separate the server, share, path, and context
+   * components.
+   */
+  url->server = src;
+
+  /* Look for context. */
+  p = strrchr( src, '?' );
+  if( NULL != p )
+    {
+    *p = '\0';
+    url->context = ++p;
+    }
+
+  /* Share part next. */
+  p = strchr( src, '/' );
+  if( NULL != p )
+    {
+    *p = '\0';
+    url->share = ++p;
+    /* path part. */
+    p = strchr( p, '/' );
+    if( NULL != p )
+      {
+      *p = '\0';
+      url->path = ++p;
+      }
+    }
+
+  /* Look for the ntdomain & username subfields
+   * in the server string (the Authority field).
+   */
+  p = strchr( url->server, '@' );
+  if( NULL != p )
+    {
+    *p = '\0';
+    url->user = url->server;
+    url->server = ++p;
+    /* Split the user field into ntdomain;user */
+    p = strchr( url->user, ';' );
+    if( NULL != p )
+      {
+      *p = '\0';
+      url->ntdomain = url->user;
+      url->user     = ++p;
+      }
+    }]]></pre>
+
+<pre><![CDATA[  /* Look for a port number in the server string. */
+  p = strchr( url->server, ':' );
+  if( NULL != p )
+    {
+    *p = '\0';
+    url->port = ++p;
+    }
+
+  return( url );
+  } /* smb_urlParse */
+
+void smb_urlContent( smb_url *url )
+  /* ---------------------------------------------------- **
+   * Dump the contents of an smb_url structure,
+   * representing a parsed SMB URL string.
+   * ---------------------------------------------------- **
+   */
+  {
+  if( url->ntdomain )
+    (void)printf( "ntdomain: %s\n", url->ntdomain );
+  if( url->user )
+    (void)printf( "    user: %s\n", url->user );
+  if( url->server )
+    (void)printf( "  server: %s\n", url->server );
+  if( url->port )
+    (void)printf( "    port: %s\n", url->port );
+  if( url->share )
+    (void)printf( "   share: %s\n", url->share );
+  if( url->path )
+    (void)printf( "    path: %s\n", url->path );
+  if( url->context )
+    (void)printf( " context: %s\n", url->context );
+  } /* smb_urlContent */
+
+/* ------------------------------------------------------ */]]><idx end="c-smburl">SMB<sidx>URL</sidx></idx></pre>
+</example>
+
+</h1s>
+</chapter>
+</oim>

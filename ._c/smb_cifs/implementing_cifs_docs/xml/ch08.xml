@@ -1,0 +1,336 @@
+<?xml version="1.0" encoding="US-ASCII"?>
+<!DOCTYPE oim SYSTEM "oimxml.dtd" [
+  <!ENTITY nbsp  "&#160;">
+  <!ENTITY lsquo "&#8216;">
+  <!ENTITY rsquo "&#8217;">
+  <!ENTITY minus "&#8211;">
+  <!ENTITY mdash "&#8212;">
+  <!ENTITY times "&#xd7;">
+  <!ENTITY copy "&#xa9;">
+] >
+<oim xmlns:dk="http://www.kirsanov.com">
+<partopen dk:number="II" id="SMB">
+<title><dk:line>SMB:</dk:line> <dk:line>The Server</dk:line> <dk:line>Message Block</dk:line> <dk:line>Protocol</dk:line></title></partopen>
+
+<chapter id="SMB2.1">
+<chapopen><title>A Little Background on&nbsp;SMB</title>
+<epigraph dk:padding-top="60">
+<p>Your mileage may vary.</p>
+<attribution>Advertiser's disclaimer</attribution>
+</epigraph>
+
+</chapopen>
+
+<email>
+<pre>From: Steven French,<idx>French, Steven</idx> Senior Software Engineer, IBM
+  To: Chris Hertel
+
+Chris,
+
+Hope things are going well in the cold north...<idx>Feigenbaum,
+Dr. Barry</idx><idx>BAF protocol</idx><idx>IBM</idx><idx>DOS</idx><idx>dialect</idx><idx>OS/2</idx><idx>Microsoft</idx><idx>LM</idx>
+
+I thought the following info would be interesting to you. I met the
+original "inventor" of SMB a few years ago - Dr. Barry Feigenbaum -
+who back in the early 80's was working on network software
+architecture for the infant IBM PCs, working for IBM in the Boca 
+Raton plant in Florida. He mentioned that it was first called the 
+"BAF" protocol (after his initials) but he later changed it to SMB.  
+In the early DOS years IBM and Microsoft (with some input from Intel 
+and 3Com) contributed to it but by the time of the first OS/2 server 
+version (LANMAN1.0 dialect and later) Microsoft did much of the work 
+(for "LAN Manager" and its relatives).</pre>
+</email>
+
+<p>Like NetBIOS<idx>NetBIOS</idx>, the Server Message Block protocol
+originated a long time ago at IBM. Microsoft embraced it, extended it,
+and in 1996 gave it a marketing upgrade by renaming it "CIFS."</p>
+
+<p>Over the years there have been several attempts to document and
+standardize the SMB/CIFS protocol:<idx>SMB</idx></p>
+
+<ul>
+<li><p>Microsoft keeps an archive of documentation covering older
+versions of SMB/CIFS. The collection spans a period of roughly ten
+years, starting at about 1988 with the SMB Core
+Protocol.<idx>SMB<sidx>Core Protocol</sidx></idx> The collection is
+housed, it seems, on a dusty FTP server in a forgotten corner of a
+machine room somewhere in the Pacific Northwest. The URL for the CIFS
+archive is <code>ftp://ftp.microsoft.com/developr/drg/CIFS/</code>.
+</p></li>
+
+<li><p>In 1992, X/Open (now known as The Open Group) published an SMB
+specification titled <cite>Protocols for X/Open PC Interworking: SMB,
+Version 2</cite>. The book is now many years out of date and SMB has
+evolved a bit since its publication, yet it is still considered one of
+the best references available.<fn>The X/Open SMB
+documentation<idx>X/Open SMB Documentation</idx> is out of print, but
+electronic copies are now available online (free registration
+required). See
+<url>http://www.opengroup.org/products/<dk:br/><dk:nobr>publications/catalog/</dk:nobr></url>,
+and look for documents #C195 and #C209.</fn> The Open Group is a
+standards body so the outdated version of SMB described in the X/Open
+book is, after all, a standard protocol.</p></li>
+
+<li><p>A few years later, Microsoft submitted a set of CIFS Internet
+Drafts to the IETF<idx>IETF</idx> (<b>I</b>nternet <b>E</b>ngineering
+<b>T</b>ask <b>F</b>orce), but those drafts were somewhat incomplete
+and inaccurate; they were allowed to expire. Microsoft's more recent
+attempts at documenting CIFS (starting in March, 2002) have been
+rendered useless by awkward licensing restrictions, and from all
+accounts contain no new information.<fn>I must rely on anecdotal
+evidence to support this claim. Due to the licensing restrictions,
+<dk:nobr>I have</dk:nobr> not read these documents, which were
+released in March of 2002.</fn> The expired IETF Internet
+Drafts<idx>Leach/Naik Internet Drafts</idx> (by Paul Leach<idx>Leach,
+Paul</idx> and Dilip Naik<idx>Naik, Dilip</idx>) are still available
+from the Microsoft FTP server described above and other sources around
+the web.</p></li>
+
+<li><p>The CIFS Working Group of the <b>S</b>torage <b>N</b>etwork
+<b>I</b>ndustry <b>A</b>ssociation (SNIA<idx>SNIA</idx>) has published
+a <em>CIFS Technical Reference</em><idx start="c8-snia">SNIA<sidx>CIFS
+Technical Reference</sidx></idx> based on the earlier IETF drafts. The
+SNIA document is neither a specification nor a standard, but it is
+freely available from the SNIA website.</p></li>
+</ul>
+
+<p>Without a current and authoritative protocol specification, there
+is no external reference against which to measure the "correctness" of
+an implementation, and no way to hold anyone accountable. Since
+Microsoft is the market leader, with a proven monopoly on the desktop,
+the behavior of their clients and servers is the standard against
+which all other implementations <dk:nobr>are measured.</dk:nobr></p>
+
+<p>Jeremy Allison,<idx>Allison, Jeremy</idx> the Samba
+Team's<idx>Samba<sidx>Team</sidx></idx> First Officer,<fn>...and
+Tactical Officer. He's the one with the prosthetic forehead.</fn> has
+stated that "The level of detail required to interoperate successfully
+is simply not documentable." One reason that this is true is that
+Microsoft can "enhance" SMB behavior at will. Combined with the dearth
+of authoritative references, this means that the only criteria for a
+well-behaved SMB implementation is that it works with Microsoft
+products. As a result, subtle inconsistencies and variations have
+crept into the protocol. They are discovered in much the same way that
+a dog-owner discovers poop in the yard in springtime
+when the snow melts.<fn>I live in Minnesota, where it most definitely
+snows in winter. I share my home with a Pembrokeshire Welsh
+Corgi and a Golden Retriever, so the springtime
+scenario described above is vividly real and meaningful to me. Some of
+my Australian Samba Team friends have suggested
+that people in other parts of the world may find it less familiar. Use
+your imagination.</fn></p>
+
+<p>Many people dread spring chores, but spring also brings the
+flowers. The children play, the dog chases a butterfly, the birds
+sing... and it all seems suddenly worthwhile. It's the same with the work
+we have ahead. Things are not really too bad, once you've gotten
+started.</p>
+
+<h1>Getting Started</h1><h1s>
+
+<p>This part of the book will cover the basics of SMB, enumerate and
+describe some of the SMB message types (commands), discuss protocol
+dialects, give some details on authentication, and provide a few
+examples. That should be enough to help you develop a working
+knowledge of the protocol, a working SMB client, and possibly a simple
+server.</p>
+
+<p>Bear in mind, though, that SMB is more complex and less well
+defined than NBT. In the NBT section it was possible to describe every
+message type and provide a comprehensive review of the entire NBT
+protocol. It is not practical to cover all of SMB in the same
+way. Instead, the goal here is to explain the basics of SMB, provide
+details that are missing from other sources, and describe how to go
+about exploring SMB on your own. In other words, the goal is to
+develop understanding rather than simply providing knowledge.</p>
+
+<p>The textbook for this class is the latest version of the SNIA
+<cite>CIFS Technical Reference</cite>. Additional sources are listed
+in the References section near the end of this book. The most
+important tool, however, is probably the protocol analyzer. Warm up
+your copy of Ethereal<idx>Ethereal</idx> or NetMon,<idx>NetMon</idx>
+and get ready to do some packet shoveling. </p>
+
+</h1s><h1 id="SMB2.1.2">NBT or Not NBT</h1><h1s>
+
+<p>Before we actually start, there is one more thing to mention: The
+SMB protocol is supposed to be "transport independent." That is, SMB
+<em>should</em> work over any reliable transport that meets a few
+basic criteria. NBT is one such transport, but SMB does not really
+require the NetBIOS API.<idx>NetBIOS<sidx>API</sidx></idx> It can, for
+instance, be run directly over TCP/IP.</p>
+
+<p>Just for fun, we will refer to SMB over TCP/IP<idx>TCP</idx>
+without NBT as "naked" or "raw." When running naked, SMB defaults to
+using TCP port 445<idx>445/TCP</idx> instead of the NBT Session
+Service<idx>NBT<sidx>Session Service</sidx></idx> port
+(TCP/139<idx>139/TCP</idx>).  Windows 2000, Windows XP, and
+Samba<idx>Samba</idx> all support raw transport, but the large number
+of "legacy" Windows clients still in use suggest that NBT will not go
+away any time soon.</p>
+
+<p>Other than the new port number, there are only two notable
+differences between NBT and naked transport<idx>naked
+transport</idx>. The first is that naked transport does not make use
+of the NBT <code>SESSION REQUEST</code> and <code>POSITIVE SESSION
+RESPONSE</code> messages. The second is that the two transports
+interpret the <code>SESSION MESSAGE</code> header a bit
+differently.</p>
+
+<p>Recall (from <ref refid="NBT1.6"/>) that the NBT Session Service
+prepends a four-byte header to each <code>SESSION MESSAGE</code>, like
+so:</p>
+
+<table colwidths="3.125* 3.125* 3.125* 3.125* 3.125* 3.125* 3.125* 3.125* 3.125* 3.125* 3.125* 3.125* 3.125* 3.125* 3.125* 3.125* 3.125* 3.125* 3.125* 3.125* 3.125* 3.125* 3.125* 3.125* 3.125* 3.125* 3.125* 3.125* 3.125* 3.125* 3.125* 3.125*" dk:type="centered" dk:borders="all">
+<tbody>
+<tr dk:border="after" dk:display-align="after">
+<td dk:border="right"><p><code>0</code></p></td>
+<td dk:border="right"><p><code>1</code></p></td>
+<td dk:border="right"><p><code>2</code></p></td>
+<td dk:border="right"><p><code>3</code></p></td>
+<td dk:border="right"><p><code>4</code></p></td>
+<td dk:border="right"><p><code>5</code></p></td>
+<td dk:border="right"><p><code>6</code></p></td>
+<td dk:border="right"><p><code>7</code></p></td>
+<td dk:border="right"><p><code>8</code></p></td>
+<td dk:border="right"><p><code>9</code></p></td>
+<td dk:border="right"><p><line><code>1</code></line>
+<line><code>0</code></line></p></td>
+<td dk:border="right"><p><line><code>1</code></line>
+<line><code>1</code></line></p></td>
+<td dk:border="right"><p><line><code>1</code></line>
+<line><code>2</code></line></p></td>
+<td dk:border="right"><p><line><code>1</code></line>
+<line><code>3</code></line></p></td>
+<td dk:border="right"><p><line><code>1</code></line>
+<line><code>4</code></line></p></td>
+<td dk:border="right"><p><line><code>1</code></line>
+<line><code>5</code></line></p></td>
+<td dk:border="right"><p><line><code>1</code></line>
+<line><code>6</code></line></p></td>
+<td dk:border="right"><p><line><code>1</code></line>
+<line><code>7</code></line></p></td>
+<td dk:border="right"><p><line><code>1</code></line>
+<line><code>8</code></line></p></td>
+<td dk:border="right"><p><line><code>1</code></line>
+<line><code>9</code></line></p></td>
+<td dk:border="right"><p><line><code>2</code></line>
+<line><code>0</code></line></p></td>
+<td dk:border="right"><p><line><code>2</code></line>
+<line><code>1</code></line></p></td>
+<td dk:border="right"><p><line><code>2</code></line>
+<line><code>2</code></line></p></td>
+<td dk:border="right"><p><line><code>2</code></line>
+<line><code>3</code></line></p></td>
+<td dk:border="right"><p><line><code>2</code></line>
+<line><code>4</code></line></p></td>
+<td dk:border="right"><p><line><code>2</code></line>
+<line><code>5</code></line></p></td>
+<td dk:border="right"><p><line><code>2</code></line>
+<line><code>6</code></line></p></td>
+<td dk:border="right"><p><line><code>2</code></line>
+<line><code>7</code></line></p></td>
+<td dk:border="right"><p><line><code>2</code></line>
+<line><code>8</code></line></p></td>
+<td dk:border="right"><p><line><code>2</code></line>
+<line><code>9</code></line></p></td>
+<td dk:border="right"><p><line><code>3</code></line>
+<line><code>0</code></line></p></td>
+<td><p><line><code>3</code></line>
+<line><code>1</code></line></p></td>
+</tr>
+<tr>
+<td colspan="8" dk:border="right"><p><code>0 (zero)</code></p></td>
+<td colspan="7" dk:border="right"><p>&lt;reserved&gt;</p></td>
+<td colspan="17"><p><code>LENGTH (17 bits)</code></p></td>
+</tr>
+</tbody></table>
+
+<p>The <code>LENGTH</code> field, as shown, is 17 bits wide.<fn>There
+are some old archived conversations on Microsoft's CIFS mailing
+list<idx>CIFS<sidx>mailing list</sidx></idx> which suggest that some
+implementors were - and possibly still are - only allowing for a 16
+bit <code>LENGTH</code> field in the NBT <code>SESSION
+MESSAGE</code>.</fn> Raw TCP transport also prepends a four-byte
+header, but there are no reserved bits so the <code>LENGTH</code> may
+use three full bytes:</p>
+
+<table colwidths="3.125* 3.125* 3.125* 3.125* 3.125* 3.125* 3.125* 3.125* 3.125* 3.125* 3.125* 3.125* 3.125* 3.125* 3.125* 3.125* 3.125* 3.125* 3.125* 3.125* 3.125* 3.125* 3.125* 3.125* 3.125* 3.125* 3.125* 3.125* 3.125* 3.125* 3.125* 3.125*" dk:type="centered" dk:borders="all">
+<tbody>
+<tr dk:border="after" dk:display-align="after">
+<td dk:border="right"><p><code>0</code></p></td>
+<td dk:border="right"><p><code>1</code></p></td>
+<td dk:border="right"><p><code>2</code></p></td>
+<td dk:border="right"><p><code>3</code></p></td>
+<td dk:border="right"><p><code>4</code></p></td>
+<td dk:border="right"><p><code>5</code></p></td>
+<td dk:border="right"><p><code>6</code></p></td>
+<td dk:border="right"><p><code>7</code></p></td>
+<td dk:border="right"><p><code>8</code></p></td>
+<td dk:border="right"><p><code>9</code></p></td>
+<td dk:border="right"><p><line><code>1</code></line>
+<line><code>0</code></line></p></td>
+<td dk:border="right"><p><line><code>1</code></line>
+<line><code>1</code></line></p></td>
+<td dk:border="right"><p><line><code>1</code></line>
+<line><code>2</code></line></p></td>
+<td dk:border="right"><p><line><code>1</code></line>
+<line><code>3</code></line></p></td>
+<td dk:border="right"><p><line><code>1</code></line>
+<line><code>4</code></line></p></td>
+<td dk:border="right"><p><line><code>1</code></line>
+<line><code>5</code></line></p></td>
+<td dk:border="right"><p><line><code>1</code></line>
+<line><code>6</code></line></p></td>
+<td dk:border="right"><p><line><code>1</code></line>
+<line><code>7</code></line></p></td>
+<td dk:border="right"><p><line><code>1</code></line>
+<line><code>8</code></line></p></td>
+<td dk:border="right"><p><line><code>1</code></line>
+<line><code>9</code></line></p></td>
+<td dk:border="right"><p><line><code>2</code></line>
+<line><code>0</code></line></p></td>
+<td dk:border="right"><p><line><code>2</code></line>
+<line><code>1</code></line></p></td>
+<td dk:border="right"><p><line><code>2</code></line>
+<line><code>2</code></line></p></td>
+<td dk:border="right"><p><line><code>2</code></line>
+<line><code>3</code></line></p></td>
+<td dk:border="right"><p><line><code>2</code></line>
+<line><code>4</code></line></p></td>
+<td dk:border="right"><p><line><code>2</code></line>
+<line><code>5</code></line></p></td>
+<td dk:border="right"><p><line><code>2</code></line>
+<line><code>6</code></line></p></td>
+<td dk:border="right"><p><line><code>2</code></line>
+<line><code>7</code></line></p></td>
+<td dk:border="right"><p><line><code>2</code></line>
+<line><code>8</code></line></p></td>
+<td dk:border="right"><p><line><code>2</code></line>
+<line><code>9</code></line></p></td>
+<td dk:border="right"><p><line><code>3</code></line>
+<line><code>0</code></line></p></td>
+<td><p><line><code>3</code></line>
+<line><code>1</code></line></p></td>
+</tr>
+<tr>
+<td colspan="8" dk:border="right"><p><code>0 (zero)</code></p></td>
+<td colspan="24"><p><code>LENGTH (24 bits)</code></p></td>
+</tr>
+</tbody></table>
+
+<p>Appendix B of the SNIA <cite>CIFS Technical Reference</cite> is the
+only source that was found which clearly shows the naked transport
+<code>LENGTH</code> field as being 24 bits wide. This 24-bit field translates to
+16 megabytes, though, and that's a bigbunch - more than is typically
+practical. Fortunately, the actual maximum message size is something
+that is negotiated when the client and server establish the
+session.</p>
+
+<p>When we discuss the SMB messages themselves we will ignore the
+<dk:nobr><code>SESSION MESSAGE</code></dk:nobr> headers, since they are part of the
+transport, not the SMB protocol.<idx end="c8-snia">SNIA<sidx>CIFS Technical Reference</sidx></idx></p>
+
+</h1s></chapter>
+</oim>

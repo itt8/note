@@ -1,0 +1,2428 @@
+<?xml version="1.0" encoding="US-ASCII"?>
+<!DOCTYPE oim SYSTEM "oimxml.dtd" [
+  <!ENTITY nbsp  "&#160;">
+  <!ENTITY lsquo "&#8216;">
+  <!ENTITY rsquo "&#8217;">
+  <!ENTITY minus "&#8211;">
+  <!ENTITY mdash "&#8212;">
+  <!ENTITY times "&#xd7;">
+  <!ENTITY copy "&#xa9;">
+] >
+<oim xmlns:dk="http://www.kirsanov.com">
+<chapter id="Browsing3.4">
+<chapopen><title>The Talk on the Street</title>
+<epigraph dk:padding-top="36">
+<p>You are a cornflakes-vert.</p>
+<attribution><line>Something my friend Kathy</line>
+   <line>said to me in High School</line>
+   <line>(and I still don't get it)</line></attribution>
+</epigraph>
+</chapopen>
+
+<p>Enough descriptive hyperbole. Let's get to work.</p>
+
+<p>SMBtrans<idx start="c22-SMBtrans">SMBtrans</idx> is an SMB message with the
+<code>SMB_COM_TRANSACTION</code> command byte specified in the
+header. It is also the transport for all Browse Service messages. The
+on-the-wire layout of the body of the SMBtrans, in
+<dk:nobr>C-style</dk:nobr> notation, is as follows:</p>
+
+<pre dk:break="after">typedef struct
+  {
+  uchar WordCount;            /* SetupCount + 14             */
+  struct                      /* SMB-layer parameters        */
+    {
+    ushort TotalParamCount;     /* Total param bytes to send */
+    ushort TotalDataCount;      /* Total data bytes to send  */
+    ushort MaxParameterCount;   /* Max param bytes to return */
+    ushort MaxDataCount;        /* Max data bytes to return  */
+    ushort MaxSetupCount;       /* Max setup words to return */
+    ushort Flags;               /* Explained below           */
+    ulong  Timeout;             /* Operation timeout         */
+    ushort Reserved;            /* Unused word               */
+    ushort ParameterCount;      /* Param bytes in this msg   */
+    ushort ParameterOffset;     /* Param offset within SMB   */
+    ushort DataCount;           /* Data bytes in this msg    */
+    ushort DataOffset;          /* Data offset within SMB    */</pre>
+<pre>    ushort SetupCount;          /* Setup word count          */
+    ushort Setup[];             /* Setup words               */
+    } Words;
+  ushort ByteCount;           /* Number of SMB data bytes    */
+  struct                      /* SMB-layer data              */
+    {
+    uchar Name[];               /* Transaction service name  */
+    uchar Pad[];                /* Pad to word boundary      */
+    uchar Parameters[];         /* Parameter bytes           */
+    uchar Pad1[];               /* Pad to word boundary      */
+    uchar Data[];               /* Data bytes                */
+    } Bytes;
+  } smb_Trans_Req;
+</pre>
+
+<p>We can, in fact, make some sense of all that... really we can.
+</p>
+
+<h1 id="Browsing3.4.1">Making Sense of SMBtrans</h1><h1s>
+
+<p>As has already been pointed out, we are dealing with layered
+protocols and layered protocols can cause some terminology
+confusion. For example, earlier in the book SMB messages were
+described as having a header, a parameter section, and a data
+section (and there was a cute picture of an insect to highlight
+the anatomy). SMB transactions - half a protocol layer up - also have
+parameters and data. The terms get recycled, as demonstrated by the
+structure presented above in which the <code>Parameters[]</code> and
+<code>Data[]</code> fields are both carried within the
+<code>SMB_DATA</code> block (the <code>Bytes</code>) of the SMB
+message.</p>
+
+<p>SMB transaction messages generally represent some sort of network
+function call. In an SMB transaction:</p>
+
+<ul>
+<li><p>The <em>Parameters</em> represent the values passed directly to
+the function that was called.</p></li>
+
+<li><p>The <em>Data</em> represents any indirect values, such as
+objects indicated by pointers passed as parameters (i.e. objects passed by
+reference).</p></li>
+</ul>
+
+<p>That's a very general description, and it may be slightly
+inaccurate in practice. It works well enough in theory, though, and it
+provides a conceptual foothold. If you want, you can go one step
+further and think of the <dk:nobr><code>SetupCount</code></dk:nobr> and
+<code>Setup[]</code> fields as the transaction header.</p>
+
+<p>Okay, now that we have that out of the way, here's what the
+SMBtrans fields are all about:</p>
+
+<dl>
+<dt>SMB Parameters</dt>
+
+<dd>
+<dl>
+<dt><code>TotalParamCount</code></dt>
+
+<dd><p>You may recall from earlier discussions that the SMBtrans
+transaction has the ability to carry a total payload of 64&nbsp;Kbytes -
+potentially much more than the SMB buffer size will allow.  It does
+this by sending zero or more secondary transaction messages which
+contain the additional parameters and/or data.</p>
+
+<p>The <code>TotalParamCount</code> field indicates the <em>total</em>
+number of parameter bytes that the server should expect to receive
+over the course of the transaction. It may take multiple messages
+to get them all there.</p></dd>
+
+<dt><code>TotalDataCount</code></dt>
+
+<dd><p>Similar to the previous field, this indicates the total number
+of data bytes the server should expect to receive. </p>
+
+<p>If you think about it, you will see that the theoretical
+SMBtrans data transfer limit is actually
+2&#160;&#215;&#160;(216&#160;&minus;&#160;1). Both the
+<code>Parameter</code> and <code>Data</code> lengths are 16-bit values so,
+in theory, SMBtrans can send 128&nbsp;Kbytes (minus two bytes), which is
+double the 64K we've <dk:nobr>been claiming.</dk:nobr></p></dd>
+
+<dt><code>MaxParameterCount</code>,
+<code>MaxDataCount</code>, and
+<code>MaxSetupCount</code></dt>
+
+<dd><p>These fields let the client inform the server of the maximum
+number of <code>Parameter[]</code>, <code>Data[]</code>, and
+<code>Setup[]</code> bytes, respectively, that the client is willing
+to receive in the server's reply. These are total bytes for the
+transaction, not per-message bytes.</p>
+
+<p>A note regarding the <code>MaxSetupCount</code> field: The X/Open
+documentation lists this as a 16-bit field, but in the Leach/Naik CIFS
+draft it is given as a single byte followed by a one-byte nul
+pad. Because the value is given in SMB byte order<idx>byte order</idx>
+(and because it will not exceed 255), either way works.</p></dd>
+
+<dt><code>Flags</code></dt>
+
+<dd><p>There are two flags defined in this field, but they don't
+appear to be used much in Browser Protocol messages. </p>
+
+<table colwidths="9* 14* 77*">
+<caption>SMBtrans flags</caption>
+<thead>
+<tr dk:border="after">
+<th><p>Bit</p></th>
+<th><p>Bitmask</p></th>
+<th><p>Description</p></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><p>15&minus;2</p></td>
+<td><p><code>0xFFFC</code></p></td>
+<td><p><b>&lt;Reserved&gt; (must be zero)</b></p></td>
+</tr>
+<tr>
+<td><p>1</p></td>
+<td><p><code>0x0002</code></p></td>
+<td><p>If set, this is a one-way transaction
+and the server should not send a response. In theory, this bit
+should be set in all Class 2 Mailslot<idx start="c22-mailslot">mailslot</idx>  messages, but in packet
+captures this bit always seems to be clear.</p></td>
+</tr>
+<tr>
+<td><p>0</p></td>
+<td><p><code>0x0001</code></p></td>
+
+<td><p>If set, it indicates that the client wishes to disconnect from
+the share indicated by the <code>TID</code><idx>TID</idx> field in the
+SMB header when the transaction completes. </p>
+
+<p>Mailslot messages will have a zero <code>TID</code> value, so this
+bit should not be set. RAP<idx>RAP</idx> calls always use the
+<code>IPC$</code><idx>IPC$</idx> share, which will have been opened
+using an earlier <code>TREE CONNECT</code><idx>TREE CONNECT</idx>
+message. So, in theory, this bit <em>could</em> be set in RAP
+calls... but it was clear in all of the packets captured during
+testing.</p></td>
+</tr>
+</tbody>
+</table>
+
+</dd>
+<dt><code>Timeout</code></dt>
+
+<dd><p>The documentation is scattered. The X/Open docs provide only a
+few words regarding this particular field. The SNIA
+doc<idx>SNIA<sidx>CIFS Technical Reference</sidx></idx> has a small
+section (Section 3.2.9) that covers timeouts in general, and some
+additional information can be found in various places throughout each
+of those references.</p>
+
+<p>The field indicates the number of milliseconds (1/1000ths of a
+second) that the <em>server</em> should wait for a transaction to
+complete. A value of zero indicates that the server should return
+immediately, sending an error code if it could not obtain required
+resources right away. A value of &minus;1 indicates that the client is
+willing to have the server wait forever. The documentation doesn't
+make it clear, but the correct DOS error code<idx>DOS<sidx>error
+codes</sidx></idx> in the case of a timeout is probably
+<code>ERRSRV/ERRtimeout</code> (<code>0x02/0x0058</code>).</p></dd>
+
+<dt><code>ParameterCount</code></dt>
+
+<dd><p>The number of bytes in the <code>Parameter[]</code> block of this
+message. Keep in mind that this may be lower than the
+<code>TotalParamCount</code> value. If it is, then the rest of the
+parameters will follow in secondary transaction messages.</p></dd>
+
+<dt><code>ParameterOffset</code></dt>
+
+<dd><p>The offset from the beginning of the SMB message at which the
+parameter block starts.</p></dd>
+
+<dt><code>DataCount</code></dt>
+
+<dd><p>The number of bytes in the <code>Data[]</code> block of this
+message. Once again, this may be lower than the
+<code>TotalDataCount</code> value. If so, the rest of the data will
+follow in additional messages.</p></dd>
+
+<dt><code>DataOffset</code></dt>
+
+<dd><p>The offset from the beginning of the SMB message at which the
+data block starts.</p></dd>
+
+<dt><code>SetupCount</code></dt>
+
+<dd><p>The number of setup <em>words</em>. As with the
+<code>MaxSetupCount</code> field, <code>SetupCount</code> is presented as
+an unsigned short in the X/Open document but is given as an
+unsigned byte followed by a one-byte pad in the Leach/Naik
+draft.</p></dd>
+
+<dt><code>Setup[]</code></dt>
+
+<dd><p>An array of 16-byte values used to "set up" the transaction
+<dk:nobr>(the transaction,</dk:nobr> not the function call). This might be considered
+<dk:nobr>the header</dk:nobr> portion of the transaction.</p></dd>
+</dl>
+</dd>
+
+<dt>SMB Data</dt>
+
+<dd>
+<dl>
+<dt><code>Name[]</code></dt>
+
+<dd><p>The name of the Named Pipe or Mailslot to which the transaction
+is being sent (for example, "<code>\PIPE\LANMAN</code>").</p></dd>
+
+<dt><code>Parameters[]</code></dt>
+
+<dd><p>The marshalled parameters.</p></dd>
+
+<dt><code>Data[]</code></dt>
+
+<dd><p>The marshalled data. A little later on, we will carefully avoid
+<dk:nobr>explaining</dk:nobr> how the parameters and data get packaged.</p></dd>
+
+<dt><code>Pad</code> and <code>Pad1</code></dt>
+
+<dd><p>Some (but not all) clients and servers will add padding bytes
+(typically, but not necessarily, nul) to force word or longword
+alignment of the <code>Parameters[]</code> and <code>Data[]</code>
+sections. That really messes things up. You must: </p>
+
+<ul>
+<li><p>Be sure to use <code>ByteCount</code> to figure out how large the
+<code>SMB_DATA</code> section really is.</p></li>
+
+<li><p>Use <code>ParameterOffset</code> and <code>ParameterCount</code> to
+figure out where the transaction parameters begin and how many
+bytes there are.</p></li>
+
+<li><p>Use <code>DataOffset</code> and <code>DataCount</code> to figure out
+where the transaction data begins and how many bytes there are.</p></li>
+</ul>
+
+<p>Gotta love this stuff...</p></dd>
+</dl>
+</dd>
+</dl>
+
+<p>There is a lot more information in both the X/Open documentation
+and the Leach/Naik CIFS drafts. For some reason, specific details
+regarding <dk:nobr>SMBtrans</dk:nobr> were left out of the SNIA
+doc<idx>SNIA<sidx>CIFS Technical Reference</sidx></idx>, although
+there is a discussion of Mailslots and Named Pipes (and the other
+transaction types are covered). All of the listed docs do explain how
+secondary transaction messages may be used to transfer
+<code>Setup[]</code>, <code>Parameter[]</code>, and/or
+<code>Data[]</code> blocks that are larger than the allowed SMB buffer
+size.</p>
+
+<p>There are also some warnings given in the SNIA doc regarding
+variations in implementation. It seems you need to be careful with
+CIFS (no surprise there). See the last paragraph of Section&nbsp;3.15.3
+in the SNIA doc if'n <dk:nobr>your curious.</dk:nobr></p>
+
+<p>...but now it's time for some code.</p>
+
+<p dk:break="after"><ref refid="Listing3.1"/> is a bit dense, but it
+does a decent job of putting together an SMBtrans message from
+parts. It doesn't fill in the NBT or SMB headers, but there are code
+examples and descriptions elsewhere in the book that cover those
+issues. What it does do is provide a starting point for managing
+SMBtrans transactions, particularly those that might exceed the
+server's SMB buffer limit and need to be fragmented.</p>
+
+<example id="Listing3.1">
+<caption>SMBtrans messages</caption>
+<pre dk:break="after"><![CDATA[typedef struct
+  {
+  ushort  SetupCount;        /* Setup word count          */
+  ushort *Setup;             /* Setup words               */
+  ushort  Flags;             /* 0x1=Disconnect;0x2=oneway */
+  ulong   Timeout;           /* Server timeout in ms      */
+  ushort  MaxParameterCount; /* Max param bytes to return */
+  ushort  MaxDataCount;      /* Max data bytes to return  */
+  ushort  MaxSetupCount;     /* Max setup words to return */
+  ushort  TotalParamCount;   /* Total param bytes to send */
+  ushort  TotalDataCount;    /* Total data bytes to send  */
+  ushort  ParamsSent;        /* Parameters already sent   */
+  ushort  DataSent;          /* Data already sent         */
+  uchar  *Name;              /* Transaction service name  */
+  uchar  *Parameters;        /* Parameter bytes           */
+  uchar  *Data;              /* Data bytes                */
+  } smb_Transaction_Request;
+
+int SetStr( uchar *dst, int offset, char *src )
+  /* ---------------------------------------------------- **
+   * Quick function to copy a string into a buffer and
+   * return the *total* length, including the terminating
+   * nul byte.  Does *no* limit checking (bad).
+   * Input:  dst    - Destination buffer.
+   *         offset - Starting point within destination.
+   *         src    - Source string.
+   * Output: Number of bytes transferred.
+   * ---------------------------------------------------- **
+   */
+  {
+  int i;
+
+  for( i = 0; '\0' != src[i]; i++ )
+    dst[offset+i] = src[i];
+  dst[offset+i] = '\0';
+
+  return( i+1 );
+  } /* SetStr */
+
+int smb_TransRequest( uchar                   *bufr,
+                      int                      bSize,
+                      smb_Transaction_Request *Request )
+  /* ---------------------------------------------------- **
+   * Format an SMBtrans request message.
+   * ---------------------------------------------------- **
+   */]]></pre>
+<pre dk:break="after"><![CDATA[  {
+  int    offset = 0;
+  int    keep_offset;
+  int    bcc_offset;
+  int    result;
+  int    i;
+
+  /* See that we have enough room for the SMB-level params:
+   * Setup + 14 bytes of SMB params + 2 bytes for Bytecount.
+   */
+  if( bSize < (Request->SetupCount + 14 + 2) )
+    Fail( "Transaction buffer too small.\n" );
+
+  /* Fill the SMB-level parameter block.
+   */
+  bufr[offset++] = (uchar)(Request->SetupCount + 14);
+  smb_SetShort( bufr, offset, Request->TotalParamCount );
+  offset += 2;
+  smb_SetShort( bufr, offset, Request->TotalDataCount );
+  offset += 2;
+  smb_SetShort( bufr, offset, Request->MaxParameterCount);
+  offset += 2;
+  smb_SetShort( bufr, offset, Request->MaxDataCount );
+  offset += 2;
+  smb_SetShort( bufr, offset, Request->MaxSetupCount );
+  offset += 2;
+  smb_SetShort( bufr, offset, (Request->Flags & 0x0003) );
+  offset += 2;
+  smb_SetLong(  bufr, offset, Request->Timeout );
+  offset += 4;
+  smb_SetShort( bufr, offset, 0 );       /* Reserved word */
+  offset += 2;
+  keep_offset = offset;   /* Remember ParamCount location */
+  offset += 8;               /* Skip ahead to SetupCount. */
+  smb_SetShort( bufr, offset, Request->SetupCount );
+  offset += 2;
+  for( i = 0; i < Request->SetupCount; i++ )
+    {
+    smb_SetShort( bufr, offset, Request->Setup[i] );
+    offset += 2;
+    }
+
+  /* Fill the SMB-level data block...
+   * We skip the ByteCount field until the end.
+   */
+  bcc_offset = offset;  /* Keep the Bytecount offset. */
+  offset += 2;]]></pre>
+
+<pre dk:break="after"><![CDATA[  /* We need to have enough room to specify the
+   * pipe or mailslot.
+   */
+  if( strlen( Request->Name ) >= (bSize - offset) )
+    Fail( "No room for Transaction Name: %s\n",
+          Request->Name );
+
+  /* Start with the pipe or mailslot name.
+   */
+  offset += SetStr( bufr, offset, Request->Name );
+
+  /* Now figure out how many SMBtrans parameter bytes
+   * we can copy, and copy them.
+   */
+  result = bSize - offset;
+  if( result > Request->TotalParamCount )
+    result = Request->TotalParamCount;
+  Request->ParamsSent = result;
+  if( result > 0 )
+    (void)memcpy( &bufr[offset],
+                  Request->Parameters,
+                  result );
+  /* Go back and fill in Param Count and Param Offset.
+   */
+  smb_SetShort( bufr, keep_offset, result );
+  keep_offset += 2;
+  smb_SetShort( bufr, keep_offset, SMB_HDR_SIZE + offset );
+  keep_offset += 2;
+  offset += result;
+
+  /* Now figure out how many SMBtrans data bytes we
+   * can copy, and copy them.
+   */
+  result = bSize - offset;
+  if( result > Request->TotalDataCount )
+    result = Request->TotalDataCount;
+  Request->DataSent = result;
+  if( result > 0 )
+    (void)memcpy( &bufr[offset],
+                  Request->Data,
+                  result );
+  /* Go back and fill in Data Count and Data Offset.
+   */
+  smb_SetShort( bufr, keep_offset, result );
+  keep_offset += 2;
+  smb_SetShort( bufr, keep_offset, SMB_HDR_SIZE + offset );]]></pre>
+<pre><![CDATA[  keep_offset += 2;         /* not really needed any more */
+  offset += result;
+
+  /* Go back and fill in the byte count.
+   */
+  smb_SetShort( bufr, bcc_offset, offset - (bcc_offset+2) );
+
+  /* Done.
+   */
+  return( offset );
+  } /* smb_TransRequest */]]></pre>
+</example>
+
+<p>The <code>smb_Transaction_Request</code> structure in the listing
+differs from the wire-format version. The former is designed to keep
+track of a transaction while it is being built and until it has been
+completely transmitted. With a little more code, it should be able to
+compose secondary transaction messages too. Fortunately, all of the
+Browse Service requests are small enough to fit into a typical SMB
+buffer, so you shouldn't have to worry about sending secondary SMB
+transaction messages. At least not right away. On the other hand, a
+Browse Server's reply to a
+<code>NetServerEnum2</code><idx>NetServerEnum2</idx> call can easily
+exceed the SMB buffer size so you may need to know how to rebuild a
+fragmented response. With that in mind, we will explain how multi-part
+messages work when we cover <code>NetServerEnum2</code>.</p>
+
+<p>It is probably worth noting, at this point, just how many layers of
+<dk:nobr>abstraction we're dealing with.</dk:nobr> If you look at a
+packet capture of an <dk:nobr><code>NetServerEnum2</code></dk:nobr>
+request, you'll find that it is way the heck down at the bottom of a
+large pile:</p>
+
+<pre>Ethernet II
++ IP
+  + TCP
+    + NBT Session Service<idx>NBT<sidx>Session Service</sidx></idx>
+      + SMB (SMB_COM_TRANSACTION)
+        + SMB Pipe Protocol
+          + Microsoft Windows Remote Administration Protocol
+            + NetServerEnum2
+</pre>
+
+<p>It sure is getting deep around here...</p>
+
+<p>All those layers make things seem more complicated than they
+really are, but if we chip away at it one small workable piece at a
+time it will all be easier to understand. </p>
+
+</h1s><h1 id="Browsing3.4.2">Browse Service Mailslot Messages</h1><h1s>
+
+<p>The vast bulk of the Browser Protocol consists of Mailslot
+messages. These are also relatively simple, which is why we are
+starting with them instead of RAP<idx>RAP</idx>. Still, there are a
+lot of layers to go through in order to get a Mailslot message out
+onto the wire.  Let's get chipping...</p>
+
+<dl>
+<dt>The NBT layer</dt>
+
+<dd><p>Browser Mailslot messages are transported by the NBT Datagram
+Service<idx>NBT<sidx>Datagram Service</sidx></idx>, which was covered
+in <ref refid="NBT1.5"/>. We will ignore most of the fields at the NBT
+layer, since their values are host specific (things like source IP
+address and <b>S</b>ending <b>N</b>ode <b>T</b>ype). The important
+fields, from our persective, are:</p>
+
+<pre>NBT_Datagram
+  {
+  MsgType         = &lt;unicast, multicast, broadcast, etc.&gt;
+  SourceName      = &lt;NBT Source Name&gt;
+  DestinationName = &lt;NBT Destination Name&gt;
+  UserData        = &lt;The SMBTrans Message&gt;
+  }
+</pre>
+
+<p>The values assigned to the <code>SourceName</code> and
+<code>DestinationName</code> fields may be written as
+<em>machine</em><code>&lt;xx&gt;</code> or
+<em>workgroup</em><code>&lt;yy&gt;</code>, where <em>machine</em> and
+<em>workgroup</em> are variable and dependent upon the
+environment.</p>
+
+<p>The <code>SourceName</code> field will contain the name registered
+by the service sending the request. In practice, this is either the
+Mailslot Service name (<em>machine</em><code>&lt;00&gt;</code><idx
+start="c22-mn00" type="00">machine</idx>) or the Server
+Service<idx>SMB<sidx>Server Service</sidx></idx> name
+(<em>machine</em><code>&lt;20&gt;</code><idx
+type="20">machine</idx>). Both have been seen in testing. In most
+cases it does not matter.</p>
+
+<p><code>UserData</code> will be indicated indirectly by detailing the
+SMBtrans and Mailslot layers.</p></dd>
+
+<dt>The SMB layer</dt>
+
+<dd><p>The NBT Datagram Service is connectionless, and Class 2
+Mailslots don't send replies. At the SMB level, however, the header
+fields are used to maintain state or return some sort of error code or
+security token. Such values have no meaning in a Mailslot message, so
+almost all of the SMB header fields are pointless in this
+context. Only the first five bytes are actually used. That would be
+the <code>"\xffSMB"</code><idx>\xffSMB</idx> string and the one byte
+command code, which is always <code>SMB_COM_TRANSACTION</code>
+(<code>0x25</code>). The rest are all zero. We will not bother to
+specify the contents of the SMB header in our discussion.</p></dd>
+
+<dt>The SMBtrans layer</dt>
+
+<dd><p>The SMBtrans transaction fields will be filled in via the
+<code>smb_Transaction_Request</code> structure from <ref
+refid="Listing3.1"/>. That way you can map the discussions directly to
+the code.</p>
+
+<p>For example, if the <code>Data</code> block contains ten bytes, the
+<dk:nobr><code>TotalDataCount</code></dk:nobr> would be filled in like so:</p>
+
+<pre>smb_Transaction_Request
+  {
+  TotalDataCount = 10
+  }
+</pre>
+
+<p>The <code>SetupCount</code> and <code>Setup</code> fields are constant
+across all Browser Mailslot messages. The values are specified here
+so that they don't have to be specified for every message:</p>
+
+<pre>SetupCount = 3
+Setup[]
+  {
+  0x0001, (Mailslot Opcode   = Mailslot Write)
+  0x0001, (Transact Priority = Normal)
+  0x0002, (Mailslot Class    = Unreliable/Bcast)
+  }
+</pre>
+
+<p>Finally, any remaining fields (the values of which have not been
+otherwise specified or explicitly ignored) should be assumed zero
+(NULL, nul, nada, non, nerp<idx>nerp</idx>, nyet, etc.). For example,
+the <code>MaxParameterCount</code>, <code>MaxDataCount</code>, and
+<code>MaxSetupCount</code> fields will not be listed because they are
+always zero in Class 2 Mailslot messages.</p></dd>
+
+<dt>The Mailslot Layer</dt>
+
+<dd><p>Browser Mailslot messages are carried in the <code>Data[]</code>
+block of the SMBtrans message. They each have their own structure,
+which will be described using C-style notation.</p></dd>
+</dl>
+
+<p>A few more general notes about Mailslot messages before we forge
+ahead...</p>
+
+<ul>
+<li><p>Browser Mailslots don't use the SMBtrans
+<code>Parameters[]</code> block, so the <code>TotalParamCount</code>
+is always zero.<idx end="c22-SMBtrans">SMBtrans</idx></p></li>
+
+<li><p>The <code>Mailslot OpCode</code> in the <code>Setup[]</code>
+field is set to <code>0x0001</code>, which indicates a <code>Mailslot Write</code>
+operation.  There are no other operations defined for Mailslots, which
+kinda makes it pointless. This field has nothing to do with the
+<code>OpCode</code> contained within the Mailslot message itself
+(described below), which identifies the Browse Service function being
+performed.</p></li>
+
+<li><p>The <code>Transact Priority</code> in the <code>Setup[]</code>
+is supposed to contain a value in the range 0..9, where 9 is the
+highest. The X/Open docs say that if two messages arrive (practically)
+simultaniously, the higher priority message should be processed
+first. The SNIA doc<idx>SNIA<sidx>CIFS Technical
+Reference</sidx></idx> says that this field is ignored. The latter is
+probably correct, but it doesn't matter much. Most of the captures
+taken in testing show a priority value of 0 or 1.</p></li>
+
+<li><p>The <code>Mailslot Class</code>, also in the
+<code>Setup[]</code>, should always contain <code>0x0002</code>, indicating a Class
+2 Mailslot. The SNIA doc says that this field is ignored
+too.<fn>It is possible that Class 1 Mailslots are not used. At all.</fn></p></li>
+</ul>
+
+<p>Yet one more additional general note regarding Mailslot messages:
+the first byte of the <code>Data</code> block is always an
+<code>OpCode</code> indicating which of the
+<code>\MAILSLOT\BROWSE</code><idx>\MAILSLOT<sidx>\BROWSE</sidx></idx>
+(or
+<code>\MAILSLOT\LANMAN</code><idx>\MAILSLOT<sidx>\LANMAN</sidx></idx>)
+functions is being called. Here's a list of the available
+functions:</p>
+
+<table colwidths="10* 40* 50*">
+<thead>
+<tr dk:border="after">
+<th><p></p></th>
+<th><p>OpCode</p></th>
+<th><p>Function</p></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><p></p></td>
+<td><p><code>1</code></p></td>
+<td><p><code>HostAnnouncement</code><idx>HostAnnouncement</idx></p></td>
+</tr>
+<tr>
+<td><p></p></td>
+<td><p><code>2</code></p></td>
+<td><p><code>AnnouncementRequest</code><idx>AnnouncementRequest</idx></p></td>
+</tr>
+<tr>
+<td><p></p></td>
+<td><p><code>8</code></p></td>
+<td><p><code>RequestElection</code><idx>RequestElection</idx><idx>election</idx></p></td>
+</tr>
+<tr>
+<td><p></p></td>
+<td><p><code>9</code></p></td>
+<td><p><code>GetBackupListRequest</code><idx>GetBackupListRequest</idx></p></td>
+</tr>
+<tr>
+<td><p></p></td>
+<td><p><code>10</code></p></td>
+<td><p><code>GetBackupListResponse</code><idx>GetBackupListResponse</idx></p></td>
+</tr>
+<tr>
+<td><p></p></td>
+<td><p><code>11</code></p></td>
+<td><p><code>BecomeBackupRequest</code><idx>BecomeBackupRequest</idx></p></td>
+</tr>
+<tr>
+<td><p></p></td>
+<td><p><code>12</code></p></td>
+<td><p><code>DomainAnnouncement</code><idx>DomainAnnouncement</idx></p></td>
+</tr>
+<tr>
+<td><p></p></td>
+<td><p><code>13</code></p></td>
+<td><p><code>MasterAnnouncement</code><idx>MasterAnnouncement</idx></p></td>
+</tr>
+<tr>
+<td><p></p></td>
+<td><p><code>14</code></p></td>
+<td><p><code>ResetBrowserState</code><idx>ResetBrowserState</idx></p></td>
+</tr>
+<tr>
+<td><p></p></td>
+<td><p><code>15</code></p></td>
+<td><p><code>LocalMasterAnnouncement</code><idx>LocalMasterAnnouncement</idx></p></td>
+</tr>
+</tbody>
+</table>
+
+<p>The next step is to describe each of those functions.</p>
+
+<p>Let's get to it... </p>
+
+<h2 id="Browsing3.4.2.1">Announcement Request</h2><h2s>
+
+<p><idx start="c22-mname">machine name</idx>The
+<code>AnnouncementRequest</code><idx>AnnouncementRequest</idx> frame
+is fairly simple, so it's a good place to start. The message structure
+(carried in the <code>smb_Trans_Req.Bytes.Data</code> section) looks
+like this:</p>
+
+<pre>struct
+  {
+  uchar  OpCode;
+  uchar  Unused;
+  uchar *ResponseName;
+  } AnnouncementRequest;
+</pre>
+
+<p dk:indent="no">which means that the
+<code>AnnouncementRequest</code> frame is made up of an
+<code>OpCode</code>, an unused byte, and a character string.  (The
+unused byte may have been reserved for use as a flags field at one
+time.)</p>
+
+<p>The following values are assigned:</p>
+
+<pre>NBT_Datagram
+  {
+  MsgType         = 0x11 (DIRECT_GROUP DATAGRAM)
+  SourceName      = <em>machine</em>&lt;00&gt;
+  DestinationName = <em>workgroup</em>&lt;00&gt;
+  }
+smb_Transaction_Request
+  {
+  TotalDataCount  = 3 + strlen( ResponseName )
+  Name            = "\MAILSLOT\BROWSE"<idx end="c22-mailslot">mailslot</idx><idx>\MAILSLOT<sidx>\BROWSE</sidx></idx>
+  Data
+    {
+    OpCode        = 0x02 (AnnouncementRequest)
+    ResponseName  = &lt;NetBIOS machine name, no suffix&gt;
+    }
+  }
+</pre>
+
+<p>This frame may also be sent to the
+<code>MSBROWSE&lt;01&gt;</code><idx>MSBROWSE&lt;01&gt;</idx> name to
+request <dk:nobr>responses</dk:nobr> from LMBs<idx
+start="c22-lmb">LMB</idx> for foreign
+workgroups.<idx>Workgroup</idx></p>
+
+<p dk:break="after">The <code>TotalDataCount</code> is calculated by adding:</p>
+
+<ul>
+<li><p>one byte for the <code>OpCode</code>,</p></li>
+<li><p>one for the <code>Unused</code> byte,</p></li>
+<li><p>the string length of the <code>ResponseName</code> field, and</p></li>
+<li><p>one byte for the <code>ResponseName</code> nul terminator.</p></li>
+</ul>
+
+<p>Don't forget those string terminators.</p>
+
+<p>There is no direct reply to this request, so the
+<code>SourceName</code> and
+<dk:nobr><code>ResponseName</code></dk:nobr> fields in the packet are
+ignored. Providers<idx>Browse Service<sidx>Provider</sidx></idx> that
+receive this message are expected to broadcast a
+<code>HostAnnouncement</code><idx>HostAnnouncement</idx> frame
+(described next) to re-announce their services. They are supposed to
+wait a random amount of time between 0 and 30 seconds before sending
+the announcement, to avoid network traffic congestion. In testing,
+however, many systems ignored <dk:nobr>this message.</dk:nobr></p>
+
+<p>Under the older LAN Manager style browsing, a similar message was
+sent to the <code>\MAILSLOT\LANMAN</code> Mailslot. The LAN Manager
+<code>Announce<dk:hyphen/><dk:nobr>Request</dk:nobr></code><idx>AnnounceRequest</idx>
+and <code>Announce</code> frame formats are described in
+Section&nbsp;5.3.3 of the X/Open doc <cite>IPC Mechanisms for
+SMB</cite>. </p>
+
+</h2s><h2 id="Browsing3.4.2.2">Host Announcement</h2><h2s>
+
+<p>The <code>HostAnnouncement</code><idx>HostAnnouncement</idx> is a
+bit more complicated than the <code>AnnouncementRequest</code>. Here's
+its structure:</p>
+
+<pre>struct
+  {
+  uchar  Opcode;
+  uchar  UpdateCount;
+  ulong  Periodicity;
+  uchar *ServerName;
+  uchar  OSMajorVers;
+  uchar  OSMinorVers;
+  ulong  ServerType;
+  uchar  BroMajorVers;
+  uchar  BroMinorVers;
+  ushort Signature;
+  uchar *Comment;
+  } HostAnnouncement;
+</pre>
+
+<p dk:break="after" dk:indent="no">...and here's how it all pans out:</p>
+
+<pre>NBT_Datagram
+  {
+  MsgType         = 0x11 (DIRECT_GROUP DATAGRAM)
+  SourceName      = <em>machine</em>&lt;00&gt;
+  DestinationName = <em>workgroup</em>&lt;1D&gt;
+  }
+smb_Transaction_Request
+  {
+  TotalDataCount  = 18 + strlen( ServerName + Comment )
+  Name            = "\MAILSLOT\BROWSE"<idx>\MAILSLOT<sidx>\BROWSE</sidx></idx>
+  Data
+    {
+    OpCode        = 0x01 (HostAnnouncement)
+    UpdateCount   = &lt;Incremented after each announcement&gt;
+    Periodicity   = &lt;Time until next announcement, in ms&gt;
+    ServerName    = &lt;NetBIOS machine name, no suffix&gt;
+    OSMajorVers   = 4 &lt;Windows OS version to mimic&gt;
+    OSMinorVers   = 5 &lt;Windows OS point version to mimic&gt;
+    ServerType    = &lt;Discussion below&gt;
+    BroMajorVers  = 15
+    BroMinorVers  = 1
+    Signature     = 0xaa55
+    Comment       = &lt;Server description, max 43 bytes&gt;
+    }
+  }
+</pre>
+
+<p>That needs a once-over.</p>
+
+<p>The announcement is broadcast at the IP level, but the
+<code>DestinationName</code> is the local LMB name so the message
+should only be picked up by the Local Master. Other nodes could, in
+theory, listen in and keep their own local Browse List<idx>Browse
+List</idx> copies up-to-date.</p>
+
+<p>The Leach/Naik Browser Draft says that the <code>UpdateCount</code>
+should be zero and should be ignored by recipients. In practice, it
+appears that many systems increment that counter for each
+<code>HostAnnouncement</code> frame that they send. No harm done.</p>
+
+<p>The <code>Periodicity</code> field announces the amount of time, in
+milliseconds, that the sender plans to wait until it sends another
+<code>HostAnnouncement</code> frame. As described earlier, the initial
+period is one minute, but it doubles for each announcement until it
+would exceed 12 minutes, at which point it is pegged at 12 minutes.
+In theory, the LMB should remove a host from the Browse List if it
+has not heard an update from that host after 3 periods have
+elapsed. In practice, some systems get this value wrong so the LMB
+should wait 36 minutes.<idx end="c22-lmb">LMB</idx></p>
+
+<p>The <code>ServerType</code> field is a complex bitmap. We will
+dissect it later, as it is also used by the
+<code>NetServerEnum2</code><idx>NetServerEnum2</idx> RAP<idx>RAP</idx>
+call.</p>
+
+<p>The Browser version number (15.1) and the <code>Signature</code>
+field are specified in the Leach/Naik Browser draft. Some Windows
+systems (particularly the Windows 9x family) use a Browser version
+number of 21.4. No one, it seems, knows why and it doesn't appear
+that there are any protocol differences between the two versions.
+</p>
+
+</h2s><h2 id="Browsing3.4.2.3">Election Request</h2><h2s>
+
+<p>The
+<code>RequestElection</code><idx>RequestElection</idx><idx>election</idx>
+frame is used to start or participate in a Browser Election. It looks
+like this:</p>
+
+<pre>struct
+  {
+  uchar  Opcode;
+  uchar  Version;
+  ulong  Criteria;
+  ulong  UpTime;
+  ulong  Reserved;
+  uchar *ServerName;
+  } RequestElection;
+</pre>
+
+<p>In its simplest form, the <code>RequestElection</code> can be
+filled in with zeros. This gives it the lowest possible election
+criteria.  All Potential Browsers<idx>Potential Browser</idx> in the
+same workgroup<idx start="c22-workgroup">Workgroup</idx> on the same
+LAN will be able to out-bid the zero-filled request, so a full-scale
+election will ensue as all Potential Browsers are eligible <dk:nobr>to
+participate.</dk:nobr></p>
+
+<pre>NBT_Datagram
+  {
+  MsgType         = 0x11 (DIRECT_GROUP DATAGRAM)
+  SourceName      = <em>machine</em>&lt;00&gt;
+  DestinationName = <em>workgroup</em>&lt;1E&gt;
+  }
+smb_Transaction_Request
+  {
+  TotalDataCount  = 15
+  Name            = "\MAILSLOT\BROWSE"<idx>\MAILSLOT<sidx>\BROWSE</sidx></idx>
+  Data
+    {
+    OpCode        = 0x08 (RequestElection)
+    }
+  }
+</pre>
+
+<p>In testing, it was discovered that some Potential Browsers are
+willing to receive <code>RequestElection</code> frames on just about
+any registered NetBIOS name<idx>NetBIOS<sidx>name</sidx></idx>,
+including the
+<code>MSBROWSE&lt;01&gt;</code><idx>MSBROWSE&lt;01&gt;</idx> name.</p>
+
+<p>Once the election gets going, the particpants will all try to
+out-vote their competition. The details of the election process are
+convoluted, so they will be set aside for just a little while
+longer. In the meantime, here is a complete election message, with
+election criteria filled in.</p>
+
+<pre>NBT_Datagram
+  {
+  MsgType         = 0x11 (DIRECT_GROUP DATAGRAM)
+  SourceName      = <em>machine</em>&lt;00&gt;
+  DestinationName = <em>workgroup</em>&lt;1E&gt;
+  }
+smb_Transaction_Request
+  {
+  TotalDataCount  = 15 + strlen( ServerName )
+  Name            = "\MAILSLOT\BROWSE"<idx>\MAILSLOT<sidx>\BROWSE</sidx></idx>
+  Data
+    {
+    OpCode        = 0x08 (RequestElection)
+    Version       = 1
+    Criteria      = &lt;Another complex bitmap&gt;
+    UpTime        = &lt;Time since last reboot, in milliseconds&gt;
+    ServerName    = &lt;NetBIOS machine name, no suffix&gt;
+    }
+  }
+</pre>
+
+<p>The <code>Criteria</code> bitmap will be covered along with the
+election details. Basically, though, it is read as an unsigned long
+integer and higher values "win." </p>
+
+</h2s><h2 id="Browsing3.4.2.4">Get Backup List Request</h2><h2s>
+
+<p><idx>GetBackupListRequest</idx>Another simple one. The message looks like this:</p>
+
+<pre dk:break="after">struct
+  {
+  uchar OpCode;
+  uchar ReqCount;
+  ulong Token;
+  } GetBackupListRequest;
+</pre>
+
+<p>The Ethereal<idx>Ethereal</idx> Network Protocol Analyzer and its
+many authors should be given a good heaping helping of appreciation
+just about now. The primary reference for the Browse Service data
+structures is the expired Leach/Naik Browser Internet Draft, but that
+document was a draft and is now expired. It cannot be expected that it
+will be completely accurate. It doesn't include the
+<code>ReqCount</code> field in its description, and it lists the
+<code>Token</code> as an unsigned short. That doesn't match what's on
+the wire. Thankfully, Ethereal knows better.</p>
+
+<pre>NBT_Datagram
+  {
+  MsgType         = 0x11 (DIRECT_GROUP DATAGRAM)
+  SourceName      = <em>machine</em>&lt;00&gt;
+  DestinationName = <em>workgroup</em>&lt;1D&gt;
+  }
+smb_Transaction_Request
+  {
+  TotalDataCount  = 6
+  Name            = "\MAILSLOT\BROWSE"<idx>\MAILSLOT<sidx>\BROWSE</sidx></idx>
+  Data
+    {
+    OpCode        = 0x09 (GetBackupListRequest)
+    ReqCount      = &lt;Number of browsers requested&gt;
+    Token         = &lt;Whatever&gt;
+    }
+  }
+</pre>
+
+<p>The <code>ReqCount</code> field lets the LMB know how large a list
+of Backup Browsers<idx>Backup Browser</idx> the client (the
+Consumer<idx>Browse Service<sidx>Consumer</sidx></idx>) would like to
+receive.</p>
+
+<p>The <code>Token</code> field is echoed back by the LMB when it
+sends the
+<code>Get<dk:hyphen/><dk:nobr>BackupListResponse</dk:nobr></code><idx>GetBackupListResponse</idx>. Echoing
+back the <code>Token</code> is supposed to let the Consumer match the
+response to the request.  This is necessary because the
+<dk:nobr><code>SourceName</code></dk:nobr> in the
+<code>GetBackupListResponse</code> is generally the LMB's machine
+name, so there is nothing in the response that indicates the
+workgroup.  If the Consumer is trying to query multiple workgroups it
+could easily <dk:nobr>lose track.</dk:nobr><idx
+end="c22-mname">machine name</idx></p>
+
+</h2s><h2 id="Browsing3.4.2.5">Get Backup List Response</h2><h2s>
+
+<p dk:break="after"><idx>GetBackupListResponse</idx>This message is
+sent in response (but not as a reply) to a
+<code>GetBackupList<dk:hyphen/><dk:nobr>Request</dk:nobr></code>. The
+structure is fairly straightforward:</p>
+
+<pre>struct
+  {
+  uchar  OpCode;
+  uchar  BackupCount;
+  ulong  Token;
+  uchar *BackupList;
+  } GetBackupListResponse;
+
+NBT_Datagram
+  {
+  MsgType         = 0x10 (DIRECT_UNIQUE DATAGRAM)
+  SourceName      = <em>machine</em>&lt;00&gt;<idx end="c22-mn00" type="00">machine</idx>
+  DestinationName = &lt;Source name from the request&gt;
+  }
+smb_Transaction_Request
+  {
+  TotalDataCount  = 7 + &lt;length of BackupList&gt;
+  Name            = "\MAILSLOT\BROWSE"<idx>\MAILSLOT<sidx>\BROWSE</sidx></idx>
+  Data
+    {
+    OpCode        = 0x0A (GetBackupListResponse)
+    BackupCount   = &lt;Number of browser names returned&gt;
+    Token         = &lt;Echo of the request Token&gt;
+    BackupList    = &lt;List of Backup Browsers, nul-delimited&gt;
+    }
+  }
+</pre>
+
+<p>At the IP level this message is unicast, and at the NBT level it
+is sent as a <code>DIRECT_UNIQUE DATAGRAM</code>. This is the closest
+thing to a Mailslot<idx>mailslot</idx> "reply" that you'll see.</p>
+
+<p>The <code>Token</code> is a copy of the <code>Token</code> that was sent
+in the <code>GetBackup<dk:hyphen/>List Request</code> that triggered the response.
+The <code>BackupCount</code> value represents the number of names
+listed in the <code>BackupList</code> field, which may be less than the
+number requested.</p>
+
+<p>The <code>BackupList</code> will contain a string of 
+nul-<em>delimited</em> substrings. For example, you might get something
+like this:</p>
+
+<pre>Data
+  {
+  OpCode        = 0x0A (GetBackupListResponse)
+  BackupCount   = 2
+  Token         = 0x61706C65
+  BackupList    = "STEFFOND\0CONRAD"
+  }
+</pre>
+
+<p dk:indent="no">which indicates that nodes <code>STEFFOND</code> and
+<code>CONRAD</code> are both Backup Browsers<idx>Backup Browser</idx>
+(and one of them may also be the LMB<idx start="c22-lmb-2">LMB</idx>)
+for the workgroup. Oh... that string is, of course, nul-terminated as
+well. Note that you can't use a normal <code>strlen()</code> call to
+calculate the length of the <code>BackupList</code>. It would just
+return the length of the first name. </p>
+
+</h2s><h2 id="Browsing3.4.2.6">Local Master Announcement</h2><h2s>
+
+<p>The
+<code>LocalMasterAnnouncement</code><idx>LocalMasterAnnouncement</idx>
+is broadcast by the Local Master Browser. Other nodes, particularly
+Backup Browsers,<idx>Backup Browser</idx> can listen for this message
+and use it to keep track of the whereabouts of the LMB service. If the
+Local Master Browser for a workgroup hears another node announce
+itself as the LMB for the same workgroup, then it can call for a new
+election.<idx>election</idx></p>
+
+<p>This message is also used to end a Browser Election. The winner
+declares itself by sending a <code>LocalMasterAnnouncement</code>
+frame.
+</p>
+
+<p>The <code>LocalMasterAnnouncement</code> is identical in structure
+to the <code>HostAnnouncement</code><idx>HostAnnouncement</idx> frame except for its
+<code>OpCode</code>:</p>
+
+<pre>smb_Transaction_Request
+  {
+  Data
+    {
+    OpCode = 0x0F (LocalMasterAnnouncement)
+    }
+  }
+</pre>
+
+<p>The Leach/Naik draft says that LMBs do not need to send
+<code>Host<dk:hyphen/><dk:nobr>Announcement</dk:nobr></code> frames because the
+<code>LocalMasterAnnouncement</code> accomplishes the same thing. The
+real reason that the LMB doesn't need to send
+<code>HostAnnouncement</code> frames is that <code>HostAnnouncement</code>
+frames are sent <em>to the LMB</em>, and there's no reason for an LMB
+to announce itself to itself. </p>
+
+</h2s><h2 id="Browsing3.4.2.7">Master Announcement</h2><h2s>
+
+<p dk:break="after">The
+<code>MasterAnnouncement</code><idx>MasterAnnouncement</idx> is sent
+by the LMB to the DMB to let the DMB<idx>DMB</idx> know that the LMB
+exists. The message contains the <code>OpCode</code> field and the SMB
+Server Service<idx>SMB<sidx>Server Service</sidx></idx> name of the
+LMB.  The Server Service name<idx start="c22-mname-2">machine
+name</idx> will be registered with the NBNS, so the DMB will be able
+to look it up as needed.</p>
+
+<pre>struct
+  {
+  uchar  OpCode;
+  uchar *ServerName;
+  } MasterAnnouncement;
+
+NBT_Datagram
+  {
+  MsgType         = 0x10 (DIRECT_UNIQUE DATAGRAM)
+  SourceName      = <em>machine</em>&lt;00&gt;<idx start="c22-mn00-2" type="00">machine</idx>
+  DestinationName = <em>workgroup</em>&lt;1B&gt;
+  }
+smb_Transaction_Request
+  {
+  TotalDataCount  = 2 + strlen( ServerName )
+  Name            = "\MAILSLOT\BROWSE"<idx>\MAILSLOT<sidx>\BROWSE</sidx></idx>
+  Data
+    {
+    OpCode        = 0x0D (MasterAnnouncement)
+    ServerName    = &lt;NetBIOS machine name, no suffix&gt;
+    }
+  }
+</pre>
+
+<p>When the DMB receives a
+<code>MasterAnnouncement</code><idx>MasterAnnouncement</idx>, it
+should perform a <code>NetServerEnum2</code><idx>NetServerEnum2</idx>
+synchronization with the LMB. It should also keep track of remote LMBs
+in its workgroup and periodically (every 15 minutes) synchronize
+Browse Lists with them.<idx>Browse List</idx> Likewise, an LMB will
+periodically query the DMB. This is how the Browse List is propagated
+across multiple subnets.</p>
+
+<p>Note that this message is unicast. A broadcast datagram would
+not reach a remote DMB. </p>
+
+</h2s><h2 id="Browsing3.4.2.8">Domain Announcement</h2><h2s>
+
+<p>The <code>DomainAnnouncement</code><idx>DomainAnnouncement</idx>
+has the same structure as the
+<code>HostAnnouncement</code><idx>HostAnnouncement</idx> and
+<code>LocalMasterAnnouncement</code><idx>LocalMasterAnnouncement</idx>
+frames. The difference is in <dk:nobr>the content.</dk:nobr></p>
+
+<p>The <code>DomainAnnouncement</code> is sent to the
+<code>MSBROWSE&lt;01&gt;</code><idx>MSBROWSE&lt;01&gt;</idx> name, so
+that all of the foreign LMBs on the subnet will receive it. Instead of
+the NetBIOS machine name, the <code>ServerName</code> field contains
+the workgroup name. The NetBIOS machine
+name<idx>NetBIOS<sidx>name</sidx></idx> is also reported, but it is
+placed into the <dk:nobr><code>Comment</code> field.</dk:nobr></p>
+
+<pre>NBT_Datagram
+  {
+  MsgType         = 0x11 (DIRECT_GROUP DATAGRAM)
+  SourceName      = <em>machine</em>&lt;00&gt;
+  DestinationName = "\01\02__MSBROWSE__\02&lt;01&gt;"
+  }
+smb_Transaction_Request
+  {
+  TotalDataCount  = 18 + strlen( ServerName + Comment )
+  Name            = "\MAILSLOT\BROWSE"<idx>\MAILSLOT<sidx>\BROWSE</sidx></idx>
+  Data
+    {
+    OpCode        = 0x0C (DomainAnnouncement)
+    UpdateCount   = &lt;Incremented after each announcement&gt;
+    Periodicity   = &lt;Time until next announcement, in ms&gt;
+    ServerName    = &lt;NetBIOS workgroup name, no suffix&gt;
+    OSMajorVers   = 4 &lt;Windows OS version to mimic&gt;
+    OSMinorVers   = 5 &lt;Windows OS point version to mimic&gt;
+    ServerType    = &lt;Discussion below&gt;
+    BroMajorVers  = 15
+    BroMinorVers  = 1
+    Signature     = 0xaa55
+    Comment       = &lt;LMB NetBIOS machine name, no suffix&gt;
+    }
+  }
+</pre>
+
+<p>A note of caution on this one. Some Windows systems send what
+appears to be garblage in the <code>BroMajorVers</code>,
+<code>BroMinorVers</code>, and <code>Signature</code>
+fields. Ethereal<idx>Ethereal</idx> compensates by combining these
+three into a single longword which it calls "Mysterious Field." </p>
+
+</h2s><h2 id="Browsing3.4.2.9">Become Backup Request</h2><h2s>
+
+<p>This message is sent by the LMB when it wants to promote a
+Potential Browser<idx>Potential Browser</idx> to Backup
+Browser<idx>Backup Browser</idx>
+status.<idx>BecomeBackupRequest</idx></p>
+
+<pre dk:break="after">struct
+  {
+  uchar  OpCode;
+  uchar *BrowserName;
+  } BecomeBackupRequest;</pre>
+<pre>NBT_Datagram
+  {
+  MsgType         = 0x11 (DIRECT_GROUP DATAGRAM)
+  SourceName      = <em>machine</em>&lt;00&gt;
+  DestinationName = <em>workgroup</em>&lt;1E&gt;
+  }
+smb_Transaction_Request
+  {
+  TotalDataCount  = 2 + strlen( BrowserName )
+  Name            = "\MAILSLOT\BROWSE"<idx>\MAILSLOT<sidx>\BROWSE</sidx></idx>
+  Data
+    {
+    OpCode        = 0x0B (BecomeBackupRequest)
+    BrowserName   = &lt;NetBIOS machine name of promoted node&gt;
+    }
+  }
+</pre>
+
+<p>The message is an NBT multicast datagram sent to all Potential
+Browsers in the workgroup. The <code>BrowserName</code> field contains
+the name of the node that is being promoted (no suffix byte<idx>suffix
+byte</idx>). That node will respond by sending a new
+<code>HostAnnouncement</code><idx>HostAnnouncement</idx> frame and
+obtaining a fresh copy of the Browse List<idx>Browse List</idx> from
+the LMB. The newly promoted Backup Browser should refresh its Browse
+List copy every 15 minutes.<idx end="c22-workgroup">Workgroup</idx><idx end="c22-mname-2">machine
+name</idx></p>
+
+</h2s><h2 id="Browsing3.4.2.10">The Undocumented Reset</h2><h2s>
+
+<p>It is difficult to find documentation on this message - it's not
+written up in the Leach/Naik draft - but there is some information
+hiding around the web if you dig a little... and, of course, we're
+describing it here.</p>
+
+<p>Big things come in small packages. Here's the
+<code>ResetBrowserState</code><idx>ResetBrowserState</idx> frame:</p>
+
+<pre>struct
+  {
+  uchar OpCode;
+  uchar Command;
+  } ResetBrowserState;
+</pre>
+
+<p dk:break="after">Not much to it, but it can have an impact. This is how it's
+filled in:</p>
+
+<pre>NBT_Datagram
+  {
+  MsgType         = 0x11 (DIRECT_GROUP DATAGRAM)
+  SourceName      = <em>machine</em>&lt;00&gt;<idx end="c22-mn00-2" type="00">machine</idx>
+  DestinationName = <em>workgroup</em>&lt;1D&gt;
+  }
+smb_Transaction_Request
+  {
+  TotalDataCount  = 2
+  Name            = "\MAILSLOT\BROWSE"<idx>\MAILSLOT<sidx>\BROWSE</sidx></idx>
+  Data
+    {
+    OpCode        = 0x0E (ResetBrowserState)
+    Command       = &lt;Bitfield - see below&gt;
+    }
+  }
+</pre>
+
+<p>The <code>ResetBrowserState</code> message can mess with a Local
+Master Browser's mind. There are three bits defined for the
+<code>Command</code> field, and here's what they do:</p>
+
+<table dk:break="after" colwidths="6* 42* 52*">
+<caption><code>ResetBrowserState</code> command bits</caption>
+<thead>
+<tr dk:border="after">
+<th><p>Bit</p></th>
+<th><p>Name / Bitmask</p></th>
+<th><p>Description</p></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><p>7-3</p></td>
+<td><p><code>0xF8</code></p></td>
+<td><p>&lt;Reserved&gt; (must be zero)</p></td>
+</tr>
+<tr>
+<td><p>2</p></td>
+<td><p><line><code>RESET_STATE_STOP</code></line>
+<line><code>0x04</code></line></p></td>
+
+<td><p>Tells the Local Master Browser not to be a browser any
+more. The LMB will de-register its <code>&lt;1D&gt;</code> and
+<code>&lt;1E&gt;</code> names and sulk in a corner. Many
+implementations ignore this command, even if they respect the
+others. DMBs<idx>DMB</idx> should never accept this command.</p></td>
+</tr>
+<tr>
+<td><p>1</p></td>
+<td><p><line><code>RESET_STATE_CLEAR_ALL</code></line>
+<line><code>0x02</code></line></p></td>
+<td><p>Causes the LMB to clear its Browse List<idx>Browse List</idx> and start over.</p></td>
+</tr>
+<tr>
+<td><p>0</p></td>
+<td><p><line><code>RESET_STATE_STOP_MASTER</code></line>
+<line><code>0x01</code></line></p></td>
+
+<td><p>Causes the LMB to demote itself to a Backup Browser.<idx>Backup
+Browser</idx> This will, eventually, cause a new
+election<idx>election</idx> (which may be won by the very same
+system).<idx end="c22-lmb-2">LMB</idx></p></td>
+</tr>
+</tbody>
+</table>
+
+</h2s><h2 id="Browsing3.4.2.11">It's All in the Delivery</h2><h2s>
+
+<p>Would a little more code be useful?</p>
+
+<p>The code gets rather dull at this level because all we are
+really doing is packing and unpacking bytes. Unfortunately, that's
+what network protocols are all about. Not very glamorous, is
+it?</p>
+
+<p><ref refid="Listing3.2"/> packs a
+<code>RequestElection</code><idx>RequestElection</idx><idx>election</idx>
+message into a byte block so that it can be handed to the
+<code>smb_TransRequest()</code> function via the
+<code>smb_Transaction_Request</code> structure.  Sending election
+requests to a busy LAN can be kinda fun... and possibly a little
+disruptive.</p>
+
+<example id="Listing3.2">
+<caption>SMBtrans messages<idx>\MAILSLOT<sidx>\BROWSE</sidx></idx></caption>
+<pre dk:break="after"><![CDATA[#define BROWSE_REQUEST_ELECTION 0x08
+
+static smb_Transaction_Request TReqs[1];
+
+static const ushort MailSlotSetup[3]
+                    = { 0x0001, 0x0001, 0x0002 };
+static const uchar *MailSlotName
+                    = "\\MAILSLOT\\BROWSE";
+
+int ElectionRequest( uchar *bufr,
+                     int    bSize,
+                     ulong  Criteria,
+                     ulong  Uptime,
+                     uchar *ServerName)
+  /* ---------------------------------------------------- **
+   * Marshal an Election Request record.
+   *
+   * Returns the number of bytes used.
+   * ---------------------------------------------------- **
+   */
+  {
+  size_t len;
+  uchar  buildData[32];
+
+  /* Initialize the TReqs block.
+   */
+  (void)memset( TReqs, 0, sizeof(smb_Transaction_Request) );
+  TReqs->SetupCount = 3;
+  TReqs->Setup      = MailSlotSetup;
+  TReqs->Name       = MailSlotName;]]></pre>
+
+<pre><![CDATA[  /* Build the Browser message in 'buildData'. */
+  (void)memset( buildData, '\0', 32 );
+  buildData[0] = BROWSE_REQUEST_ELECTION;
+  len = 15;
+
+  /* If the ServerName is empty, assume that the
+   * request is for a zero-filled election message.
+   * Otherwise, fill in the rest of the message.
+   */
+  if( NULL != ServerName && '\0' != *ServerName )
+    {
+    buildData[1] = 1;                        /* Version.  */
+    smb_SetLong( buildData, 2, Criteria );   /* Criteria. */
+    smb_SetLong( buildData, 6, Uptime );     /* Uptime.   */
+                                /* Skip 4 reserved bytes. */
+
+    /* Copy the ServerName, and make sure there's a nul.
+     * Count the nul in the total.
+     */
+    (void)strncpy( &(buildbufr[15]), ServerName, 15 );
+    bufr[31] = '\0';
+    len += 1 + strlen( &(buildbufr[15]) );
+    }
+
+  /* Finish filling in the transaction request structure.
+   */
+  TReqs->TotalDataCount = (ushort)len;
+  TReqs->Data           = buildData;
+
+  /* Write the transaction into the buffer.
+   * Return the transaction message size.
+   */
+  len = smb_TransRequest( bufr, bSize, TReqs );
+  return( len );
+  } /* ElectionRequest */]]></pre>
+</example>
+
+</h2s></h1s><h1 id="Browsing3.4.3">RAPture</h1><h1s>
+
+<p><idx start="c22-SMBtrans-2">SMBtrans</idx>Understand this at the
+outset: Examining a function of the RAP protocol is like studying the
+runic carvings on the lid of Pandora's box. They might just be large
+friendly letters... or they could be the manufacturer's warning
+label.</p>
+
+<p>We are <em>not</em> going to open the box.</p>
+
+<p>The <code>NetServerEnum2</code><idx>NetServerEnum2</idx> function
+can be implemented without having to fully understand the inner
+workings of RAP<idx>RAP</idx>, so there really is no need. If you want
+to, you can rummage around in the RAP functions by reading through
+Appendix B of the X/Open book <cite>Protocols for X/Open PC
+Interworking: SMB, Version 2</cite>. After that, there is yet again
+another additional further Leach/Naik draft already. You can find the
+Leach/Naik <cite>CIFS Remote Administration Protocol Preliminary
+Draft</cite> under the filename
+<code>cifsrap2.txt</code><idx>cifsrap2.txt</idx> on
+Microsoft's<idx>Microsoft</idx> FTP server. It is definitely a draft,
+but it provides a lot of good information if you read it
+carefully. One more resource a die-hard RAP-per will want to check is
+<cite>Remoted Net API Format Strings</cite>, which is an email message
+that was sent to Microsoft's CIFS mailing list by Paul Leach. It
+provides details on the formatting of RAP messages. All of these
+sources are, of course, listed in the <dk:nobr>References
+section.</dk:nobr></p>
+
+<p>One of the downsides of RAP, from our perspective, is that it
+defines <em>yet another layer</em> of parameters and data... and
+there's a heap, too.</p>
+
+<p>Gotta love layers.</p>
+
+<p>RAP provides a formula for marshalling its parameters, data,
+and heap, passing them over a network connection, and then
+passing the results back again. A complete RAP implementation would
+most likely automate the marshalling and unmarshalling process, and
+the human eye would never need to see it. That would be overkill in
+our case, so we're stuck doing things the easy way - by hand.</p>
+
+<p>RAP functions are sent via a Named Pipe, not a
+Mailslot,<idx>mailslot</idx> so the whole communications process is
+different. Like the Mailslot-based functions, RAP functions are packed
+into an SMBtrans transaction, but that's just about all that's really
+the same. The steps which must be followed in order to execute a RAP
+call are:</p>
+
+<ul>
+<li><p>Open a TCP session.</p> 
+<ul>
+<li><p>NBT Session Request.</p>
+<ul>
+<li><p>SMB Negotiate Protocol.</p></li>
+<li><p>SMB Session Setup.</p></li>
+<li><p>SMB Tree Connect (to <code>\\<em>machine</em>\IPC$</code>).</p> 
+<ul>
+<li><p dk:break="after">RAP call and reply.</p></li>
+</ul>
+</li>
+<li><p>SMB Tree Disconnect (optional).</p></li>
+<li><p>SMB Logoff (optional).</p></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><p>Close TCP session.</p></li>
+</ul>
+
+<p>You can see all of this very clearly in a packet capture. Having
+a sniff handy as you read through this section is highly
+recommended, by the <dk:nobr>way. Don't forget to listen</dk:nobr> on 139/TCP instead
+of (or in addition to) <dk:nobr>138/UDP.<dk:space size="3"/></dk:nobr> </p>
+
+<h2 id="Browsing3.4.3.1"><code>NetServerEnum2</code> Request</h2><h2s>
+
+<p>You can generate a
+<code>NetServerEnum2</code><idx>NetServerEnum2</idx> exchange in a
+variety of ways. For example, you can refresh the server list in the
+Windows Network Neighborhood<idx>Network Neighborhood</idx> or use the
+jCIFS<idx>jCIFS</idx> <code>List.java</code><idx>List.java</idx>
+utility with the URL "<code>smb://<em>workgroup</em>/</code>". The
+request, as displayed by the packet sniffer, should look something
+<dk:nobr>like this:<dk:space size="3"/></dk:nobr></p>
+
+<pre>+ Transmission Control Protocol
++ NetBIOS Session Service<idx>NBT<sidx>Session Service</sidx></idx>
++ SMB (Server Message Block Protocol)
+  SMB Pipe Protocol
+- Microsoft Windows Lanman Remote API Protocol
+    Function Code: NetServerEnum2 (104)
+    Parameter Descriptor: WrLehDz<idx>WrLehDz</idx>
+    Return Descriptor: B16BBDz
+    Detail Level: 1
+    Receive Buffer Length: 65535
+    Server Type: 0xffffffff
+    Enumeration Domain: WORKGROUP
+</pre>
+
+<p dk:break="after">The <code>Descriptor</code> fields are a
+distinctive feature of RAP<idx>RAP</idx> requests. These are the
+cryptic runes of which we spoke earlier.  They are format strings,
+used to define the structure of the parameters and data being sent as
+well as that expected in the reply. They can be used to automate the
+packing and unpacking of the packets, or they can be stuffed into the
+packet as constants with no regard to their meaning. The latter is the
+simpler course.  With that in mind, here is the (simplified, but still
+correct) C-style format of a <code>NetServerEnum2</code>
+<dk:nobr>request:</dk:nobr></p>
+
+<pre>struct
+  {
+  ushort RAPCode;
+  uchar *ParamDesc;
+  uchar *DataDesc;
+  struct
+    {
+    ushort InfoLevel;
+    ushort BufrSize;
+    ulong  ServerType;
+    uchar *Workgroup;
+    } Params;
+  } NetServerEnum2Req;
+</pre>
+
+<p>So, given the above structure, the <code>NetServerEnum2</code>
+request is filled in as shown below. Note that, at the
+SMBtrans-level, there are no <code>Setup[]</code> words, the
+<code>Data[]</code> section is empty, and all of the above structure is
+bundled into the <code>Parameter[]</code> block.</p>
+
+<pre><idx>B16BBDz</idx>smb_Transaction_Request
+  {
+  TotalParamCount   = 27 + strlen( Workgroup )
+  MaxParameterCount = 8
+  MaxDataCount      = &lt;Size of the reply buffer&gt;
+  Name              = "\PIPE\LANMAN"
+  Data
+    {
+    RAPCode         = 104 (0x0068)
+    ParamDesc       = "WrLehDz"
+    DataDesc        = "B16BBDz"
+    RAP_Params
+      {
+      InfoLevel     = 1 &lt;See below&gt;
+      BufrSize      = &lt;Same as MaxDataCount&gt;
+      ServerType    = &lt;See below&gt;
+      Workgroup     = &lt;Name of the workgroup to list&gt;
+      }
+    }
+  }
+</pre>
+
+<p>A few of those fields need a little discussion.</p>
+
+<dl>
+<dt><code>TotalParamCount</code></dt>
+
+<dd><p>The value 27 includes three short integers, one long integer,
+two constant strings (with lengths of 8 bytes each), and one
+nul byte to terminate the <code>Workgroup</code> field. That adds up to
+27 bytes.</p></dd>
+
+<dt><code>MaxDataCount</code> and <code>BufrSize</code></dt>
+
+<dd><p>Samba<idx>Samba</idx> allocates the largest size buffer it can
+(64&nbsp;Kbytes minus one byte) to receive the response data. Other
+clients seem to have trouble with a 64K buffer, and will subtract a
+few bytes from the size. 64K minus 360&nbsp;bytes has been seen, and
+jCIFS uses 64K minus 512&nbsp;bytes. </p>
+
+<email> 
+<pre>From: Allen, Michael B
+  To: jcifs@samba.org
+
+I think I just made it up. I found 0xFFFF would result in
+errors. I never really investigated why.
+</pre>
+</email>
+</dd>
+
+<dt><code>InfoLevel</code></dt>
+
+<dd><p>There are two <code>InfoLevel</code>s<idx>InfoLevel</idx>
+available: 0 and 1. Level 0 is not very interesting. Note that if you
+want to try level 0, you will need to change the <code>DataDesc</code>
+string as well.</p></dd>
+
+<dt><code>ServerType</code></dt>
+
+<dd><p>There are two common values used in the request message. They
+are: </p>
+
+<pre>SV_TYPE_DOMAIN_ENUM == 0x80000000
+SV_TYPE_ALL         == 0xFFFFFFFF
+</pre>
+
+<p>The first is used to query the browser for the list of all known
+workgroups.<idx start="c22-workgroup">Workgroup</idx> The second is used to query for a list of all known
+Providers<idx>Browse Service<sidx>Provider</sidx></idx> in the
+specified (or default) workgroup.</p>
+
+<p>Note that these are not the only allowed values. When we cover
+the reply message (next section) there will be a table of all known
+bit values. Queries for specific subsets of Providers can be
+generated using these bits.</p>
+</dd>
+
+<dt><code>Workgroup</code><idx>Workgroup</idx></dt>
+
+<dd><p>In many cases, this will be an empty string (just a nul byte).
+An empty <code>Workgroup</code> field represents a request to list the
+Providers that are members of the browser's default workgroup. That
+means, of course, that the browser being queried <em>must have</em> a
+default workgroup. </p>
+
+<p>This results in an interesting problem. Since the workgroup name is
+not always specified, a single system cannot (on a single IP address)
+be the LMB<idx>LMB</idx> for more than one workgroup. If a node were
+to become the LMB for multiple workgroups, then it would not know
+which set of servers to report in response to a
+<code>NetServerEnum2</code> query with an empty workgroup name.</p>
+</dd>
+</dl>
+
+<p>...and that is "all you need to know" about the
+<code>NetServerEnum2</code> <dk:nobr>request message.</dk:nobr> </p>
+
+</h2s><h2 id="Browsing3.4.3.2"><code>NetServerEnum2</code> Reply</h2><h2s>
+
+<p>The response message is a bit more involved, so you may want to
+take notes. A packet capture, once again, is a highly recommended
+visual aide.</p>
+
+<p>Starting at the top... The <code>TotalParamCount</code> field in the
+SMBtrans reply message will have a value of 8, indicating the size
+of the SMBtrans-level <code>Parameter[]</code> block. Those bytes fall
+out as follows:</p>
+
+<pre>struct
+  {
+  ushort Status;      /* Error Code        */
+  ushort Convert;     /* See below         */
+  ushort EntryCount;  /* Entries returned  */
+  ushort AvailCount;  /* Entries available */
+  }
+</pre>
+
+<dl>
+<dt><code>Status</code></dt>
+
+<dd><p>An error code.<idx>DOS<sidx>error codes</sidx></idx> Available
+codes are listed in the Leach/Naik Browser draft.</p></dd>
+
+<dt><code>Convert</code></dt>
+
+<dd><p>More on this in a moment, when we get to the <code>Data[]</code>
+block.</p></dd>
+
+<dt><code>EntryCount</code></dt>
+
+<dd><p>The number of entries returned in the reply.</p></dd>
+
+<dt><code>AvailCount</code></dt>
+
+<dd><p>The number of available entries. This may be more than the
+number in <code>EntryCount</code>, in which case there are more entries
+than will fit in the data buffer length given in the request.</p></dd>
+</dl>
+
+<p>That's all there is to the <code>Parameter[]</code> block. It's
+nicely simple, but things get a little wilder as we move on. Do
+keep track of that <code>Convert</code> value...</p>
+
+<p>The SMB-level <code>Data[]</code> block will start with a series of
+<code>ServerInfo_1</code> structures, as described below:</p>
+
+<pre>struct
+  {
+  uchar  Name[16];      /* Provider name     */
+  uchar  OSMajorVers;   /* Provider OS Rev   */
+  uchar  OSMinorVers;   /* Provider OS Point */
+  ulong  ServerType;    /* See below         */
+  uchar *Comment;       /* Pointer           */
+  } ServerInfo_1;
+</pre>
+
+<p>There will be &lt;<code>EntryCount</code>&gt; such structures packed
+neatly together. It is fairly easy to parse them out, because the
+<code>Name</code> field is a fixed-length, nul-padded string and the
+<code>Comment</code> field <em>really is</em> a pointer. The Leach/Naik
+Browser draft suggests that the <code>Comment</code> strings themselves
+<em>may</em> follow each <code>ServerInfo_1</code> structure, but all
+examples seen on the wire show four bytes. Hang on to those four
+bytes... we'll explain in a moment.</p>
+
+<p>Anywhich, the above structure has a fixed length - 26 bytes, to
+be <dk:nobr>precise. That makes</dk:nobr> it easy to parse <code>ServerInfo_1</code>
+structures from the <dk:nobr><code>Data[]</code> block.</dk:nobr></p>
+
+<p>The values in the <code>ServerInfo_1</code> are the same ones
+announced by the Provider<idx>Browse
+Service<sidx>Provider</sidx></idx> in its
+<code>HostAnnouncement</code><idx>HostAnnouncement</idx> or
+<code>DomainAnnouncement</code><idx>DomainAnnouncement</idx>
+frames. They are stored in an internal database on the browser
+node. Some of these fields have been discussed before, but a detailed
+description of the <dk:nobr><code>ServerType</code></dk:nobr> field
+has been postponed at every opportunity.  Similarly, the pointer value
+in the <code>Comment</code> field really needs some clarification.</p>
+
+<p>Let's start with the <code>Comment</code> pointer...</p>
+
+<p>The <code>Comment</code> pointer may just possibly be a relic of the
+long lost days of DOS. Those who know more about 16-bit DOS
+internals may judge. In any case, what you need to do is this:</p>
+
+<ul>
+<li><p>Read the <code>Comment</code> pointer from the
+<code>ServerInfo_1</code> structure.</p></li>
+
+<li><p>Remove the two higher-order bytes:
+ <code>Comment &amp; 0x0000FFFF</code>.</p></li>
+
+<li><p>Subtract the value of the <code>Convert</code> field:
+ <code>offset = (Comment &amp; 0x0000FFFF) - Convert</code>.</p></li>
+
+<li><p>Use the resulting offset to find the actual <code>Comment</code>
+string. The offset is relative to the start of the SMBtrans
+<code>Data[]</code> block.</p></li>
+</ul>
+
+<p>Well <em>that</em> was easy. This stuff is so lovable you just
+want to give it a hug, don't you?</p>
+
+<p>Some further notes:</p>
+
+<ul>
+<li><p>The <code>Comment</code> strings are stored in the RAP-level
+heap.</p></li>
+
+<li><p>The <code>ServerInfo_1</code> blocks are considered RAP-level
+"data."</p></li>
+
+<li><p>Both of those are collected into the SMBtrans-level
+<code>Data[]</code> block.</p></li>
+
+<li><p>Just to make things simple, the RAP-level parameters are
+gathered into the SMBtrans <code>Parameter[]</code> block.</p></li>
+</ul>
+
+<p>Right... Having tilted that windmill, let's take a look at the
+(more sensible, but also much more verbose) <code>ServerType</code>
+field. We have delayed describing this field for quite a while.  Here,
+finally, it is... well, mostly. The list below is based on Samba<idx>Samba</idx>
+sources. It is close to Ethereal's list,<idx>Ethereal</idx> and less
+close to the list given in the Leach/Naik draft. Let the buyer
+beware.</p>
+
+<table colwidths="9* 35* 56*">
+<caption>Browser Provider type bits</caption>
+<thead>
+<tr dk:border="after">
+<th><p>Bit</p></th>
+<th><p>Name / Bitmask</p></th>
+<th><p>Description</p></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><p>31</p></td>
+<td><p><line><code dk:type="small">SV_TYPE_DOMAIN_ENUM</code></line>
+<line><code>0x80000000</code></line></p></td>
+
+<td><p>Enumerate Domains. This bit is used in the request to ask for a
+list of known workgroups<idx>Workgroup</idx> instead of a list of
+Providers in a workgroup.</p></td>
+</tr>
+<tr>
+<td><p>30</p></td>
+<td><p><line><code dk:type="small">SV_TYPE_LOCAL_LIST_ONLY</code></line>
+<line><code>0x40000000</code></line></p></td>
+
+<td><p>This bit identifies entries for which
+the browser is <em>authoritative</em>. That is, it is set if the
+Provider (or workgroup) entry was received via an announcement
+message, and clear if the entry is the result of a sync with the
+DMB.</p></td>
+</tr>
+<tr>
+<td><p>29</p></td>
+<td><p><line><code dk:type="small">SV_TYPE_ALTERNATE_XPORT</code></line>
+<line><code>0x20000000</code></line></p></td>
+
+<td><p>No one seems to remember where this
+came from or what it means. Ethereal doesn't know about it.</p></td>
+</tr>
+<tr>
+<td><p>28-24</p></td>
+<td><p><code>0x1F000000</code></p></td>
+<td><p>Unused.</p></td>
+</tr>
+<tr>
+<td><p>23</p></td>
+<td><p><line><code dk:type="small">SV_TYPE_DFS_SERVER</code></line>
+<line><code>0x00800000</code></line></p></td>
+
+<td><p>The Provider offers DFS<idx>DFS</idx> shares.
+Possibly a DFS root.</p></td>
+</tr>
+<tr>
+<td><p>22</p></td>
+<td><p><line><code dk:type="small">SV_TYPE_WIN95_PLUS</code></line>
+<line><code>0x00400000</code></line></p></td>
+
+<td><p>Indicates a Provider that considers
+itself to be in the Windows 9x family.</p></td>
+</tr>
+<tr>
+<td><p>21</p></td>
+<td><p><line><code dk:type="small">SV_TYPE_SERVER_VMS</code></line>
+<line><code>0x00200000</code></line></p></td>
+
+<td><p>Indicates a VMS (Pathworks)
+server.</p></td>
+</tr>
+<tr>
+<td><p>20</p></td>
+<td><p><line><code dk:type="small">SV_TYPE_SERVER_OSF</code></line>
+<line><code>0x00100000</code></line></p></td>
+
+<td><p>Indicates an OSF Unix server.</p></td>
+</tr>
+<tr>
+<td><p>19</p></td>
+<td><p><line><code dk:type="small">SV_TYPE_DOMAIN_MASTER</code></line>
+<line><code>0x00080000</code></line></p></td>
+
+<td><p>Indicates a Domain Master Browser
+(DMB).</p></td>
+</tr>
+<tr>
+<td><p>18</p></td>
+<td><p><line><code dk:type="small">SV_TYPE_MASTER_BROWSER</code></line>
+<line><code>0x00040000</code></line></p></td>
+
+<td><p>Indicates a Local Master Browser
+(LMB<idx>LMB</idx>).</p></td>
+</tr>
+<tr>
+<td><p>17</p></td>
+<td><p><line><code dk:type="small">SV_TYPE_BACKUP_BROWSER</code></line>
+<line><code>0x00020000</code></line></p></td>
+
+<td><p>Indicates a Backup Browser...<idx>Backup Browser</idx></p></td>
+</tr>
+<tr>
+<td><p>16</p></td>
+<td><p><line><code dk:type="small">SV_TYPE_POTENTIAL_BROWSER</code></line>
+<line><code>0x00010000</code></line></p></td>
+
+<td><p>...and, of course, a Potential
+Browser.</p></td>
+</tr>
+<tr>
+<td><p>15</p></td>
+<td><p><line><code dk:type="small">SV_TYPE_SERVER_NT</code></line>
+<line><code>0x00008000</code></line></p></td>
+
+<td><p>Indicates a Windows NT Server.</p></td>
+</tr>
+<tr>
+<td><p>14</p></td>
+<td><p><line><code dk:type="small">SV_TYPE_SERVER_MFPN</code></line>
+<line><code>0x00004000</code></line></p></td>
+
+<td><p>Unknown. Ethereal ignores this one,
+and it's not listed in the Leach/Naik Browser draft.</p></td>
+</tr>
+<tr>
+<td><p>13</p></td>
+<td><p><line><code dk:type="small">SV_TYPE_WFW</code></line>
+<line><code>0x00002000</code></line></p></td>
+
+<td><p>Windows for Workgroups.</p></td>
+</tr>
+<tr>
+<td><p>12</p></td>
+<td><p><line><code dk:type="small">SV_TYPE_NT</code></line>
+<line><code>0x00001000</code></line></p></td>
+
+<td><p>A Windows NT client.</p></td>
+</tr>
+<tr>
+<td><p>11</p></td>
+<td><p><line><code dk:type="small">SV_TYPE_SERVER_UNIX</code></line>
+<line><code>0x00000800</code></line></p></td>
+
+<td><p>An SMB server running Xenix<idx>Xenix</idx> or Unix.
+Samba will set this bit when announcing its services.</p></td>
+</tr>
+<tr>
+<td><p>10</p></td>
+<td><p><line><code dk:type="small">SV_TYPE_DIALIN_SERVER</code></line>
+<line><code>0x00000400</code></line></p></td>
+
+<td><p>The Provider offers dial-up services
+(e.g. NT RAS<idx>NT RAS</idx>).</p></td>
+</tr>
+<tr>
+<td><p>9</p></td>
+<td><p><line><code dk:type="small">SV_TYPE_PRINTQ_SERVER</code></line>
+<line><code>0x00000200</code></line></p></td>
+
+<td><p>The Provider has printer services
+available.</p></td>
+</tr>
+<tr>
+<td><p>8</p></td>
+<td><p><line><code dk:type="small">SV_TYPE_DOMAIN_MEMBER</code></line>
+<line><code>0x00000100</code></line></p></td>
+
+<td><p>The Provider is a member of an NT
+Domain. That means that the Provider itself has authenticated to
+the NT Domain.</p></td>
+</tr>
+<tr>
+<td><p>7</p></td>
+<td><p><line><code dk:type="small">SV_TYPE_NOVELL</code></line>
+<line><code>0x00000080</code></line></p></td>
+
+<td><p>The Provider is a Novell server
+offering SMB services. This is probably used with SMB over IPX/SPX,
+but may be set by Novell's SMB implementation as well.</p></td>
+</tr>
+<tr>
+<td><p>6</p></td>
+<td><p><line><code dk:type="small">SV_TYPE_AFP</code></line>
+<line><code>0x00000040</code></line></p></td>
+
+<td><p>The Provider is an Apple system.
+Thursby's Dave product and Apple's SMB implementation may set this
+bit.</p></td>
+</tr>
+<tr>
+<td><p>5</p></td>
+<td><p><line><code dk:type="small">SV_TYPE_TIME_SOURCE</code></line>
+<line><code>0x00000020</code></line></p></td>
+
+<td><p>The Provider offers SMB time
+services. (Yes, there is an SMB-based time sync service.)</p></td>
+</tr>
+<tr>
+<td><p>4</p></td>
+<td><p><line><code dk:type="small">SV_TYPE_DOMAIN_BAKCTRL</code></line>
+<line><code>0x00000010</code></line></p></td>
+
+<td><p>The Provider is a Backup Domain Controller (BDC<idx>BDC</idx>).</p></td>
+</tr>
+<tr>
+<td><p>3</p></td>
+<td><p><line><code dk:type="small">SV_TYPE_DOMAIN_CTRL</code></line>
+<line><code>0x00000008</code></line></p></td>
+
+<td><p>The Provider is a Domain
+Controller.<idx>DC</idx></p></td>
+</tr>
+<tr>
+<td><p>2</p></td>
+<td><p><line><code dk:type="small">SV_TYPE_SQLSERVER</code></line>
+<line><code>0x00000004</code></line></p></td>
+
+<td><p>The Provider offers SQL
+services.</p></td>
+</tr>
+<tr>
+<td><p>1</p></td>
+<td><p><line><code dk:type="small">SV_TYPE_SERVER</code></line>
+<line><code>0x00000002</code></line></p></td>
+
+<td><p>The Provider offers SMB file
+services.</p></td>
+</tr>
+<tr>
+<td><p>0</p></td>
+<td><p><line><code dk:type="small">SV_TYPE_WORKSTATION</code></line>
+<line><code>0x00000001</code></line></p></td>
+
+<td><p>This bit indicates that the system is
+a workstation. (Just about everything sets this bit.)</p></td>
+</tr>
+</tbody>
+</table>
+
+<p>Just to polish this subject off, here's a little code that can
+parse a
+<dk:nobr><code>NetServerEnum2</code><idx>NetServerEnum2</idx></dk:nobr>
+response message and print the results:</p>
+
+<example id="Listing3.3">
+<caption>Parsing <code>NetServerEnum2</code> Replies<idx>Backup Browser</idx><idx>BDC</idx><idx end="c22-SMBtrans-2">SMBtrans</idx></caption>
+<pre dk:break="after"><![CDATA[#define NERR_Success 0
+
+#define SV_TYPE_ALL               0xFFFFFFFF
+#define SV_TYPE_UNKNOWN           0x1F000000
+
+#define SV_TYPE_DOMAIN_ENUM       0x80000000
+#define SV_TYPE_LOCAL_LIST_ONLY   0x40000000
+#define SV_TYPE_ALTERNATE_XPORT   0x20000000
+#define SV_TYPE_DFS_SERVER        0x00800000
+#define SV_TYPE_WIN95_PLUS        0x00400000
+#define SV_TYPE_SERVER_VMS        0x00200000
+#define SV_TYPE_SERVER_OSF        0x00100000
+#define SV_TYPE_DOMAIN_MASTER     0x00080000
+#define SV_TYPE_MASTER_BROWSER    0x00040000
+#define SV_TYPE_BACKUP_BROWSER    0x00020000
+#define SV_TYPE_POTENTIAL_BROWSER 0x00010000
+#define SV_TYPE_SERVER_NT         0x00008000
+#define SV_TYPE_SERVER_MFPN       0x00004000
+#define SV_TYPE_WFW               0x00002000
+#define SV_TYPE_NT                0x00001000
+#define SV_TYPE_SERVER_UNIX       0x00000800]]></pre>
+<pre dk:break="after"><![CDATA[#define SV_TYPE_DIALIN_SERVER     0x00000400
+#define SV_TYPE_PRINTQ_SERVER     0x00000200
+#define SV_TYPE_DOMAIN_MEMBER     0x00000100
+#define SV_TYPE_NOVELL            0x00000080
+#define SV_TYPE_AFP               0x00000040
+#define SV_TYPE_TIME_SOURCE       0x00000020
+#define SV_TYPE_DOMAIN_BAKCTRL    0x00000010
+#define SV_TYPE_DOMAIN_CTRL       0x00000008
+#define SV_TYPE_SQLSERVER         0x00000004
+#define SV_TYPE_SERVER            0x00000002
+#define SV_TYPE_WORKSTATION       0x00000001
+
+typedef struct
+  {
+  ushort Status;
+  ushort Convert;
+  ushort EntryCount;
+  ushort AvailCount;
+  } NSE2_ReplyParams;
+
+void PrintBrowserBits( ulong ServerType )
+  /* ---------------------------------------------------- **
+   * Itemize Browse Service Provider Type Bits.
+   * This is boring, and could probably be done better
+   * using an array and a for() loop.
+   * ---------------------------------------------------- **
+   */
+  {
+  if( SV_TYPE_ALL == ServerType )
+    {
+    printf( "  All/Any Server types.\n" );
+    return;
+    }
+
+  if( SV_TYPE_UNKNOWN & ServerType )
+    printf( "  Warning: Undefined bits set.\n" );
+
+  if( SV_TYPE_DOMAIN_ENUM & ServerType )
+    printf( "  Enumerate Domains\n" );
+  if( SV_TYPE_LOCAL_LIST_ONLY & ServerType )
+    printf( "  Local List Only\n" );
+  if( SV_TYPE_ALTERNATE_XPORT & ServerType )
+    printf( "  Alternate Export (Unknown type)\n" );
+  if( SV_TYPE_DFS_SERVER & ServerType )
+    printf( "  DFS Support\n" );
+  if( SV_TYPE_WIN95_PLUS & ServerType )
+    printf( "  Windows 95+\n" );]]></pre>
+<pre dk:break="after"><![CDATA[  if( SV_TYPE_SERVER_VMS & ServerType )
+    printf( "  VMS (Pathworks) Server\n" );
+  if( SV_TYPE_SERVER_OSF & ServerType )
+    printf( "  OSF Unix Server\n" );
+  if( SV_TYPE_DOMAIN_MASTER & ServerType )
+    printf( "  Domain Master Browser\n" );
+  if( SV_TYPE_MASTER_BROWSER & ServerType )
+    printf( "  Local Master Browser\n" );
+  if( SV_TYPE_BACKUP_BROWSER & ServerType )
+    printf( "  Backup Browser\n" );
+  if( SV_TYPE_POTENTIAL_BROWSER & ServerType )
+    printf( "  Potential Browser\n" );
+  if( SV_TYPE_SERVER_NT & ServerType )
+    printf( "  Windows NT (or compatible) Server\n" );
+  if( SV_TYPE_SERVER_MFPN & ServerType )
+    printf( "  MFPN (Unkown type)\n" );
+  if( SV_TYPE_WFW & ServerType )
+    printf( "  Windows for Workgroups\n" );
+  if( SV_TYPE_NT & ServerType )
+    printf( "  Windows NT Workstation\n" );
+  if( SV_TYPE_SERVER_UNIX & ServerType )
+    printf( "  Unix/Xenix/Samba Server\n" );
+  if( SV_TYPE_DIALIN_SERVER & ServerType )
+    printf( "  Dialin Server\n" );
+  if( SV_TYPE_PRINTQ_SERVER & ServerType )
+    printf( "  Print Server\n" );
+  if( SV_TYPE_DOMAIN_MEMBER & ServerType )
+    printf( "  NT Domain Member Server\n" );
+  if( SV_TYPE_NOVELL & ServerType )
+    printf( "  Novell Server\n" );
+  if( SV_TYPE_AFP & ServerType )
+    printf( "  Apple Server\n" );
+  if( SV_TYPE_TIME_SOURCE & ServerType )
+    printf( "  Time Source\n" );
+  if( SV_TYPE_DOMAIN_BAKCTRL & ServerType )
+    printf( "  Backup Domain Controller\n" );
+  if( SV_TYPE_DOMAIN_CTRL & ServerType )
+    printf( "  Domain Controller\n" );
+  if( SV_TYPE_SQLSERVER & ServerType )
+    printf( "  SQL Server\n" );
+  if( SV_TYPE_SERVER & ServerType )
+    printf( "  SMB Server\n" );
+  if( SV_TYPE_WORKSTATION & ServerType )
+    printf( "  Workstation\n" );
+  } /* PrintBrowserBits */]]></pre>
+
+<pre><![CDATA[void PrintNetServerEnum2Reply( uchar *ParamBlock,
+                               int    ParamLen,
+                               uchar *DataBlock,
+                               int    DataLen )
+  /* ---------------------------------------------------- **
+   * Parse a NetServerEnum2 Reply and print the contents.
+   * ---------------------------------------------------- **
+   */
+  {
+  NSE2_ReplyParams Rep;
+  int              i;
+  int              offset;
+  uchar           *pos;
+
+  /* Check for an obvious error.
+   */
+  if( ParamLen != 8 )
+    Fail( "Error parsing NetServerEnum2 reply.\n" );
+
+  /* Grab all of the parameter words.
+   */
+  Rep.Status     = smb_GetShort( ParamBlock, 0 );
+  Rep.Convert    = smb_GetShort( ParamBlock, 2 );
+  Rep.EntryCount = smb_GetShort( ParamBlock, 4 );
+  Rep.AvailCount = smb_GetShort( ParamBlock, 6 );
+
+  /* Check for problems (errors and warnings).
+   */
+  if( Rep.Status != NERR_Success )
+    Fail( "NetServerEnum2 Error: %d.\n", Rep.Status );
+  if( Rep.EntryCount < Rep.AvailCount )
+    printf( "Warning: The list is incomplete.\n" );
+
+  /* Dump the ServerInfo_1 records. */
+  pos = DataBlock;
+  for( i = 0; i < Rep.EntryCount; i++ )
+    {
+    printf( "%-15s V%d.%d\n", pos, pos[16], pos[17] );
+    PrintBrowserBits( smb_GetLong( pos, 18 ) );
+    offset  = 0x0000FFFF & smb_GetLong( pos, 22 );
+    offset -= Rep.Convert;
+    if( offset >= DataLen )
+      Fail( "Packet offset error.\n" );
+    printf( "  Comment: %s\n", (DataBlock + offset) );
+    pos += 26;
+    }
+  } /* PrintNetServerEnum2Reply */]]></pre>
+</example>
+
+</h2s><h2 id="Browsing3.4.3.3">On the Outskirts of Town</h2><h2s>
+
+<p>There is another RAP<idx>RAP</idx> call that you need to know
+about. It comes in handy at times. It doesn't really belong to the
+Browse Service, but you may have heard its name mentioned in that
+context. It lives on the edge, somewhere between browsing and
+filesharing, and it goes by the name
+<code>NetShareEnum</code>.<idx>NetShareEnum</idx></p>
+
+<p>The <code>NetShareEnum</code> RAP call does the job of listing the
+shares offered by a server. The shares, as you already know, are
+the virtual roots of the directory trees made available via
+SMB.</p>
+
+<p>The wire format of the request is as follows:</p>
+
+<pre>struct
+  {
+  ushort RAPCode;
+  uchar *ParamDesc;
+  uchar *DataDesc;
+  struct
+    {
+    ushort InfoLevel;<idx>InfoLevel</idx>
+    ushort BufrSize;
+    } Params;
+  } NetShareEnumReq;
+</pre>
+
+<p dk:indent="no">and it is filled in like so: </p>
+
+<pre><idx>B13BWz</idx>NetShareEnumReq
+  {
+  RAPCode   = 0 (NetShareEnum)
+  ParamDesc = "WrLeh"<idx>WrLeh</idx>
+  DataDesc  = "B13BWz"
+  Params
+    {
+    InfoLevel = 1 (No other values defined)
+    BufrSize  = &lt;Same as smb_Transaction_Request.MaxDataCount&gt;
+    }
+  }
+</pre>
+
+<p>Yes, the RAP code for <code>NetShareEnum</code> is zero
+(<code>0</code>).</p>
+
+<p>There's not much to that call, particularly once you've gotten the
+<dk:nobr><code>NetServerEnum2</code><idx>NetServerEnum2</idx></dk:nobr>
+figured out. The response also contains some familiar concepts. In
+fact, the <code>Parameter[]</code> section is exactly the same.</p>
+
+<p>The RAP-level data section is supposed to contain an array of
+<dk:nobr><code>ShareInfo_1</code></dk:nobr> structures, which look like this:</p>
+
+<pre>struct
+  {
+  uchar  ShareName[13];
+  uchar  pad;
+  ushort ShareType;
+  uchar *Comment;
+  } ShareInfo_1;
+</pre>
+
+<p>Again, there are many similarities to what we have seen before.
+In this case, though, the <code>ShareType</code> field has a smaller
+set of possible values than the comparable <code>ServerType</code>
+field.</p>
+
+<table colwidths="29* 12* 59*">
+<caption>Share type values</caption>
+<thead>
+<tr dk:border="after">
+<th><p>Name</p></th>
+<th><p>Value</p></th>
+<th><p>Description</p></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><p><code>STYPE_DISKTREE</code></p></td>
+<td><p><code>0</code></p></td>
+<td><p>A disk share (root of a directory tree).</p></td>
+</tr>
+<tr>
+<td><p><code>STYPE_PRINTQ</code></p></td>
+<td><p><code>1</code></p></td>
+<td><p>A print queue.</p></td>
+</tr>
+<tr>
+<td><p><code>STYPE_DEVICE</code></p></td>
+<td><p><code>2</code></p></td>
+<td><p>A communications device (e.g. a modem).</p></td>
+</tr>
+<tr>
+<td><p><code>STYPE_STYPE</code></p></td>
+<td><p><code>3</code></p></td>
+<td><p>An Inter-Process Communication (IPC) share.</p></td>
+</tr>
+</tbody>
+</table>
+
+<p>...and that is "all you need to know" about the
+<code>NetShareEnum</code><idx>NetShareEnum</idx> call. Oh,
+wait... There is one more thing...</p>
+
+<alert type="Can't Get It Out Of My Head">
+<p>There is one great big warning regarding the
+<code>NetShareEnum</code> response. Some Windows systems have been
+seen returning parameter blocks that are very large
+<dk:nobr>(e.g. 1024 bytes).</dk:nobr> The first eight bytes contain
+the correct values. The rest appear to be left-over cruft from the
+buffer on the server side. The server is returning the buffer size
+(and the whole buffer) rather than the <code>Parameter[]</code> block
+size.</p>
+
+<p>Other transactions may exhibit similar behavior.</p>
+</alert>
+
+</h2s><h2 id="Browsing3.4.3.4">Transaction Fragmentation</h2><h2s>
+
+<p>A promise is a promise, and we did promise to cover fragmented<idx
+start="c22-fragmentation">fragmentation</idx> transactions.<fn>Maybe we
+could cover them with leaves and fallen branches and just let them
+compost themselves quietly in an out-of-the-way place or
+something.</fn></p>
+
+<p>The idea is fairly simple. If you have twenty-five sacks of
+grain to bring to town, and a wagon that can hold only twelve
+sacks, then you will need to make a few trips. Likewise with
+transactions. Due to the limits of the negotiated buffer size, a
+transaction may attempt to transfer more data than can be carried
+in a single SMB. The solution is to split up the data and send it
+using multiple SMB messages.</p>
+
+<p>The mechanism used is the same for SMBtrans<idx>SMBtrans</idx>,
+Trans2,<idx>Trans2</idx> and NTtrans.<idx>NTtrans</idx> There are
+slight differences between the transaction request and transaction
+response, though, so pay attention.</p>
+
+<p>Sending a fragmented transaction request works like this:</p>
+
+<ol>
+<li><p>Fill in the transaction SMB, packing as many
+<code>Parameter[]</code> and <dk:nobr><code>Data[]</code></dk:nobr> bytes into the
+transaction as possible. <code>Parameter[]</code> bytes have
+precedence over <code>Data[]</code> bytes.</p></li>
+
+<li><p>Send the initial message and wait for a reply (known as the
+"Interim Server Response"). This step is a shortcut. It gives the
+server a chance to reject the transaction before it has been
+completely transferred. Only the response header has any meaning. If
+there is no error, the transaction <dk:nobr>may proceed.</dk:nobr></p></li>
+
+<li><p>Send as many secondary transaction messages as necessary to
+transfer the remaining <code>Parameter[]</code> and
+<code>Data[]</code> bytes. Note that the SMB command and structure of
+secondary transactions is not the same as those of the initial
+message.</p></li>
+
+<li><p>Wait for the server to execute the transaction and
+return the results.</p></li>
+</ol>
+
+<p>Now go back and take a look at <ref refid="Listing3.1"/>. Note that
+the <code>smb_Transaction_Request</code> structure keeps track of the
+number of <dk:nobr><code>Parameter[]</code></dk:nobr> and <code>Data[]</code> bytes
+already packed for shipping. That makes it easy to build the secondary
+messages should they be needed.</p>
+
+<p>Fragmenting a transaction response is a simpler process. The
+response SMBs all have the same structure (no special secondary
+messages) and they all have an SMB header, which may contain an
+error code if necessary. So, the server can just send as many
+transaction response SMBs as needed to transfer all of the results.
+That's it. <idx end="c22-fragmentation">fragmentation</idx></p>
+
+</h2s><h2 id="Browsing3.4.3.5">RAP Annoyances</h2><h2s>
+
+<p>RAP<idx>RAP</idx> can be quite annoying - that's just its
+nature. There are two particular annoyances of which you should be
+aware:</p>
+
+<dl>
+<dt>Authentication<idx>authentication</idx></dt>
+
+<dd><p>It is common for a server to deny a
+<code>NetShareEnum</code><idx>NetShareEnum</idx> request on an
+anonymous SMB connection. A valid username/password pair may be
+required. Some servers also require non-anonymous authentication for
+the <code>NetServerEnum2</code><idx>NetServerEnum2</idx> request,
+though this is less common.</p></dd>
+
+<dt>Limitations and Permutations</dt>
+
+<dd><p>Grab a capture of a <code>NetShareEnum</code> request and take
+a look at the data descriptor string for the returned data (which
+should be "B13BWz",<idx>B13BWz</idx> as described above). The number
+13 in the string indicates the maximum length of the share names to be
+returned, and it includes the terminating nul byte.</p>
+
+<p>"B13BWz" means that the <code>NetShareEnum</code> function will
+not return share names with a string length greater than 12
+characters each. Of course, there are many systems that can offer
+shares with names longer than 12 characters. Thus, we have a
+problem.</p>
+
+<p>One way to solve the problem would be to change the field size
+in the descriptor string to, for example, something like 
+"B256BWz". That trick isn't likely to work against all servers,
+however, because the descriptor strings are constant enough that
+some implementations probably ignore them. Another option is to use
+short share names, but that only works if you have control over all
+of the SMB servers in the network.</p>
+
+<p>The prescribed solution is to use a different function, called
+<code>Net<u>r</u>ShareEnum</code><idx>NetrShareEnum</idx>. Note that
+there's an extra letter 'r' hidden in there. Also note that the
+<code>Net<u>r</u>ShareEnum</code> function is an
+MS-RPC<idx>MS-RPC</idx> call, not a RAP call, and thus is beyond the
+scope of this book. You can watch for it in packet captures, however,
+and possibly consider it as a starting point should you decide to
+explore the world of MS-RPC.</p></dd>
+</dl>
+
+<p>So, now you know.</p>
+
+</h2s></h1s>
+</chapter>
+</oim>

@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="US-ASCII"?>
+<!DOCTYPE oim SYSTEM "oimxml.dtd" [
+  <!ENTITY nbsp  "&#160;">
+  <!ENTITY lsquo "&#8216;">
+  <!ENTITY rsquo "&#8217;">
+  <!ENTITY minus "&#8211;">
+  <!ENTITY mdash "&#8212;">
+  <!ENTITY times "&#xd7;">
+  <!ENTITY copy "&#xa9;">
+] >
+<oim xmlns:dk="http://www.kirsanov.com">
+
+<foreword>
+
+<epigraph dk:padding-top="92">
+<p></p>
+</epigraph>
+
+<p dk:indent="no">Writing a book is hard - writing a <em>good</em> book is very hard,
+and describing an area as complex as CIFS is a nightmare.  The biggest
+pleasure of being involved with the production of this reference is in
+the clarity and depth of the end result - the impossible has been
+achieved, for the benefit of all involved in this protocol.</p>
+
+<p>CIFS is an important protocol - indeed, in Windows networks it
+could be considered as important as TCP/IP, as almost all
+communication between Windows machines can flow over it.  It provides
+file and print services, and, among other things, is a carrier for
+Remote Procedure Call and NT Domain services. When I came to CIFS in
+2001, it was out of an interest in the Samba project - an Open Source
+implementation that I was running on Linux - where I soon became a
+specialist in Authentication.  At the time, there was little good
+documentation available, particularly on the murky details of
+<dk:nobr>authentication.</dk:nobr></p>
+
+<p>For that reason, you will find my name scattered all over the
+Authentication area of this book. As a developer of a CIFS
+implementation, there are many things that I now know - and needed to
+know then - that were never clearly written down.  Too often, the only
+reference on some functionality was the C code that implemented it -
+and the implicit hope that comments vaguely represented reality.  I
+personally spent many hours inspecting the publicly available sources
+of Samba and Samba-TNG, in the hope of gleaning some extra
+understanding, some critical detail.</p>
+
+<p>My role in this book was one of many willing victims - exposing all
+I knew about CIFS, realising how little we had all actually proved,
+and how much we just assumed.  Chris' role was that of interrogator -
+asking all the difficult questions, and forcing us all to re-evaluate.
+The end result was a lot of testing, experimentation, and analysis, but
+also the solid research foundation behind this massive effort.</p>
+
+<p>My hope is that with this book, future developers will no longer be
+required to pore over cryptic standards drafts - or badly commented C
+code - to understand the "big picture" into which their software
+sits.</p>
+
+<p>More remarkably however, <cite>Implementing CIFS</cite> provides a solid
+technical reference on the protocol as a whole - between the
+standardese of the SNIA Technical Reference included as an appendix
+and the clear English of Chris' own chapters is a wealth of technical
+information that aids even the most experienced developer.</p>
+
+<p>Beyond that, by creating such readable documentation, Implementing
+CIFS allows more than blind faith in vendors words - CIFS is now
+assessable to network administrators and other non-programmers who
+can understand for themselves how this protocol works (and how it
+doesn't).</p>
+
+<p>By leading readers though the creation of his own basic CIFS
+client, Chris Hertel ensures that readers have a solid background in
+the basics - and can continue on to implementing the rest of the protocol
+sure of their foundations.</p>
+
+<p>I've very much enjoyed working with Chris Hertel on <cite>Implementing
+CIFS</cite>&nbsp;&mdash; finally, I could see a description of this protocol that mere
+mortals could not only understand, but also enjoy!</p>
+
+<author>Andrew Bartlett<idx>Bartlett, Andrew</idx></author>
+<description>Samba Team</description>
+<place>Canberra, Australia</place>
+<date>June 2003</date>
+
+</foreword>
+</oim>

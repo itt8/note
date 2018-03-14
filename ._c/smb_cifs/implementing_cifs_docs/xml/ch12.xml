@@ -1,0 +1,1396 @@
+<?xml version="1.0" encoding="US-ASCII"?>
+<!DOCTYPE oim SYSTEM "oimxml.dtd" [
+  <!ENTITY nbsp  "&#160;">
+  <!ENTITY lsquo "&#8216;">
+  <!ENTITY rsquo "&#8217;">
+  <!ENTITY minus "&#8211;">
+  <!ENTITY mdash "&#8212;">
+  <!ENTITY times "&#xd7;">
+  <!ENTITY copy "&#xa9;">
+] >
+<oim xmlns:dk="http://www.kirsanov.com">
+<chapter id="SMB2.5">
+<chapopen><title>The SMB Header in&nbsp;Detail</title>
+<epigraph dk:padding-top="68">
+<p><line>1st rule of Oriental Cuisine:</line>
+<line>Never look inside the eggroll.</line></p>
+</epigraph>
+</chapopen>
+
+<p>During that first expedition into SMB territory we continually
+deferred, among other things, studying the finer details of the SMB 
+header. We were trying to cover the general concepts, but now we need
+to dig into the guts of SMB to see how things really work.  Latex
+gloves and lab coats required.</p>
+
+<p>Let's start by revisiting the header layout. Just for review,
+here's what it looks like:</p>
+
+<table colwidths="3.125* 3.125* 3.125* 3.125* 3.125* 3.125* 3.125* 3.125* 3.125* 3.125* 3.125* 3.125* 3.125* 3.125* 3.125* 3.125* 3.125* 3.125* 3.125* 3.125* 3.125* 3.125* 3.125* 3.125* 3.125* 3.125* 3.125* 3.125* 3.125* 3.125* 3.125* 3.125*" dk:type="centered" dk:borders="all">
+<tbody>
+<tr dk:border="after" dk:display-align="after">
+<td dk:border="right"><p><code>0</code></p></td>
+<td dk:border="right"><p><code>1</code></p></td>
+<td dk:border="right"><p><code>2</code></p></td>
+<td dk:border="right"><p><code>3</code></p></td>
+<td dk:border="right"><p><code>4</code></p></td>
+<td dk:border="right"><p><code>5</code></p></td>
+<td dk:border="right"><p><code>6</code></p></td>
+<td dk:border="right"><p><code>7</code></p></td>
+<td dk:border="right"><p><code>8</code></p></td>
+<td dk:border="right"><p><code>9</code></p></td>
+<td dk:border="right"><p><line><code>1</code></line>
+<line><code>0</code></line></p></td>
+<td dk:border="right"><p><line><code>1</code></line>
+<line><code>1</code></line></p></td>
+<td dk:border="right"><p><line><code>1</code></line>
+<line><code>2</code></line></p></td>
+<td dk:border="right"><p><line><code>1</code></line>
+<line><code>3</code></line></p></td>
+<td dk:border="right"><p><line><code>1</code></line>
+<line><code>4</code></line></p></td>
+<td dk:border="right"><p><line><code>1</code></line>
+<line><code>5</code></line></p></td>
+<td dk:border="right"><p><line><code>1</code></line>
+<line><code>6</code></line></p></td>
+<td dk:border="right"><p><line><code>1</code></line>
+<line><code>7</code></line></p></td>
+<td dk:border="right"><p><line><code>1</code></line>
+<line><code>8</code></line></p></td>
+<td dk:border="right"><p><line><code>1</code></line>
+<line><code>9</code></line></p></td>
+<td dk:border="right"><p><line><code>2</code></line>
+<line><code>0</code></line></p></td>
+<td dk:border="right"><p><line><code>2</code></line>
+<line><code>1</code></line></p></td>
+<td dk:border="right"><p><line><code>2</code></line>
+<line><code>2</code></line></p></td>
+<td dk:border="right"><p><line><code>2</code></line>
+<line><code>3</code></line></p></td>
+<td dk:border="right"><p><line><code>2</code></line>
+<line><code>4</code></line></p></td>
+<td dk:border="right"><p><line><code>2</code></line>
+<line><code>5</code></line></p></td>
+<td dk:border="right"><p><line><code>2</code></line>
+<line><code>6</code></line></p></td>
+<td dk:border="right"><p><line><code>2</code></line>
+<line><code>7</code></line></p></td>
+<td dk:border="right"><p><line><code>2</code></line>
+<line><code>8</code></line></p></td>
+<td dk:border="right"><p><line><code>2</code></line>
+<line><code>9</code></line></p></td>
+<td dk:border="right"><p><line><code>3</code></line>
+<line><code>0</code></line></p></td>
+<td><p><line><code>3</code></line>
+<line><code>1</code></line></p></td>
+</tr>
+<tr dk:border="after">
+<td dk:border="right" colspan="8"><p><code>0xff</code></p></td>
+<td dk:border="right" colspan="8"><p><code>'S'</code></p></td>
+<td dk:border="right" colspan="8"><p><code>'M'</code></p></td>
+<td colspan="8"><p><code>'B'</code></p></td>
+</tr>
+<tr dk:border="after">
+<td dk:border="right" colspan="8"><p><code>COMMAND</code></p></td>
+<td colspan="24"><p><code>STATUS...</code></p></td>
+</tr>
+<tr dk:border="after">
+<td dk:border="right" colspan="8"><p><code>..STATUS</code></p></td>
+<td dk:border="right" colspan="8"><p><code>FLAGS</code><idx>FLAGS</idx></p></td>
+<td colspan="16"><p><code>FLAGS2</code><idx>FLAGS2</idx></p></td>
+</tr>
+<tr dk:border="after">
+<td colspan="32"><p>
+<line><code>EXTRA</code></line>
+<line><code>...</code></line>
+<line><code>...</code></line>
+</p></td>
+</tr>
+<tr dk:border="after">
+<td dk:border="right" colspan="16"><p><code>TID</code><idx>TID</idx></p></td>
+<td colspan="16"><p><code>PID</code><idx>PID</idx></p></td>
+</tr>
+<tr>
+<td dk:border="right" colspan="16"><p><code>UID</code><idx>UID</idx></p></td>
+<td colspan="16"><p><code>MID</code><idx>MID</idx></p></td>
+</tr>
+</tbody></table>
+
+<p>The first four bytes are constant, so we won't worry about
+those. The <code>COMMAND</code> field is fairly straightforward too;
+it's just a one byte field containing an SMB command code. The list of
+available codes is given in Section 5.1 of the SNIA doc<idx
+start="c12-snia">SNIA<sidx>CIFS Technical Reference</sidx></idx>. The
+rest of the header is where the fun lies... </p>
+
+<h1 id="SMB2.5.1">The <code>SMB_HEADER.STATUS</code> Field Exposed</h1><h1s>
+
+<p>Things get interesting starting at the
+<code>STATUS</code><idx>NT_STATUS</idx> field. It wouldn't be so bad
+except for the fact that there are two possible error code formats to
+consider. There is the DOS and OS/2<idx>OS/2</idx> format, and then
+there is the NT_STATUS format. In C language terms, the
+<code>STATUS</code> field looks something like this:</p>
+
+<pre>typedef union
+  {
+  ulong NT_Status;
+  struct
+    {
+    uchar  ErrorClass;
+    uchar  reserved;
+    ushort ErrorCode;
+    } DosError;
+  } Status;
+</pre>
+
+<p>From the client side, one way to deal with the split personality
+problem is to use the DOS codes<idx>DOS<sidx>error codes</sidx></idx>
+exclusively.<fn>This is exactly what jCIFS<idx>jCIFS</idx> does (up
+through release 0.6.6 and the 0.7.0beta series). There has been a
+small amount of discussion about supporting the
+NT_STATUS<idx>NT_STATUS</idx> codes, but it's not clear whether there
+is any need to change.</fn> These are fairly well documented (by SMB
+standards), and <em>should</em> be supported by all SMB servers. Using
+DOS codes is probably a good choice, but there is a catch... there are
+some <dk:nobr>advanced features</dk:nobr> which simply don't work
+unless the client negotiates <dk:nobr>NT_STATUS codes.</dk:nobr>
+</p>
+
+<alert type="Strange Behavior">
+
+<p>If the client negotiates Extended Security with a Windows 2000
+server and also negotiates DOS error codes, then the <code>SESSION
+SETUP ANDX</code><idx>SESSION SETUP</idx> will fail, and return a DOS
+hardware error. (!?)</p>
+
+<pre dk:keep="together">STATUS
+  {
+  ErrorClass = 0x03   (Hardware Error)
+  ErrorCode  = 0x001F (General Error)
+  }
+</pre>
+
+<p>Perhaps W2K doesn't know which DOS error to return, and is
+guessing. The bigger question is, why does this fail at all?</p>
+
+<p>The same SMB conversation with the NT_STATUS capability enabled
+works just fine. Perhaps, when the coders were coding that piece of
+code, they assumed that only clients capable of using NT_STATUS codes
+would also use the Extended Security feature. Perhaps that assumption
+came from the knowledge that all <b>Windows</b> systems that could
+handle Extended Security would negotiate NT_STATUS. We can only
+guess...</p>
+
+<p>This is one of the oddities of SMB, and another fine bit of
+forensic SMB research by Andrew Bartlett<idx>Bartlett, Andrew</idx> of
+the Samba Team.<idx>Samba<sidx>Team</sidx></idx></p>
+</alert>
+
+<p>Another reason to support NT_STATUS codes is that they provide
+finer-grained diagnostics, simply because there are more of them
+defined than there are DOS codes. Samba<idx>Samba</idx> has a fairly
+complete list of the known NT_STATUS codes, which can be found in the
+<code>samba/source/include/nterr.h</code> file in the Samba
+distribution. The list of DOS codes is in
+<code>doserr.h</code><idx>doserr.h</idx> in the same directory.</p>
+
+<p>We have already described the structure of the DOS error codes.
+NT_STATUS codes also have a structure, and it looks like this:</p>
+
+<table colwidths="4.5* 4.5* 7* 7* 2.75* 2.75* 2.75* 2.75* 2.75* 2.75* 2.75* 2.75* 2.75* 2.75* 2.75* 2.75* 2.75* 2.75* 2.75* 2.75* 2.75* 2.75* 2.75* 2.75* 2.75* 2.75* 2.75* 2.75* 2.75* 2.75* 2.75* 2.75*" dk:type="centered" dk:borders="all">
+<tbody>
+<tr dk:border="after" dk:display-align="after">
+<td dk:border="right"><p><code>0</code></p></td>
+<td dk:border="right"><p><code>1</code></p></td>
+<td dk:border="right"><p><code>2</code></p></td>
+<td dk:border="right"><p><code>3</code></p></td>
+<td dk:border="right"><p><code>4</code></p></td>
+<td dk:border="right"><p><code>5</code></p></td>
+<td dk:border="right"><p><code>6</code></p></td>
+<td dk:border="right"><p><code>7</code></p></td>
+<td dk:border="right"><p><code>8</code></p></td>
+<td dk:border="right"><p><code>9</code></p></td>
+<td dk:border="right"><p><line><code>1</code></line>
+<line><code>0</code></line></p></td>
+<td dk:border="right"><p><line><code>1</code></line>
+<line><code>1</code></line></p></td>
+<td dk:border="right"><p><line><code>1</code></line>
+<line><code>2</code></line></p></td>
+<td dk:border="right"><p><line><code>1</code></line>
+<line><code>3</code></line></p></td>
+<td dk:border="right"><p><line><code>1</code></line>
+<line><code>4</code></line></p></td>
+<td dk:border="right"><p><line><code>1</code></line>
+<line><code>5</code></line></p></td>
+<td dk:border="right"><p><line><code>1</code></line>
+<line><code>6</code></line></p></td>
+<td dk:border="right"><p><line><code>1</code></line>
+<line><code>7</code></line></p></td>
+<td dk:border="right"><p><line><code>1</code></line>
+<line><code>8</code></line></p></td>
+<td dk:border="right"><p><line><code>1</code></line>
+<line><code>9</code></line></p></td>
+<td dk:border="right"><p><line><code>2</code></line>
+<line><code>0</code></line></p></td>
+<td dk:border="right"><p><line><code>2</code></line>
+<line><code>1</code></line></p></td>
+<td dk:border="right"><p><line><code>2</code></line>
+<line><code>2</code></line></p></td>
+<td dk:border="right"><p><line><code>2</code></line>
+<line><code>3</code></line></p></td>
+<td dk:border="right"><p><line><code>2</code></line>
+<line><code>4</code></line></p></td>
+<td dk:border="right"><p><line><code>2</code></line>
+<line><code>5</code></line></p></td>
+<td dk:border="right"><p><line><code>2</code></line>
+<line><code>6</code></line></p></td>
+<td dk:border="right"><p><line><code>2</code></line>
+<line><code>7</code></line></p></td>
+<td dk:border="right"><p><line><code>2</code></line>
+<line><code>8</code></line></p></td>
+<td dk:border="right"><p><line><code>2</code></line>
+<line><code>9</code></line></p></td>
+<td dk:border="right"><p><line><code>3</code></line>
+<line><code>0</code></line></p></td>
+<td><p><line><code>3</code></line>
+<line><code>1</code></line></p></td>
+</tr>
+<tr>
+<td dk:border="right" colspan="2"><p><code>Level</code></p></td>
+<td dk:border="right" colspan="2"><p>&lt;reserved&gt;</p></td>
+<td dk:border="right" colspan="12"><p><code>Facility</code></p></td>
+<td colspan="16"><p><code>ErrorCode</code></p></td>
+</tr>
+</tbody></table>
+
+<p>In testing, it appears as though the <code>Facility</code> field is
+always set to zero (<code>FACILITY_NULL</code>) for SMB errors. That
+leaves us with the <code>Level</code> and
+<dk:nobr><code>ErrorCode</code></dk:nobr> fields to provide
+variety... and, as we have suggested, there is quite a bit of
+variety. Samba's <code>nterr.h</code><idx>nterr.h</idx> file lists
+over 500 NT_STATUS codes, while <code>doserr.h</code> lists only 99
+(and some of those are repeats).</p>
+
+<p><code>Level</code> is one of the following:</p>
+
+<p dk:displayed="yes">
+<line><code>00</code> == Success</line>
+<line><code>01</code> == Information</line>
+<line><code>10</code> == Warning</line>
+<line><code>11</code> == Error</line></p>
+
+<p>Since the next two bits (the &lt;reserved&gt; bits) are always
+zero, the highest-order nibble will have one of the following values:
+<code>0x0</code>, <code>0x4</code>, <code>0x8</code>, or
+<code>0xC</code>. At the other end of the longword, the
+<code>ErrorCode</code> is read as an unsigned short (just like the DOS
+<code>ErrorCode</code> field).</p>
+
+<p>The availability of Samba's list of NT_STATUS codes makes things
+easy. It took a bit of effort to generate that list, however, as most
+of the codes are not documented in an accessible form. Andrew
+Tridgell<idx>Tridge</idx> described the method below, which he used to
+generate a list of valid NT_STATUS codes. His results were used to
+create the <code>nterr.h</code> file used in Samba.</p>
+
+<trick type="Tridge's">
+<ol>
+<li><p>Modify the source of Samba's <code>smbd</code><idx>smbd</idx>
+daemon so that whenever you try to delete a file that matches a
+specific pattern it will return an NT_STATUS error code. (Do this on a
+testing copy, of course. This hack is not meant for production.) For
+example, return an error whenever the filename to be deleted matches
+<dk:nobr>"<code>STATUS_CODE_HACK_FILENAME.*</code>".</dk:nobr> Another
+thing to do is to include the specific error number as the filename
+extension, so that the name</p>
+
+<pre>STATUS_CODE_HACK_FILENAME.0xC000001D</pre>
+
+<p dk:indent="no">will cause Samba to return an NT_STATUS code of
+<code>0xC000001D</code>.</p></li>
+
+<li><p>Create the files on the server side first so you have something
+to delete. That is easily done with a shell script, such as this:</p>
+
+<pre>#!/bin/bash
+#
+i=0;j=256
+while [ $i -lt $j ]
+do
+ touch `printf "STATUS_CODE_HACK_FILENAME.0xC000%.4x" $i`
+ i=`expr $i + 1`
+done</pre>
+
+<p dk:indent="no">Change the values of <code>i</code> and <code>j</code> to generate
+different ranges.</p></li>
+
+<li><p>On a Windows NT or Windows 2000 system, mount the Samba share
+containing the generated <code>STATUS_CODE_HACK*</code> files.  Next,
+open a DOS command shell and, one by one, delete the files.  For each
+file, Samba should return the specified NT_STATUS code... and Windows
+will interpret the code and tell you what it means. If the code is not
+defined, Windows will tell you that as well.</p></li>
+
+<li><p>If you capture the delete transactions using
+Microsoft's<idx>Microsoft</idx> NetMon<idx>NetMon</idx> tool, it will show you the
+symbolic names that Microsoft uses for the NT_STATUS codes.  </p></li>
+</ol>
+</trick>
+
+<p>Okay, now for the next conundrum...</p>
+
+<p>Servers have it tougher than clients. Consider a server that needs
+to respond to one client using DOS error codes, and to another client
+using NT_STATUS codes. That's bad enough, but consider what happens
+when that server needs to query yet another server in order to
+complete some operation. For example, a file server might need to
+contact a Domain Controller in order to
+authenticate<idx>authentication</idx> the user.</p>
+
+<p>The problem is that, no matter which <code>STATUS</code> format the
+Domain Controller<idx>DC</idx> uses when responding to the file
+server, it will be the wrong format for one of the clients. To solve
+this problem the server needs to provide a consistent mapping between
+DOS and NT_STATUS codes.</p>
+
+<p>Windows NT and Windows 2000 both have such mappings built-in but,
+of course, the details are not published (a partial list is given in
+Section 6 of the SNIA doc). Andrew Bartlett used a trick similar to
+Tridge's in order to generate the required mappings. His setup uses a
+Samba server running as a Primary Domain Controller
+(PDC<idx>PDC</idx>), and a Windows 2000 system providing SMB file
+services. A third system, running Samba's
+<code>smbtorture</code><idx>smbtorture</idx> testing utility, acts as
+the client. When the client system tries to log on to the Windows
+server, Windows passes the login request to the Samba PDC.</p>
+
+<p>The test works like this:</p>
+
+<trick type="Andrew Bartlett's">
+<ol>
+<li><p>Modify Samba's authentication code to reject login attempts for
+any username beginning with "<code>0x</code>". Translate the login
+name (e.g.  "<code>0xC000001D</code>") into an NT_STATUS code, and
+return that in the <code>STATUS</code> field.</p></li>
+
+<li><p>Configure <code>smbtorture</code> to negotiate DOS error
+codes. Aim <code>smbtorture</code> at the W2K SMB server and try
+logging in as user <code>0xC0000001</code>, <code>0xC0000002</code>...
+etc.</p></li>
+
+<li><p>For each login attempt from the client, the Windows SMB server
+will receive a login failure message from the Samba PDC.  Since
+<code>smbtorture</code> has requested DOS error codes, the W2K
+pickle-in-the-middle is forced to translate the NT_STATUS values into
+DOS error codes... and that's how you discover Microsoft's
+mapping of NT_STATUS codes to DOS error codes.</p></li>
+</ol>
+
+<p>The test configuration is shown in <ref refid="Figure2.7"/>.</p>
+</trick>
+
+<fig dk:pos="top" id="Figure2.7">
+<img dk:width="180" loc="SMB07"/>
+<caption>Andrew Bartlett's test configuration</caption>
+<subcaption><p>The polite way to ask Windows for its NT_STATUS-to-DOS error code
+mappings.</p>
+
+<p>The client sends a logon request to the W2K server, which forwards
+it to the Samba PDC. The PDC rejects the login, using the Username
+as the NT_STATUS code. The client requested DOS error codes, so the
+W2K system must translate.</p></subcaption>
+</fig>
+
+<p>Andrew's test must be rerun periodically. The mappings have been
+known to change when Windows service packs are installed. See the file
+<dk:nobr><code>samba/source/libsmb/errormap.c</code></dk:nobr> in the Samba distribution
+for more fun and adventure.<fn>After all that work... Sometime around
+August of 2002, Microsoft posted a bit of documentation listing the
+DOS error codes that they have defined. Not all are used in CIFS, but
+it's a nice list to have. In addition, they have documented an
+NTDLL.DLL function that converts DOS error codes into NT_STATUS<idx>NT_STATUS</idx>
+codes. (Thanks to Jeremy<idx>Allison, Jeremy</idx> for finding these.)</fn></p>
+
+</h1s><h1 id="SMB2.5.2">The <code>FLAGS</code> and <code>FLAGS2</code> Fields Tell
+All</h1><h1s>
+
+<p>Most (but not all) of the bits in the older <code>FLAGS</code>
+field are of interest only to older servers. They represent features
+that have been superseded by newer features in newer servers. It would
+be nice if all of the old stuff would just go away so that we wouldn't
+have to worry about it. It does seem, in fact, as though this is
+slowly happening. (Maybe it would be better if the old stuff stayed
+and the new stuff had never happened. Hmmm...)</p>
+
+<p>In any case, this next table presents the <code>FLAGS</code> bits
+in order of descending significance - the opposite of the order used
+in the SNIA doc. English speaking people tend to read from left to
+right and from top to bottom, so it seems logical (as this book is,
+more or less, written in English)<fn>The English language is Copyright
+&copy; 1597 by William Shakespeare &amp; Co., used by permission. All
+rights deserved.</fn> to transpose the left-to-right order into a
+top-to-bottom table.<idx>FLAGS</idx></p>
+
+<table colwidths="5* 42* 53*">
+<caption><code>SMB_HEADER.FLAGS</code></caption>
+<thead>
+<tr dk:border="after">
+<th><p>Bit</p></th>
+<th><p>Name / Bitmask / Values</p></th>
+<th><p>Description</p></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><p>7</p></td>
+
+<td><p><line><code dk:type="small">SMB_FLAGS_SERVER_TO_REDIR</code></line>
+<line><code>0x80</code></line>
+<line><code>0</code>:&#160;request</line>
+<line><code>1</code>:&#160;reply</line></p></td>
+
+<td><p>What an awful name!  On DOS, OS/2<idx>OS/2</idx>, and Windows
+systems, the client is built into the operating system and is called a
+"redirector,"<idx>redirector</idx> which is where the
+"<code>SERVER_TO_REDIR</code>" part of the name comes from. Basically,
+though, this is simply the reply flag.</p></td>
+</tr>
+
+<tr>
+<td><p>6</p></td>
+
+<td><p><line><code dk:type="small">SMB_FLAGS_REQUEST_BATCH_OPLOCK</code></line>
+<line><code>0x40</code></line>
+<line><code>0</code>:&#160;Exclusive</line>
+<line><code>1</code>:&#160;Batch</line></p></td>
+
+<td><p><b>Obsolete.</b></p>
+
+<p>If bit 5 is set, then bit 6 is the "batch OpLock"<idx>OpLocks</idx>
+(aka <code>OPBATCH</code><idx>OPBATCH</idx>) bit. Bit 6 should be
+clear if bit 5 is clear.</p>
+
+<p>In a request from the client, this bit is used to indicate whether
+the client wants an exclusive OpLock (<code>0</code>) or a batch OpLock (<code>1</code>). In a
+response, this bit indicates that the server has granted the batch
+OpLock.</p>
+
+<p>OpLocks (opportunistic locks) will be covered later.</p>
+
+<p>This bit is only used in the deprecated <code>SMB_COM_OPEN</code>,
+<code>SMB_COM_CREATE</code>, and <code>SMB_COM_CREATE_NEW</code>
+SMBs. It should be zero in all other SMBs.</p>
+</td>
+</tr>
+<tr>
+<td></td>
+<td></td>
+<td>
+<p>The <code>SMB_COM_OPEN_ANDX</code><idx>OPEN_ANDX</idx> SMB has a
+separate set of flags that handle OpLock requests, as does the
+<code>SMB_COM_NT_CREATE_ANDX</code> SMB.</p></td>
+</tr>
+
+<tr>
+<td><p>5</p></td>
+
+<td><p><line><code dk:type="small">SMB_FLAGS_REQUEST_OPLOCK</code></line>
+<line><code>0x20</code></line>
+<line><code>0</code>:&#160;no&#160;OpLock</line>
+<line><code>1</code>:&#160;OpLock</line></p></td>
+
+<td><p><b>Obsolete.</b></p>
+
+<p>This is the "OpLock" bit. If this bit is set in a request, it
+indicates that the client wants to obtain an OpLock. If set in the
+reply, it indicates that the server has granted the OpLock.</p>
+
+<p>OpLocks (opportunistic locks) will be covered later.</p>
+
+<p>This bit is only used in the deprecated <code>SMB_COM_OPEN</code>,
+<code>SMB_COM_CREATE</code>, and <code>SMB_COM_CREATE_NEW</code>
+SMBs. It should be zero in all other SMBs. The
+<code>SMB_COM_OPEN_ANDX</code> SMB has a separate set of flags that
+handle OpLock requests, as does the
+<code>SMB_COM_NT_CREATE_ANDX</code> SMB. (Sigh.)</p></td>
+</tr>
+
+<tr>
+<td><p>4</p></td>
+
+<td><p><line><code dk:type="small">SMB_FLAGS_CANONICAL_PATHNAMES</code></line>
+<line><code>0x10</code></line>
+<line><code>0</code>:&#160;Host&#160;format</line>
+<line><code>1</code>:&#160;Canonical</line></p></td>
+
+<td><p><b>Obsolete.</b></p>
+
+<p>This was supposed to be used to indicate whether or not pathnames
+in SMB messages were mapped to their "canonical" form. Thing is, it
+doesn't do much good to write a client or server that doesn't map
+names to the canonical form (which is basically DOS,
+OS/2<idx>OS/2</idx>, or Windows compatible). This bit should always be
+set (<code>1</code>).</p></td>
+</tr>
+
+<tr>
+<td><p>3</p></td>
+
+<td><p><line><code dk:type="small">SMB_FLAGS_CASELESS_PATHNAMES</code></line>
+<line><code>0x08</code></line>
+<line><code>0</code>:&#160;case-sensitive</line>
+<line><code>1</code>:&#160;caseless</line></p></td>
+
+<td><p>When this bit is clear (<code>0</code>), pathnames should be
+treated as case-sensitive. When the bit is set, pathnames are
+considered caseless.</p>
+
+<p>All good in theory. The trouble is that some systems assume
+caseless pathnames no matter what the state of this bit. Best practice
+on the client side is to leave this bit set (<code>1</code>) and
+always assume caseless pathnames.</p></td>
+</tr>
+
+<tr>
+<td><p>2</p></td>
+
+<td><p><code>0x04</code></p></td>
+
+<td><p><b>&lt;Reserved&gt; (must be zero).</b></p>
+
+<p>...well, sort of. This bit is clearly listed as "Reserved (must be
+zero)" in both the SNIA and the X/Open docs,<idx>X/Open SMB
+Documentation</idx> yet the latter contains some odd references to
+optionally using this bit in conjunction with OpLocks. It's probably a
+typo. Best bet is to clear it (<code>0</code>) and leave it
+alone.</p></td>
+</tr>
+
+<tr>
+<td><p>1</p></td>
+
+<td><p><line><code dk:type="small">SMB_FLAGS_CLIENT_BUF_AVAIL</code></line>
+<line><code>0x02</code></line>
+<line><code>0</code>:&#160;Not&#160;posted</line>
+<line><code>1</code>:&#160;Buffer&#160;posted</line></p></td>
+
+<td><p><b>Obsolete.</b></p>
+
+<p>This was probably useful with other transports, such as
+NetBEUI.<idx>NetBEUI</idx> If the client sets this bit, it is telling
+the server that it has already posted a buffer to receive the server's
+response. The expired Leach/Naik Internet Draft<idx>Leach/Naik
+Internet Drafts</idx> says that this allows a "send without
+acknowledgment" from the server.</p>
+
+<p>This bit should be clear (<code>0</code>) for use with NBT and
+naked TCP transports.</p></td>
+</tr>
+
+<tr>
+<td><p>0</p></td>
+
+<td><p><line><code dk:type="small">SMB_FLAGS_SUPPORT_LOCKREAD</code></line>
+<line><code>0x01</code></line>
+<line><code>0</code>:&#160;Not&#160;supported</line>
+<line><code>1</code>:&#160;Supported</line></p></td>
+
+<td><p><b>Obsolete.</b></p>
+
+<p>If this bit is set in the SMB <code>NEGOTIATE PROTOCOL
+RESPONSE</code>,<idx>NEGOTIATE PROTOCOL</idx> then the server supports
+the deprecated <code>SMB_COM_LOCK_AND_READ</code> and
+<code>SMB_COM_WRITE_AND_UNLOCK</code> SMBs. Unless you are
+implementing outdated dialects, this bit should be clear
+(<code>0</code>).</p></td>
+</tr>
+</tbody>
+</table>
+
+<p>The <code>NEGOTIATE PROTOCOL REQUEST</code> that we dissected back
+in <ref refid="SMB2.4.3"/> shows only the
+<code>SMB_FLAGS_CANONICAL_PATHNAMES</code> and
+<code>SMB_FLAGS_CASELESS_PATHNAMES</code> bits set, which is probably
+the best thing for new implementations to do. Testing with other
+clients may reveal other workable combinations.</p>
+
+<p>Now let's take a look at the newer flags in the
+<code>FLAGS2</code><idx>FLAGS2</idx> field.</p>
+
+<table colwidths="5* 41* 54*">
+<caption><code>SMB_HEADER.FLAGS2</code></caption>
+<thead>
+<tr dk:border="after">
+<th><p>Bit</p></th>
+<th><p>Name / Bitmask / Values</p></th>
+<th><p>Description</p></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><p>15</p></td>
+
+<td><p><line><code dk:type="small">SMB_FLAGS2_UNICODE_STRINGS</code></line>
+<line><code>0x8000</code></line>
+<line><code>0</code>:&#160;ASCII</line>
+<line><code>1</code>:&#160;Unicode</line></p></td>
+
+<td><p>If set (<code>1</code>), this bit indicates that string fields
+within the SMB message are encoded using a two-byte, little endian
+Unicode<idx>Unicode</idx> format. The SNIA doc says that the format is
+UTF-16LE<idx>User Level Security<sidx>UTF-16LE</sidx></idx> but some
+folks on the Samba Team<idx>Samba<sidx>Team</sidx></idx> say it's
+really UCS-2LE<idx>UCS-2LE</idx>.  The latter is probably correct, but
+it may not matter as both formats are probably the same for the Basic
+Multilingual Plane.  Doesn't Unicode sound like fun?<fn>One of the
+reasons that the jCIFS<idx>jCIFS</idx> project was started is that
+Java has built-in Unicode support, which solves a lot of
+problems. That, plus the native threading model and a few other
+features, made an SMB implementation in Java very tempting. Support
+for Unicode in a CIFS implementation is not really optional any more
+except, perhaps, in the simplest of client systems. Unfortunately,
+Unicode is way beyond the scope of this book. See the References
+section for some web links to get you started with Unicode.</fn></p>
+
+<p>If clear (<code>0</code>), all strings are in 8-bit ASCII format
+(by which we actually mean 8-bit OEM character set format).</p></td>
+</tr>
+
+<tr>
+<td><p>14</p></td>
+
+<td><p><line><code dk:type="small">SMB_FLAGS2_32BIT_STATUS</code></line>
+<line><code>0x4000</code></line>
+<line><code>0</code>:&#160;DOS error code<idx>DOS<sidx>error codes</sidx></idx></line>
+<line><code>1</code>:&#160;NT_STATUS<idx>NT_STATUS</idx> code</line></p></td>
+
+<td><p>Indicates whether the <code>STATUS</code> field is in DOS or
+NT_STATUS format. This may also be used to help the server guess which
+format the client prefers before it has actually been
+negotiated.</p></td>
+</tr>
+
+<tr>
+<td><p>13</p></td>
+
+<td><p><line><code dk:type="small">SMB_FLAGS2_READ_IF_EXECUTE</code></line>
+<line><code>0x2000</code></line>
+<line><code>0</code>:&#160;Execute != Read</line>
+<line><code>1</code>:&#160;Execute confers Read</line></p></td>
+
+<td><p>A quirky little bit this. If set (<code>1</code>), it indicates
+that execute permission on a file also grants read permission. It is
+only useful in read operations.</p></td>
+</tr>
+
+<tr>
+<td><p>12</p></td>
+
+<td><p><line><code dk:type="small">SMB_FLAGS2_DFS_PATHNAME</code></line>
+<line><code>0x1000</code></line>
+<line><code>0</code>:&#160;Normal pathname</line>
+<line><code>1</code>:&#160;DFS pathname</line></p></td>
+
+<td><p>This is used with the <b>D</b>istributed
+<b>F</b>ile <b>S</b>ystem (DFS<idx>DFS</idx>), which we haven't covered
+yet. If this bit is set (<code>1</code>), it indicates that the client
+knows about DFS, and that the server should resolve any
+UNC<idx>UNC</idx> names in the SMB message by looking in the DFS
+namespace. If this bit is clear (<code>0</code>), the server should
+not check the DFS namespace.</p></td>
+</tr>
+
+<tr>
+<td><p>11</p></td>
+
+<td><p><line><code dk:type="small">SMB_FLAGS2_EXTENDED_SECURITY</code></line>
+<line><code>0x0800</code></line>
+<line><code>0</code>:&#160;Normal security</line>
+<line><code>1</code>:&#160;Extended security</line></p></td>
+
+<td><p>If set (<code>1</code>), this bit indicates that the sending
+node understands Extended Security. We'll touch on this again when we
+discuss authentication.</p></td>
+</tr>
+
+<tr>
+<td><p>10</p></td>
+<td><p><code>0x0400</code></p></td>
+<td><p><b>&lt;Reserved&gt; (must be zero)</b></p></td>
+</tr>
+
+<tr>
+<td><p>9</p></td>
+<td><p><code>0x0200</code></p></td>
+<td><p><b>&lt;Reserved&gt; (must be zero)</b></p></td>
+</tr>
+
+<tr>
+<td><p>8</p></td>
+<td><p><code>0x0100</code></p></td>
+<td><p><b>&lt;Reserved&gt; (must be zero)</b></p></td>
+</tr>
+
+<tr>
+<td><p>7</p></td>
+<td><p><code>0x0080</code></p></td>
+<td><p><b>&lt;Reserved&gt; (must be zero)</b></p></td>
+</tr>
+
+<tr>
+<td><p>6</p></td>
+
+<td><p><line><code dk:type="small">SMB_FLAGS2_IS_LONG_NAME</code></line>
+<line><code>0x0040</code></line>
+
+<line><code>0</code>:&#160;8.3 format</line>
+<line><code>1</code>:&#160;Long names</line></p></td>
+
+<td><p>If set (<code>1</code>), then any pathnames that the SMB
+contains are long pathnames, else the pathnames are in 8.3 format. Any
+new CIFS implementation really should support long names.</p></td>
+</tr>
+
+<tr>
+<td><p>5</p></td>
+<td><p><code>0x0020</code></p></td>
+<td><p><b>&lt;Reserved&gt; (must be zero)</b></p></td>
+</tr>
+
+<tr>
+<td><p>4</p></td>
+<td><p><code>0x0010</code></p></td>
+<td><p><b>&lt;Reserved&gt; (must be zero)</b></p></td>
+</tr>
+
+<tr>
+<td><p>3</p></td>
+<td><p><code>0x0008</code></p></td>
+<td><p><b>&lt;Reserved&gt; (must be zero)</b></p></td>
+</tr>
+
+<tr>
+<td><p>2</p></td>
+
+<td><p><line><code dk:type="small">SMB_FLAGS2_SECURITY_SIGNATURE</code></line>
+<line><code>0x0004</code></line>
+<line><code>0</code>:&#160;No signature</line>
+<line><code>1</code>:&#160;Message Authentication Code</line></p></td>
+
+<td><p>If set, the SMB contains a <b>M</b>essage <b>A</b>uthentication
+<b>C</b>ode (MAC<idx>MAC</idx>). The MAC is used to authenticate each
+packet in a session, to prevent various attacks.</p></td>
+</tr>
+
+<tr>
+<td><p>1</p></td>
+
+<td><p><line><code dk:type="small">SMB_FLAGS2_EAS</code></line>
+<line><code>0x0002</code></line>
+
+<line><code>0</code>:&#160;No EAs<idx>EAs</idx></line>
+<line><code>1</code>:&#160;Extended Attributes</line></p></td>
+
+<td><p>Indicates that the client understands Extended Attributes.</p>
+
+<p>Note that the SNIA doc talks about "Extended Attributes"
+<em>and</em> about "Extended File Attributes." These are two
+completely different concepts. Extended Attributes are a feature of
+OS/2<idx>OS/2</idx>. They are mentioned in Section&nbsp;1.1.6
+(page&nbsp;2) of the SNIA doc and explained in better detail on
+page&nbsp;87. Extended File Attributes are described in
+Section&nbsp;3.13 (page&nbsp;30) of the SNIA doc.</p>
+
+<p>The <code>SMB_FLAGS2_EAS</code> bit deals with Extended Attribute
+support.</p></td>
+</tr>
+
+<tr>
+<td><p>0</p></td>
+
+<td><p><line><code dk:type="small">SMB_FLAGS2_KNOWS_LONG_NAMES</code></line>
+<line><code>0x0001</code></line>
+
+<line><code>0</code>:&#160;Client wants 8.3</line>
+<line><code>1</code>:&#160;Long pathnames okay</line></p></td>
+
+<td><p>Set by the client to let the server know that long names are
+acceptable in the response.</p></td>
+</tr>
+</tbody>
+</table>
+
+<p>Some of the flags are used to modify the interpretation of the SMB
+message, while others are used to negotiate features. Some do both. It
+may take some experimentation to find the safest way to handle these
+bits. Implementations are not consistent, so new code must be
+fine-tuned.</p>
+
+<p>You may need to refer back to these tables as we dig further into
+the details. Note that the constant names listed above may not match
+those in the SNIA doc, or those in other docs or available source
+code. There doesn't seem to be a lot of agreement on the names.<idx
+end="c12-snia">SNIA<sidx>CIFS Technical Reference</sidx></idx></p>
+
+</h1s><h1 id="SMB2.5.3"><code>EXTRA</code>! <code>EXTRA</code>! Read All About It!</h1><h1s>
+
+<p>Um, actually we are going to delay covering the <code>EXTRA</code>
+field yet again. <dk:nobr><code>EXTRA.PidHigh</code></dk:nobr> will be
+thrown in with the <code>PID</code><idx>PID</idx> field, and
+<dk:nobr><code>EXTRA.Signature</code></dk:nobr> will be handled as
+part of authentication. </p>
+
+</h1s><h1 id="SMB2.5.4"><code>TID</code> and <code>UID</code>: Separated at Birth?</h1><h1s>
+
+<p>It would seem logical that the
+[<code>V</code>]<code>UID</code><idx>UID</idx> and
+<code>TID</code><idx>TID</idx> fields would be somehow related. Both
+are assigned and managed by the server, and we said before that the
+<code>SESSION SETUP</code><idx>SESSION SETUP</idx> (where the logon
+occurs) is supposed to happen <em>before</em> the <code>TREE
+CONNECT</code>.</p>
+
+<p>Well, put all that aside and pay attention to this little
+story...</p>
+
+<storytime>
+<p>Once upon a time there were many, many magic kingdoms taking up
+office space in cities and towns around the world. In each of these
+magic kingdoms there were lots of overpaid advisors called VeePees.
+The VeePees were all jealous of one another, but they were more
+jealous of the underpaid wizards in the IT department who had power
+over the data and could work spells and make the numbers come out all
+right.</p>
+
+<p>Then, one day, evil marketing magicians appeared and convinced the
+VeePees that they could steal all of the power away from the wizards
+of IT and have it for themselves. To do this, the only thing the
+VeePees would need was a magic box called a PeeCee (the name appealed
+to the VeePees). PeeCees, of course, were not cheap but the lure of
+power was great and the marketing magicians knew that the VeePees had
+control of the budget.</p>
+
+<p>Soon, the wizards of IT discovered that their supplies of mag-tapes
+and 8-inch floppies were dwindling, and that no one had bothered to
+update the service contracts on their VAXes. Worse, the VeePees
+started taunting them, saying "We don't need you any more.  We have
+spreadsheets." The wise wizards of IT smiled quietly, went back to
+their darkened cubicles, and entertained themselves by implementing
+EMACS<idx>EMACS</idx> in TECO<idx>TECO</idx> macro language. They did
+not seem at all surprised when the VeePees showed up asking questions
+like "What happens if I format C-colon?" <idx>C:</idx>and "Should I Abort, Retry,
+or - um - Fail?" The wizards understood what the VeePees did not: With
+power there must be equal measures of knowledge and understanding,
+otherwise the power will consume the data - and the user.</p>
+
+<p>The marketing magicians, seeing that their golden goose was
+molting, came up with a bold plan. They conjured up a LAN system and
+connected it to a shiny new fileserver, which they gave to the IT
+wizards. At first, the wizards were delighted by the wonderful new
+server and the beautiful strands of network cable running all over the
+kingdom. They quickly realized, however, that they had been
+tricked. The client/server architecture had effectively separated
+authority from responsibility, and the wizards were left with only the
+latter.</p>
+
+<p>...and so it is unto this very day. The VeePees and their minions
+have their PeeCees and hold the power of the data, but they remain
+under the influence of the sinister marketing magicians. The wizards
+of IT are still underpaid, have little or no say when decisions are
+made, and are held responsible and told to clean up the mess whenever
+anything goes wrong. A wholly dysfunctional arrangement.</p>
+</storytime>
+
+<p>So what the purplebananafish
+does this have to do with TIDs and UIDs? Well, see, it's like
+this...</p>
+
+<p>Early corporate LANs, such as those in our story, were small and
+self-contained. The driving goal was to make sure that the data was
+available to everyone in the office who could legitimately claim to
+need access. Security was not considered a top priority, so PC OSes
+(e.g. DOS<idx>DOS</idx>) did not support complicated minicomputer
+features like user-based authentication. Given the environment, it is
+not surprising that the authentication<idx>authentication</idx> system
+originally built into SMB was (by today's standards) quite
+primitive. Passwords, if they were used at all, were assigned to
+shares - not users - and everyone who wanted to access the same share
+would use the same password.</p>
+
+<p>This early form of SMB authentication is now known as "Share Level"
+security. <idx>Share Level Security</idx>It does not include the
+concept of user accounts, so the <code>UID</code> field is always
+zero. The password is included in the <code>TREE CONNECT</code><idx>TREE CONNECT</idx>
+message, and a valid <code>TID</code> indicates a successfully
+authenticated connection. In fact, though the <code>UID</code> field
+is listed in the SMB message format layout described in the ancient
+<code>COREP.TXT</code><idx>COREP.TXT</idx> scrolls, <em>it is not
+mentioned again anywhere else in that document</em>. There is no
+mention of a <code>SESSION SETUP</code> message either.</p>
+
+<p>There are some interesting tricks that add a bit of flexibility to
+Share Level security. For example, a single share may have multiple
+passwords assigned, each granting different access rights.  It is
+fairly common, for instance, to assign separate passwords for
+read-only vs. read/write access to a share.</p>
+
+<p>Another interesting fudge is often used to provide access to user
+home directories. The server (which, in this case, understands
+user-based authentication even if the protocol and/or client do not)
+simply offers usernames as share names. When a user connects to the
+share matching their username, they give their own login password. The
+server then checks the username/password pair using its normal account
+validation routines. Thus, user-based authentication can be mapped to
+Share Level security (see <ref refid="Figure2.8"/>).</p>
+
+<fig id="Figure2.8">
+<img dk:width="200" loc="SMB08"/>
+<caption>User-based authentication via Share Level security</caption>
+
+<subcaption><p>Each share name maps to a username (Chico, Groucho,
+etc.).  The server will accept the user's logon password as the
+<code>TREE CONNECT</code> password.</p></subcaption>
+</fig>
+
+<p>Share Level security, though still used, is considered
+deprecated. It has been replaced with "User Level" security<idx>User
+Level Security</idx> which, of course, makes use of username/password
+instead of sharename/password pairs.</p>
+
+<p>Under User Level security, the <code>SESSION SETUP</code> is
+performed as the authentication step <em>before</em> any <code>TREE
+CONNECT</code> requests may be sent. If the logon succeeds, the server
+will assign a valid (non-zero) <code>UID</code>. Subsequent <code>TREE
+CONNECT</code> attempts can use the <code>UID</code> as an
+authentication token when requesting access to a share. If User Level
+security is in use, the password field in the <code>TREE
+CONNECT</code> message will be blank.</p>
+
+<p>So, with User Level security, the client must authenticate to get a
+valid <code>UID</code>, and then present the <code>UID</code> to gain
+access to shares. Thing is, more than one <code>UID</code> may be
+generated within a single connection, and the <code>UID</code> used to
+connect to the share does not need to be the same as the one used to
+access files within the share. </p>
+
+</h1s><h1 id="SMB2.5.5"><code>PID</code> and <code>MID</code> Revealed</h1><h1s>
+
+<p>Simply put:</p>
+
+<ul>
+<li><p>a <code>PID</code><idx>PID</idx> identifies a client
+process,</p></li>
+
+<li><p>a [<code>PID</code>, <code>MID</code><idx>MID</idx>] pair
+identifies a thread within a process.</p></li>
+</ul>
+
+<p>That's the idea, anyway. The client provides values for these
+fields when it sends a request to the server, and the server is
+supposed to echo the values back in the response. That way, the client
+can match the reply to the <dk:nobr>original request.</dk:nobr></p>
+
+<p>Some systems (such as Windows and OS/2<idx>OS/2</idx>) multiplex
+all of the SMB traffic between a client and a server over a single
+TCP<idx>TCP</idx> connection.  If the client OS is multi-tasking there
+may be several active SMB sessions running concurrently, so there may
+be several requests outstanding at any given time. The SMB
+conversations are all intertwined, so the client needs a way to sort
+out the replies and hand them off to the correct thread within the
+correct process (see <ref refid="Figure2.9"/>).</p>
+
+<fig dk:pos="top" id="Figure2.9">
+<img dk:width="160" loc="SMB09"/>
+<caption>Multiplexing SMB over a single TCP connection</caption>
+<subcaption><p>Instead of opening individual TCP connections, one per
+process, some systems multiplex all SMB traffic to a given server over
+a single connection. (T<sub>0</sub>, T<sub>1</sub>, etc. are threads
+within <dk:nobr>a process.</dk:nobr>)</p></subcaption>
+</fig>
+
+<p>The <code>PID</code> field is also used to maintain the semantics
+of local file I/O. Think about a simple program, like the one in <ref
+refid="Listing2.3"/> which opens a file in read-only mode and dumps
+the contents. Consider, in particular, the call to the
+<code>open()</code> function, which returns a file descriptor. File
+descriptors are maintained on a per-process basis - that is, each
+process has its own private set. The descriptor is an integer used by
+the operating system to identify an internal record that keeps track
+of lots of information about the open file, <dk:nobr>such as:</dk:nobr></p>
+
+<ul>
+<li><p>Is the file open for reading, writing, or both?</p></li>
+<li><p>What is the current file pointer offset within the file?</p></li>
+<li><p>Do we have any locks on the file?</p></li>
+</ul>
+
+<example id="Listing2.3">
+<caption>Quick dump</caption>
+<pre dk:break="after"><![CDATA[#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>]]></pre>
+
+<pre><![CDATA[#define bSIZE 1024
+
+int main( int argc, char *argv[] )
+  /* ---------------------------------------------------- **
+   * Copy file contents to stdout.
+   * ---------------------------------------------------- **
+   */
+  {
+  int      fd_in;
+  int      fd_out;
+  ssize_t  count;
+  char     bufr[bSIZE];
+
+  if( argc != 2 )
+    {
+    (void)fprintf( stderr,
+                   "Usage: %s <filename>\n", argv[0] );
+    exit( EXIT_FAILURE );
+    }
+
+  fd_in = open( argv[1], O_RDONLY );
+  if( fd_in < 0 )
+    {
+    perror( "open()" );
+    exit( EXIT_FAILURE );
+    }
+  fd_out = fileno( stdout );
+
+  do
+    {
+    count = read( fd_in, bufr, bSIZE );
+    if( count > 0 )
+      count = write( fd_out, bufr, (size_t)count );
+    } while( bSIZE == count );
+
+  if( count < 0 )
+    {
+    perror( "read()/write()" );
+    exit( EXIT_FAILURE );
+    }
+
+  (void)close( fd_in );
+  exit( EXIT_SUCCESS );
+  } /* main */]]></pre>
+</example>
+
+<p>Now take all of that and stretch it out across a network. The files
+physically reside on the server and information about locks, offsets,
+etc. must be kept on the server side. The process that has opened the
+files, however, resides on the client and all of the file status
+information is relevant within the context of that process. That
+brings us back to what we said before: The <code>PID</code> identifies
+a client process. It lets the server keep track of client context, and
+associate it correctly with the right customer when the requests come
+rolling in.</p>
+
+<p>Further complicating things, some clients support multiple threads
+running within a process. Threads share context (memory, file
+descriptors, etc.) with their sister threads within the same process,
+but each thread may generate SMB traffic all on its own.  The
+<code>MID</code> field is used to make sure that server replies get
+back to the thread that sent the request. The server really doesn't do
+much with the <code>MID</code>. It just echoes it back to the client
+so, in fact, the client could make whatever use it wanted of the
+<code>MID</code> field. Using it as a thread identifier is probably
+the most practical thing to do.</p>
+
+<p>There is an important rule which the client should obey with regard
+to the <code>MID</code> and <code>PID</code> fields: only one SMB
+request should ever be outstanding per
+[<code>PID</code>,&#160;<code>MID</code>] pair per connection. The
+reason for this rule is that the client will generally need to know
+the result of a request before sending the next request, especially if
+an error occurred. The problems which might result should this rule be
+broken probably depend upon the server, but defensive programming
+practices would suggest avoiding trouble. </p>
+
+<h2><code>EXTRA.PidHigh</code> Dark Secrets Uncovered</h2><h2s>
+
+<p>Earlier on we promised to cover the <code>EXTRA.PidHigh</code>
+field. Well, a promise is a promise...</p>
+
+<p>The <code>PidHigh</code> field is supposed to be a <code>PID</code>
+extension, allowing the use of 32-bit rather than 16-bit values as
+process identifiers. As with all extensions, however, there is the
+basic problem of backward compatibility.</p>
+
+<p>In this case, trouble shows up if (and only if) the client supports
+<dk:nobr>32-bit</dk:nobr> process IDs but the server does not. In that
+situation, the client must have a mechanism for mapping
+<dk:nobr>32-bit</dk:nobr> process IDs to <dk:nobr>16-bit</dk:nobr>
+values that can fit into the <code>PID</code> field. It doesn't need
+to be an elaborate mapping scheme, and it is unlikely that there will
+be 64K client processes talking to the same server at the same time,
+so it should be a simple problem to solve.</p>
+
+<p>Since that mapping mechanism needs to be in place in order for the
+client to work with servers that don't support the
+<code>PidHigh</code> field, there's no reason to use 32-bit process
+IDs at all. In testing, it appears as though the <code>PidHigh</code>
+field is, in fact, always zero (except in some obscure security
+negotiations that are still not completely understood). Best bet,
+leave it zero. </p>
+
+</h2s></h1s><h1 id="SMB2.5.6">SMB Header Final Report</h1><h1s>
+
+<p>Code...</p>
+
+<p>The next <ref refid="Listing2.4"/> provides support for reading and
+writing SMB message headers. Most of the header fields are simple
+integer values, so we can use the <code>smb_Set*()</code> and
+<code>smb_Get*()</code> functions from <ref refid="Listing2.2"/> to
+move the data in and out of the header buffer. To make subsequent code
+easier to read, we provide a set of macros with nice clear names to
+front-end the function calls and assignments that are actually
+used.</p>
+
+<example id="Listing2.4" part="a">
+<caption><idx>NT_STATUS</idx>SMB Header [De]Construction: <code>MB_Header.h</code></caption>
+<pre dk:break="after"><![CDATA[/* SMB Headers are always 32 bytes long.
+ */
+#define SMB_HDR_SIZE 32
+
+/* FLAGS field bitmasks.
+ */
+#define SMB_FLAGS_SERVER_TO_REDIR       0x80
+#define SMB_FLAGS_REQUEST_BATCH_OPLOCK  0x40
+#define SMB_FLAGS_REQUEST_OPLOCK        0x20
+#define SMB_FLAGS_CANONICAL_PATHNAMES   0x10
+#define SMB_FLAGS_CASELESS_PATHNAMES    0x08
+#define SMB_FLAGS_RESERVED              0x04
+#define SMB_FLAGS_CLIENT_BUF_AVAIL      0x02
+#define SMB_FLAGS_SUPPORT_LOCKREAD      0x01
+#define SMB_FLAGS_MASK                  0xFB
+
+/* FLAGS2 field bitmasks.
+ */
+#define SMB_FLAGS2_UNICODE_STRINGS      0x8000
+#define SMB_FLAGS2_32BIT_STATUS         0x4000
+#define SMB_FLAGS2_READ_IF_EXECUTE      0x2000
+#define SMB_FLAGS2_DFS_PATHNAME         0x1000
+#define SMB_FLAGS2_EXTENDED_SECURITY    0x0800]]></pre>
+<pre dk:break="after"><idx>MID</idx><![CDATA[#define SMB_FLAGS2_RESERVED_01          0x0400
+#define SMB_FLAGS2_RESERVED_02          0x0200
+#define SMB_FLAGS2_RESERVED_03          0x0100
+#define SMB_FLAGS2_RESERVED_04          0x0080
+#define SMB_FLAGS2_IS_LONG_NAME         0x0040
+#define SMB_FLAGS2_RESERVED_05          0x0020
+#define SMB_FLAGS2_RESERVED_06          0x0010
+#define SMB_FLAGS2_RESERVED_07          0x0008
+#define SMB_FLAGS2_SECURITY_SIGNATURE   0x0004
+#define SMB_FLAGS2_EAS                  0x0002
+#define SMB_FLAGS2_KNOWS_LONG_NAMES     0x0001
+#define SMB_FLAGS2_MASK                 0xF847
+
+/* Field offsets.
+ */
+#define SMB_OFFSET_CMD      4
+#define SMB_OFFSET_NTSTATUS 5
+#define SMB_OFFSET_ECLASS   5
+#define SMB_OFFSET_ECODE    7
+#define SMB_OFFSET_FLAGS    9
+#define SMB_OFFSET_FLAGS2  10
+#define SMB_OFFSET_EXTRA   12
+#define SMB_OFFSET_TID     24
+#define SMB_OFFSET_PID     26
+#define SMB_OFFSET_UID     28
+#define SMB_OFFSET_MID     30
+
+/* SMB command codes are given in the
+ * SNIA doc.
+ */
+
+/* Write a command byte to the header buffer.
+ */
+#define smb_hdrSetCmd( bufr, cmd ) \
+        (bufr)[SMB_OFFSET_CMD] = (cmd)
+
+/* Read a command byte; returns uchar.
+ */
+#define smb_hdrGetCmd( bufr ) \
+        (uchar)((bufr)[SMB_OFFSET_CMD])
+
+/* Write a DOS Error Class to the header buffer.
+ */
+#define smb_hdrSetEclassDOS( bufr, Eclass ) \
+        (bufr)[SMB_OFFSET_ECLASS] = (Eclass)]]></pre>
+
+<pre dk:break="after"><![CDATA[/* Read a DOS Error Class; returns uchar.
+ */
+#define smb_hdrGetEclassDOS( bufr ) \
+        (uchar)((bufr)[SMB_OFFSET_ECLASS])
+
+/* Write a DOS Error Code to the header buffer.
+ */
+#define smb_hdrSetEcodeDOS( bufr, Ecode ) \
+        smb_SetShort( bufr, SMB_OFFSET_ECODE, Ecode )
+
+/* Read a DOS Error Code; returns ushort.
+ */
+#define smb_hdrGetEcodeDOS( bufr ) \
+        smb_GetShort( bufr, SMB_OFFSET_ECODE )
+
+/* Write an NT_STATUS code.
+ */
+#define smb_hdrSetNTStatus( bufr, nt_status ) \
+     smb_PutLong( bufr, SMB_OFFSET_NTSTATUS, nt_status )
+
+/* Read an NT_STATUS code; returns ulong.
+ */
+#define smb_hdrGetNTStatus( bufr ) \
+        smb_GetLong( bufr, SMB_OFFSET_NTSTATUS )
+
+/* Write FLAGS to the header buffer.
+ */
+#define smb_hdrSetFlags( bufr, flags ) \
+  (bufr)[SMB_OFFSET_FLAGS] = (flags)
+
+/* Read FLAGS; returns uchar.
+ */
+#define smb_hdrGetFlags( bufr ) \
+        (uchar)((bufr)[SMB_OFFSET_FLAGS])
+
+/* Write FLAGS2 to the header buffer.
+ */
+#define smb_hdrSetFlags2( bufr, flags2 ) \
+        smb_SetShort( bufr, SMB_OFFSET_FLAGS2, flags2 )
+
+/* Read FLAGS2; returns ushort.
+ */
+#define smb_hdrGetFlags2( bufr ) \
+        smb_GetShort( bufr, SMB_OFFSET_FLAGS2 )]]></pre>
+
+<pre dk:break="after"><![CDATA[/* Write the TID.
+ */
+#define smb_hdrSetTID( bufr, TID ) \
+        smb_SetShort( bufr, SMB_OFFSET_TID, TID )
+
+/* Read the TID; returns ushort.
+ */
+#define smb_hdrGetTID( bufr ) \
+        smb_GetShort( bufr, SMB_OFFSET_TID )
+
+/* Write the PID.
+ */
+#define smb_hdrSetPID( bufr, PID ) \
+        smb_SetShort( bufr, SMB_OFFSET_PID, PID )
+
+/* Read the PID; returns ushort.
+ */
+#define smb_hdrGetPID( bufr ) \
+        smb_GetShort( bufr, SMB_OFFSET_PID )
+
+/* Write the [V]UID.
+ */
+#define smb_hdrSetUID( bufr, UID ) \
+        smb_SetShort( bufr, SMB_OFFSET_UID, UID )
+
+/* Read the [V]UID; returns ushort.
+ */
+#define smb_hdrGetUID( bufr ) \
+        smb_GetShort( bufr, SMB_OFFSET_UID )
+
+/* Write the MID.
+ */
+#define smb_hdrSetMID( bufr, MID ) \
+        smb_SetShort( bufr, SMB_OFFSET_MID, MID )
+
+/* Read the MID; returns ushort.
+ */
+#define smb_hdrGetMID( bufr ) \
+        smb_GetShort( bufr, SMB_OFFSET_MID )
+
+/* Function prototypes.
+ */]]></pre>
+
+<pre><![CDATA[int smb_hdrInit( uchar *bufr, int bsize );
+  /* ---------------------------------------------------- **
+   * Initialize an empty header structure.
+   * Returns -1 on error, the SMB header size on success.
+   * ---------------------------------------------------- **
+   */
+
+int smb_hdrCheck( uchar *bufr, int bsize );
+  /* ---------------------------------------------------- **
+   * Perform some quick checks on a received buffer to
+   * make sure it's safe to read.  This function returns
+   * a negative value if the SMB header is invalid.
+   * ---------------------------------------------------- **
+   */]]></pre>
+</example>
+
+<example refid="Listing2.4" part="b">
+<caption>SMB Header [De]Construction: <code>MB_Header.c</code></caption>
+<pre dk:break="after"><![CDATA[#include "smb_header.h"
+
+const char *smb_hdrSMBString = "\xffSMB";
+
+int smb_hdrInit( uchar *bufr, int bsize )
+  /* ---------------------------------------------------- **
+   * Initialize an empty header structure.
+   * Returns -1 on error, the SMB header size on success.
+   * ---------------------------------------------------- **
+   */
+  {
+  int i;
+
+  if( bsize < SMB_HDR_SIZE )
+    return( -1 );
+
+  for( i = 0; i < 4; i++ )
+    bufr[i] = smb_hdrSMBString[i];
+  for( i = 4; i < SMB_HDR_SIZE; i++ )
+    bufr[i] = '\0';
+
+  return( SMB_HDR_SIZE );
+  } /* smb_hdrInit */]]></pre>
+
+<pre><![CDATA[int smb_hdrCheck( uchar *bufr, int bsize )
+  /* ---------------------------------------------------- **
+   * Perform some quick checks on a received buffer to
+   * make sure it's safe to read.  This function returns
+   * a negative value if the SMB header is invalid.
+   * ---------------------------------------------------- **
+   */
+  {
+  int i;
+
+  if( NULL == bufr )
+    return( -1 );
+
+  if( bsize < SMB_HDR_SIZE )
+    return( -2 );
+
+  for( i = 0; i < 4; i++ )
+    if( bufr[i] != smb_hdrSMBString[i] )
+      return( -3 );
+
+  return( SMB_HDR_SIZE );
+  } /* smb_hdrCheck */]]></pre>
+</example>
+
+<p>The <code>smb_hdrInit()</code> and <code>smb_hdrCheck()</code>
+functions are there primarily to ensure that the SMB headers are
+reasonably sane. They check for things like the buffer size, and
+ensure that the "<code>\xffSMB</code>"<idx>\xffSMB</idx> string is
+included correctly in the header buffer.</p>
+
+<p>Note that none of these functions or macros handle the reading and
+writing of the four-byte session header, though that would be
+trivial. The <code>SESSION MESSAGE</code> header is part of the
+transport layer, not SMB. It is handled as a simple
+network-byte-order<idx>byte order</idx> longword; something from the
+NBT Session Service<idx>NBT<sidx>Session Service</sidx></idx> that has
+been carried over into naked transport. (We covered all this back in
+<ref refid="NBT1.6"/> and <ref refid="SMB2.1.2"/>.)</p>
+
+</h1s></chapter>
+</oim>

@@ -1,0 +1,189 @@
+<?xml version="1.0" encoding="US-ASCII"?>
+<!DOCTYPE oim SYSTEM "oimxml.dtd" [
+  <!ENTITY nbsp  "&#160;">
+  <!ENTITY lsquo "&#8216;">
+  <!ENTITY rsquo "&#8217;">
+  <!ENTITY minus "&#8211;">
+  <!ENTITY times "&#xd7;">
+  <!ENTITY copy "&#xa9;">
+  <!ENTITY eacute "&#233;">
+] >
+<oim xmlns:dk="http://www.kirsanov.com">
+<chapter id="Appendix-B">
+<chapopen><title>CIFS Technical Reference</title>
+
+<epigraph dk:padding-top="36">
+<p>
+<line>The only spec I trust</line>
+<line>is written in C.</line>
+</p>
+<attribution>
+<line>Andrew Bartlett,<idx>Bartlett, Andrew</idx></line>
+<line>Samba Team</line> 
+</attribution>
+</epigraph>
+</chapopen>
+
+<p>The SNIA CIFS Technical Reference is included by kind permission of
+the Storage Network Industry Association (SNIA). The author would like
+to thank the SNIA, particularly the members of the SNIA CIFS Technical
+Work Group, for making this document available. Please see page v of
+the CIFS Technical Reference for SNIA copyright information.</p>
+
+<p>Please Note: The SNIA CIFS Technical Reference does not fall under
+the same copyright and licensing terms as the rest of the
+book. Special permission was obtained in order to include the CIFS
+Technical Reference in this book.</p>
+
+<img loc="page1"/>
+<img loc="page2"/>
+<img loc="page3"/>
+<img loc="page4"/>
+<img loc="page5"/>
+<img loc="page6"/>
+<img loc="page7"/>
+<img loc="page8"/>
+<img loc="page9"/>
+<img loc="page10"/>
+<img loc="page11"/>
+<img loc="page13"/>
+<img loc="page14"/>
+<img loc="page15"/>
+<img loc="page16"/>
+<img loc="page17"/>
+<img loc="page18"/>
+<img loc="page19"/>
+<img loc="page20"/>
+<img loc="page21"/>
+<img loc="page22"/>
+<img loc="page23"/>
+<img loc="page24"/>
+<img loc="page25"/>
+<img loc="page26"/>
+<img loc="page27"/>
+<img loc="page28"/>
+<img loc="page29"/>
+<img loc="page30"/>
+<img loc="page31"/>
+<img loc="page32"/>
+<img loc="page33"/>
+<img loc="page34"/>
+<img loc="page35"/>
+<img loc="page36"/>
+<img loc="page37"/>
+<img loc="page38"/>
+<img loc="page39"/>
+<img loc="page40"/>
+<img loc="page41"/>
+<img loc="page42"/>
+<img loc="page43"/>
+<img loc="page44"/>
+<img loc="page45"/>
+<img loc="page46"/>
+<img loc="page47"/>
+<img loc="page48"/>
+<img loc="page49"/>
+<img loc="page50"/>
+<img loc="page51"/>
+<img loc="page52"/>
+<img loc="page53"/>
+<img loc="page54"/>
+<img loc="page55"/>
+<img loc="page56"/>
+<img loc="page57"/>
+<img loc="page58"/>
+<img loc="page59"/>
+<img loc="page60"/>
+<img loc="page61"/>
+<img loc="page62"/>
+<img loc="page63"/>
+<img loc="page64"/>
+<img loc="page65"/>
+<img loc="page66"/>
+<img loc="page67"/>
+<img loc="page68"/>
+<img loc="page69"/>
+<img loc="page70"/>
+<img loc="page71"/>
+<img loc="page72"/>
+<img loc="page73"/>
+<img loc="page74"/>
+<img loc="page75"/>
+<img loc="page76"/>
+<img loc="page77"/>
+<img loc="page78"/>
+<img loc="page79"/>
+<img loc="page80"/>
+<img loc="page81"/>
+<img loc="page82"/>
+<img loc="page83"/>
+<img loc="page84"/>
+<img loc="page85"/>
+<img loc="page86"/>
+<img loc="page87"/>
+<img loc="page88"/>
+<img loc="page89"/>
+<img loc="page90"/>
+<img loc="page91"/>
+<img loc="page92"/>
+<img loc="page93"/>
+<img loc="page94"/>
+<img loc="page95"/>
+<img loc="page96"/>
+<img loc="page97"/>
+<img loc="page98"/>
+<img loc="page99"/>
+<img loc="page100"/>
+<img loc="page101"/>
+<img loc="page102"/>
+<img loc="page103"/>
+<img loc="page104"/>
+<img loc="page105"/>
+<img loc="page106"/>
+<img loc="page107"/>
+<img loc="page108"/>
+<img loc="page109"/>
+<img loc="page110"/>
+<img loc="page111"/>
+<img loc="page112"/>
+<img loc="page113"/>
+<img loc="page114"/>
+<img loc="page115"/>
+<img loc="page116"/>
+<img loc="page117"/>
+<img loc="page118"/>
+<img loc="page119"/>
+<img loc="page120"/>
+<img loc="page121"/>
+<img loc="page122"/>
+<img loc="page123"/>
+<img loc="page124"/>
+<img loc="page125"/>
+<img loc="page126"/>
+<img loc="page127"/>
+<img loc="page128"/>
+<img loc="page129"/>
+<img loc="page130"/>
+<img loc="page131"/>
+<img loc="page132"/>
+<img loc="page133"/>
+<img loc="page134"/>
+<img loc="page135"/>
+<img loc="page136"/>
+<img loc="page137"/>
+<img loc="page138"/>
+<img loc="page139"/>
+<img loc="page140"/>
+<img loc="page141"/>
+<img loc="page142"/>
+<img loc="page143"/>
+<img loc="page144"/>
+<img loc="page145"/>
+<img loc="page146"/>
+<img loc="page147"/>
+<img loc="page148"/>
+<img loc="page149"/>
+<img loc="page150"/>
+</chapter>
+</oim>
+

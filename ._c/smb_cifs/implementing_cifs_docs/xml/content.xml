@@ -1,0 +1,289 @@
+<?xml version="1.0" encoding="US-ASCII"?><oim><content>
+  frontmatter.xml
+  
+  <item level="1"><section>Foreword</section><pageno>xviii</pageno></item>
+ 
+  <item level="1"><section>Introduction</section><pageno>xxi</pageno></item>
+ 
+
+  <item level="0"><number>I</number><section>NBT: NetBIOS over TCP/IP</section><pageno>1</pageno></item>
+<item level="1"><number>1</number><section>A Short Bio of NetBIOS</section><pageno>3</pageno></item>
+<item level="2"><number>1.1</number><section>NetBIOS and DOS: The Early Years</section><pageno>3</pageno></item>
+<item level="3"><number>1.1.1</number><section>OpLock Breaks</section><pageno>4</pageno></item>
+<item level="4"><number>1.1.1.1</number><section>Unicast (NBNS) Name Registration</section><pageno>7</pageno></item>
+<item level="3"><number>1.1.2</number><section>The NTLMv2 Toolbox</section><pageno>7</pageno></item>
+
+  <item level="1"><number>2</number><section>Speaking NetBIOS</section><pageno>5</pageno></item>
+<item level="2"><number>2.1</number><section>Emulating "NetBIOS LANs"</section><pageno>6</pageno></item>
+<item level="3"><number>2.1.1</number><section>The NetBIOS Name Service</section><pageno>7</pageno></item>
+<item level="3"><number>2.1.2</number><section>The NetBIOS Datagram Service</section><pageno>10</pageno></item>
+<item level="3"><number>2.1.3</number><section>The NetBIOS Session Service</section><pageno>11</pageno></item>
+<item level="2"><number>2.2</number><section>Scope: The Final Frontier</section><pageno>12</pageno></item>
+<item level="2"><number>2.3</number><section>Thus Endeth the Overview</section><pageno>16</pageno></item>
+
+  <item level="1"><number>3</number><section>The Basics of NBT Implementation</section><pageno>17</pageno></item>
+<item level="2"><number>3.1</number><section>You Got the Name, Look Up the Number</section><pageno>18</pageno></item>
+<item level="3"><number>3.1.1</number><section>Encoding NetBIOS Names</section><pageno>19</pageno></item>
+<item level="3"><number>3.1.2</number><section>Fully Qualified NBT Names</section><pageno>22</pageno></item>
+<item level="3"><number>3.1.3</number><section>Second Level Encoding</section><pageno>22</pageno></item>
+<item level="3"><number>3.1.4</number><section>Name Service Packet Headers</section><pageno>25</pageno></item>
+<item level="3"><number>3.1.5</number><section>The Query Entry</section><pageno>28</pageno></item>
+<item level="3"><number>3.1.6</number><section>Some Trouble Ahead</section><pageno>29</pageno></item>
+<item level="3"><number>3.1.7</number><section>Finally! A Simple Broadcast Name Query</section><pageno>32</pageno></item>
+<item level="2"><number>3.2</number><section>Interlude</section><pageno>38</pageno></item>
+
+  <item level="1"><number>4</number><section>The Name Service in&#160;Detail</section><pageno>41</pageno></item>
+<item level="2"><number>4.1</number><section>NBT Names: Once More with Feeling</section><pageno>42</pageno></item>
+<item level="3"><number>4.1.1</number><section>Valid NetBIOS Name Characters</section><pageno>42</pageno></item>
+<item level="3"><number>4.1.2</number><section>NetBIOS Names within Scope</section><pageno>44</pageno></item>
+<item level="3"><number>4.1.3</number><section>Encoding and Decoding NBT Names</section><pageno>45</pageno></item>
+<item level="2"><number>4.2</number><section>NBT Name Service Packets</section><pageno>48</pageno></item>
+<item level="3"><number>4.2.1</number><section>Name Service Headers</section><pageno>48</pageno></item>
+<item level="3"><number>4.2.2</number><section>Name Service Question Records</section><pageno>53</pageno></item>
+<item level="3"><number>4.2.3</number><section>Name Service Resource Records</section><pageno>55</pageno></item>
+<item level="2"><number>4.3</number><section>Conversations with the Name Service</section><pageno>61</pageno></item>
+<item level="3"><number>4.3.1</number><section>Name Registration</section><pageno>62</pageno></item>
+<item level="4"><number>4.3.1.1</number><section>Broadcast Name Registration</section><pageno>66</pageno></item>
+<item level="4"><number>4.3.1.2</number><section>Unicast (NBNS) Name Registration</section><pageno>75</pageno></item>
+<item level="4"><number>4.3.1.3</number><section>M and H Node Name Registration</section><pageno>80</pageno></item>
+<item level="4"><number>4.3.1.4</number><section>Registering Multi-Homed Hosts</section><pageno>81</pageno></item>
+<item level="3"><number>4.3.2</number><section>Name Query</section><pageno>85</pageno></item>
+<item level="4"><number>4.3.2.1</number><section>Negative Query Response</section><pageno>89</pageno></item>
+<item level="4"><number>4.3.2.2</number><section>Positive Query Response</section><pageno>91</pageno></item>
+<item level="4"><number>4.3.2.3</number><section>The Redirect Name Query Response</section><pageno>93</pageno></item>
+<item level="4"><number>4.3.2.4</number><section>A Simple Name Query Revisited</section><pageno>93</pageno></item>
+<item level="3"><number>4.3.3</number><section>Name Refresh</section><pageno>98</pageno></item>
+<item level="3"><number>4.3.4</number><section>Name Release</section><pageno>100</pageno></item>
+<item level="4"><number>4.3.4.1</number><section>Name Release Response</section><pageno>102</pageno></item>
+<item level="3"><number>4.3.5</number><section>Node Status</section><pageno>103</pageno></item>
+<item level="4"><number>4.3.5.1</number><section>Node Status Response</section><pageno>104</pageno></item>
+<item level="3"><number>4.3.6</number><section>Name Conflict Demand</section><pageno>111</pageno></item>
+<item level="4"><number>4.3.6.1</number><section>Name Release Demand Revisited</section><pageno>112</pageno></item>
+<item level="2"><number>4.4</number><section>Enough Already</section><pageno>113</pageno></item>
+
+  <item level="1"><number>5</number><section>The Datagram Service in Detail</section><pageno>115</pageno></item>
+<item level="2"><number>5.1</number><section>Datagram Distribution over Routed IP Internetworks</section><pageno>117</pageno></item>
+<item level="2"><number>5.2</number><section>The NBDD and the Damage Done</section><pageno>119</pageno></item>
+<item level="2"><number>5.3</number><section>Implementing a Workable Datagram Service</section><pageno>120</pageno></item>
+<item level="3"><number>5.3.1</number><section>Fragmenting Datagrams</section><pageno>125</pageno></item>
+<item level="3"><number>5.3.2</number><section>Receiving Datagrams</section><pageno>126</pageno></item>
+<item level="3"><number>5.3.3</number><section>Querying the NBDD</section><pageno>127</pageno></item>
+<item level="3"><number>5.3.4</number><section>The Second Least Well Understood Aspect of NBT</section><pageno>128</pageno></item>
+
+  <item level="1"><number>6</number><section>The Session Service in&#160;Detail</section><pageno>129</pageno></item>
+<item level="2"><number>6.1</number><section>Session Service Header</section><pageno>129</pageno></item>
+<item level="2"><number>6.2</number><section>Creating an NBT Session</section><pageno>130</pageno></item>
+<item level="2"><number>6.3</number><section>Maintaining an NBT Session</section><pageno>139</pageno></item>
+<item level="2"><number>6.4</number><section>Closing an NBT Session</section><pageno>140</pageno></item>
+
+  <item level="1"><number>7</number><section>Where It All Went Wrong</section><pageno>141</pageno></item>
+<item level="2"><number>7.1</number><section>The <code>0x1D</code>irty Little Secret</section><pageno>141</pageno></item>
+<item level="2"><number>7.2</number><section>Twenty-five IPs or Less</section><pageno>142</pageno></item>
+<item level="2"><number>7.3</number><section>Special Handling Required for <code>0x1B</code> Names</section><pageno>142</pageno></item>
+<item level="2"><number>7.4</number><section>Alternate Name Resolution</section><pageno>143</pageno></item>
+<item level="2"><number>7.5</number><section>The Awful Truth</section><pageno>144</pageno></item>
+
+  <item level="0"><number>II</number><section>SMB: The Server Message Block Protocol</section><pageno>145</pageno></item>
+<item level="1"><number>8</number><section>A Little Background on&#160;SMB</section><pageno>147</pageno></item>
+<item level="2"><number>8.1</number><section>Getting Started</section><pageno>149</pageno></item>
+<item level="2"><number>8.2</number><section>NBT or Not NBT</section><pageno>150</pageno></item>
+
+  <item level="1"><number>9</number><section>An Introductory Tour of SMB</section><pageno>153</pageno></item>
+<item level="2"><number>9.1</number><section>The Server Identifier</section><pageno>154</pageno></item>
+<item level="2"><number>9.2</number><section>The Directory Path</section><pageno>155</pageno></item>
+<item level="2"><number>9.3</number><section>The File</section><pageno>156</pageno></item>
+<item level="2"><number>9.4</number><section>The SMB URL</section><pageno>157</pageno></item>
+<item level="2"><number>9.5</number><section>Was That Trip Really Necessary?</section><pageno>158</pageno></item>
+
+  <item level="1"><number>10</number><section>First Contact: Reaching the Server</section><pageno>159</pageno></item>
+<item level="2"><number>10.1</number><section>Interpreting the Server Identifier</section><pageno>160</pageno></item>
+<item level="2"><number>10.2</number><section>The Destination Port</section><pageno>162</pageno></item>
+<item level="2"><number>10.3</number><section>Transport Discovery</section><pageno>163</pageno></item>
+<item level="3"><number>10.3.1</number><section>Run Naked</section><pageno>163</pageno></item>
+<item level="3"><number>10.3.2</number><section>Using the NetBIOS Name</section><pageno>164</pageno></item>
+<item level="3"><number>10.3.3</number><section>Reverse Mapping a NetBIOS Name</section><pageno>166</pageno></item>
+<item level="2"><number>10.4</number><section>Connecting to the Server</section><pageno>167</pageno></item>
+
+  <item level="1"><number>11</number><section>SMB in Its Natural Habitat</section><pageno>177</pageno></item>
+<item level="2"><number>11.1</number><section>Our Very First Live SMBs</section><pageno>179</pageno></item>
+<item level="2"><number>11.2</number><section>SMB Message Structure</section><pageno>180</pageno></item>
+<item level="3"><number>11.2.1</number><section>SMB Message Header</section><pageno>181</pageno></item>
+<item level="3"><number>11.2.2</number><section>SMB Message Parameters</section><pageno>185</pageno></item>
+<item level="3"><number>11.2.3</number><section>SMB Message Data</section><pageno>186</pageno></item>
+<item level="2"><number>11.3</number><section>Case in Point: <code>NEGOTIATE PROTOCOL</code></section><pageno>186</pageno></item>
+<item level="2"><number>11.4</number><section>The AndX Mutation</section><pageno>188</pageno></item>
+<item level="2"><number>11.5</number><section>The Flow of Conversation</section><pageno>192</pageno></item>
+<item level="2"><number>11.6</number><section>A Little More Code</section><pageno>193</pageno></item>
+<item level="2"><number>11.7</number><section>Take a Break</section><pageno>196</pageno></item>
+
+  <item level="1"><number>12</number><section>The SMB Header in&#160;Detail</section><pageno>197</pageno></item>
+<item level="2"><number>12.1</number><section>The <code>SMB_HEADER.STATUS</code> Field Exposed</section><pageno>198</pageno></item>
+<item level="2"><number>12.2</number><section>The <code>FLAGS</code> and <code>FLAGS2</code> Fields Tell
+All</section><pageno>202</pageno></item>
+<item level="2"><number>12.3</number><section><code>EXTRA</code>! <code>EXTRA</code>! Read All About It!</section><pageno>208</pageno></item>
+<item level="2"><number>12.4</number><section><code>TID</code> and <code>UID</code>: Separated at Birth?</section><pageno>209</pageno></item>
+<item level="2"><number>12.5</number><section><code>PID</code> and <code>MID</code> Revealed</section><pageno>211</pageno></item>
+<item level="3"><number>12.5.1</number><section><code>EXTRA.PidHigh</code> Dark Secrets Uncovered</section><pageno>214</pageno></item>
+<item level="2"><number>12.6</number><section>SMB Header Final Report</section><pageno>215</pageno></item>
+
+  <item level="1"><number>13</number><section>Protocol Negotiation</section><pageno>221</pageno></item>
+<item level="2"><number>13.1</number><section>A Smattering of SMB Dialects</section><pageno>222</pageno></item>
+<item level="2"><number>13.2</number><section>Greetings: The <code>NEGOTIATE PROTOCOL REQUEST</code></section><pageno>224</pageno></item>
+<item level="2"><number>13.3</number><section>Gesundheit: The <code>NEGOTIATE PROTOCOL RESPONSE</code></section><pageno>227</pageno></item>
+<item level="3"><number>13.3.1</number><section>NegProt Response Parameters</section><pageno>227</pageno></item>
+<item level="3"><number>13.3.2</number><section>NegProt Response Data</section><pageno>235</pageno></item>
+<item level="2"><number>13.4</number><section>Are We There Yet?</section><pageno>237</pageno></item>
+
+  <item level="1"><number>14</number><section>Session Setup</section><pageno>239</pageno></item>
+<item level="2"><number>14.1</number><section><code>SESSION SETUP ANDX REQUEST</code> Parameters</section><pageno>239</pageno></item>
+<item level="3"><number>14.1.1</number><section>Virtual Circuits</section><pageno>242</pageno></item>
+<item level="3"><number>14.1.2</number><section><code>Capabilities</code> Bits</section><pageno>245</pageno></item>
+<item level="2"><number>14.2</number><section><code>SESSION SETUP ANDX REQUEST</code> Data</section><pageno>251</pageno></item>
+<item level="2"><number>14.3</number><section>The <code>SESSION SETUP ANDX RESPONSE</code> SMB</section><pageno>255</pageno></item>
+
+  <item level="1"><number>15</number><section>Authentication</section><pageno>257</pageno></item>
+<item level="2"><number>15.1</number><section>Anonymous and Guest Login</section><pageno>258</pageno></item>
+<item level="2"><number>15.2</number><section>Plaintext Passwords</section><pageno>259</pageno></item>
+<item level="3"><number>15.2.1</number><section>User Level Security with Plaintext Passwords</section><pageno>261</pageno></item>
+<item level="3"><number>15.2.2</number><section>Share Level Security with Plaintext Passwords</section><pageno>264</pageno></item>
+<item level="2"><number>15.3</number><section>LM Challenge/Response</section><pageno>265</pageno></item>
+<item level="3"><number>15.3.1</number><section>DES</section><pageno>266</pageno></item>
+<item level="3"><number>15.3.2</number><section>Creating the Challenge</section><pageno>267</pageno></item>
+<item level="3"><number>15.3.3</number><section>Creating the LM Hash</section><pageno>268</pageno></item>
+<item level="3"><number>15.3.4</number><section>Creating the LM Response</section><pageno>270</pageno></item>
+<item level="3"><number>15.3.5</number><section>LM Challenge/Response: Once More with Feeling</section><pageno>272</pageno></item>
+<item level="2"><number>15.4</number><section>NTLM Challenge/Response</section><pageno>275</pageno></item>
+<item level="2"><number>15.5</number><section>NTLM Version 2</section><pageno>276</pageno></item>
+<item level="3"><number>15.5.1</number><section>The NTLMv2 Toolbox</section><pageno>277</pageno></item>
+<item level="3"><number>15.5.2</number><section>The NTLMv2 Password Hash</section><pageno>279</pageno></item>
+<item level="3"><number>15.5.3</number><section>The NTLMv2 Response</section><pageno>281</pageno></item>
+<item level="3"><number>15.5.4</number><section>Creating the Blob</section><pageno>282</pageno></item>
+<item level="3"><number>15.5.5</number><section>Improved Security Through Confusion</section><pageno>284</pageno></item>
+<item level="3"><number>15.5.6</number><section>Insult to Injury: LMv2</section><pageno>286</pageno></item>
+<item level="3"><number>15.5.7</number><section>Choosing NTLMv2</section><pageno>287</pageno></item>
+<item level="2"><number>15.6</number><section>Extended Security: That Light at the End of&#160;the&#160;Tunnel</section><pageno>289</pageno></item>
+<item level="3"><number>15.6.1</number><section>The Extended Security Authentication Toolkit</section><pageno>291</pageno></item>
+<item level="2"><number>15.7</number><section>Kerberos</section><pageno>294</pageno></item>
+<item level="2"><number>15.8</number><section>Random Notes on W2K and NT Domain Authentication</section><pageno>295</pageno></item>
+<item level="3"><number>15.8.1</number><section>A Quick Look at W2K Domains</section><pageno>296</pageno></item>
+<item level="3"><number>15.8.2</number><section>A Few Notes about NT Domains</section><pageno>296</pageno></item>
+<item level="3"><number>15.8.3</number><section>It's Good to Have a Backup</section><pageno>298</pageno></item>
+<item level="3"><number>15.8.4</number><section>Trust Me on This</section><pageno>299</pageno></item>
+<item level="2"><number>15.9</number><section>Random Notes on Message Authentication Codes</section><pageno>300</pageno></item>
+<item level="3"><number>15.9.1</number><section>Generating the Session Key</section><pageno>302</pageno></item>
+<item level="3"><number>15.9.2</number><section>Sequence Numbers</section><pageno>304</pageno></item>
+<item level="3"><number>15.9.3</number><section>Calculating the MAC</section><pageno>304</pageno></item>
+<item level="3"><number>15.9.4</number><section>Enabling and Requiring MAC Signing</section><pageno>306</pageno></item>
+<item level="2"><number>15.10</number><section>Non Sequitur Time</section><pageno>307</pageno></item>
+<item level="2"><number>15.11</number><section>Further Study</section><pageno>308</pageno></item>
+
+  <item level="1"><number>16</number><section>Building Your SMB Vocabulary</section><pageno>309</pageno></item>
+<item level="2"><number>16.1</number><section>That <code>TREE CONNECT</code> Thingy</section><pageno>310</pageno></item>
+<item level="2"><number>16.2</number><section>SMB Echo</section><pageno>312</pageno></item>
+<item level="2"><number>16.3</number><section>Readin', Writin', and 'Rithmatic</section><pageno>315</pageno></item>
+<item level="2"><number>16.4</number><section>Transaction SMBs</section><pageno>318</pageno></item>
+<item level="3"><number>16.4.1</number><section>Mailslots and Named Pipes</section><pageno>321</pageno></item>
+
+  <item level="1"><number>17</number><section>The Remaining Oddities</section><pageno>323</pageno></item>
+<item level="2"><number>17.1</number><section>Opportunistic Locks (OpLocks)</section><pageno>323</pageno></item>
+<item level="3"><number>17.1.1</number><section>OpLock Breaks</section><pageno>325</pageno></item>
+<item level="2"><number>17.2</number><section>Distributed File System (DFS)</section><pageno>326</pageno></item>
+<item level="2"><number>17.3</number><section>DOS Attributes, Extended File Attributes, Long Filenames,
+and Suchlike</section><pageno>328</pageno></item>
+
+  <item level="1"><number>18</number><section>That Just about Wraps Things Up for SMB</section><pageno>333</pageno></item>
+
+  <item level="0"><number>III</number><section>The Browse Service</section><pageno>335</pageno></item>
+<item level="1"><number>19</number><section>A Beautiful Day
+in&#160;the&#160;Network Neighborhood</section><pageno>337</pageno></item>
+<item level="2"><number>19.1</number><section>History: From Frontier Town to Bustling Metropolis</section><pageno>338</pageno></item>
+<item level="2"><number>19.2</number><section>Sociology</section><pageno>339</pageno></item>
+<item level="2"><number>19.3</number><section>Politics</section><pageno>340</pageno></item>
+<item level="3"><number>19.3.1</number><section>When Is a Workgroup not a Workgroup?</section><pageno>343</pageno></item>
+<item level="3"><number>19.3.2</number><section>Delegating Responsibility</section><pageno>344</pageno></item>
+
+  <item level="1"><number>20</number><section>Meet the Neighbors</section><pageno>347</pageno></item>
+<item level="2"><number>20.1</number><section>Browse Service Clientele</section><pageno>348</pageno></item>
+<item level="3"><number>20.1.1</number><section>Providers</section><pageno>348</pageno></item>
+<item level="3"><number>20.1.2</number><section>Consumers</section><pageno>349</pageno></item>
+<item level="2"><number>20.2</number><section>The Local Master Browser</section><pageno>351</pageno></item>
+<item level="2"><number>20.3</number><section>Becoming a Backup Browser</section><pageno>354</pageno></item>
+<item level="2"><number>20.4</number><section>Crossing the Street with the DMB</section><pageno>355</pageno></item>
+<item level="2"><number>20.5</number><section>Elections</section><pageno>356</pageno></item>
+
+  <item level="1"><number>21</number><section>Infrastructure: The&#160;Mailslot and&#160;Named Pipe
+Abstractions</section><pageno>359</pageno></item>
+<item level="2"><number>21.1</number><section>Meet the Plumbing: Named Pipes</section><pageno>360</pageno></item>
+<item level="2"><number>21.2</number><section>The Mailslot Metaphor</section><pageno>363</pageno></item>
+
+  <item level="1"><number>22</number><section>The Talk on the Street</section><pageno>367</pageno></item>
+<item level="2"><number>22.1</number><section>Making Sense of SMBtrans</section><pageno>368</pageno></item>
+<item level="2"><number>22.2</number><section>Browse Service Mailslot Messages</section><pageno>377</pageno></item>
+<item level="3"><number>22.2.1</number><section>Announcement Request</section><pageno>380</pageno></item>
+<item level="3"><number>22.2.2</number><section>Host Announcement</section><pageno>381</pageno></item>
+<item level="3"><number>22.2.3</number><section>Election Request</section><pageno>383</pageno></item>
+<item level="3"><number>22.2.4</number><section>Get Backup List Request</section><pageno>384</pageno></item>
+<item level="3"><number>22.2.5</number><section>Get Backup List Response</section><pageno>385</pageno></item>
+<item level="3"><number>22.2.6</number><section>Local Master Announcement</section><pageno>387</pageno></item>
+<item level="3"><number>22.2.7</number><section>Master Announcement</section><pageno>387</pageno></item>
+<item level="3"><number>22.2.8</number><section>Domain Announcement</section><pageno>388</pageno></item>
+<item level="3"><number>22.2.9</number><section>Become Backup Request</section><pageno>389</pageno></item>
+<item level="3"><number>22.2.10</number><section>The Undocumented Reset</section><pageno>390</pageno></item>
+<item level="3"><number>22.2.11</number><section>It's All in the Delivery</section><pageno>392</pageno></item>
+<item level="2"><number>22.3</number><section>RAPture</section><pageno>393</pageno></item>
+<item level="3"><number>22.3.1</number><section><code>NetServerEnum2</code> Request</section><pageno>395</pageno></item>
+<item level="3"><number>22.3.2</number><section><code>NetServerEnum2</code> Reply</section><pageno>398</pageno></item>
+<item level="3"><number>22.3.3</number><section>On the Outskirts of Town</section><pageno>406</pageno></item>
+<item level="3"><number>22.3.4</number><section>Transaction Fragmentation</section><pageno>407</pageno></item>
+<item level="3"><number>22.3.5</number><section>RAP Annoyances</section><pageno>408</pageno></item>
+
+  <item level="1"><number>23</number><section>The Better Browser Bureau</section><pageno>411</pageno></item>
+<item level="2"><number>23.1</number><section>Running an Election</section><pageno>411</pageno></item>
+<item level="3"><number>23.1.1</number><section>Voting</section><pageno>412</pageno></item>
+<item level="3"><number>23.1.2</number><section>The Ballot</section><pageno>413</pageno></item>
+<item level="2"><number>23.2</number><section>Timing Is Everything</section><pageno>416</pageno></item>
+
+  <item level="1"><number>24</number><section>Samba Browse Service Enhancements</section><pageno>419</pageno></item>
+<item level="2"><number>24.1</number><section>Automatic LANMAN</section><pageno>419</pageno></item>
+<item level="2"><number>24.2</number><section>UnBrowsable</section><pageno>420</pageno></item>
+<item level="2"><number>24.3</number><section>NBNS Wildcard DMB Queries and Enhanced Browsing</section><pageno>420</pageno></item>
+<item level="2"><number>24.4</number><section>Remote Announce</section><pageno>422</pageno></item>
+<item level="2"><number>24.5</number><section>Remote Browse Sync</section><pageno>423</pageno></item>
+<item level="2"><number>24.6</number><section>DMB != PDC</section><pageno>423</pageno></item>
+
+  <item level="1"><number>25</number><section>It Can&#8217;t Happen Here</section><pageno>425</pageno></item>
+<item level="2"><number>25.1</number><section>Misconfigured Hosts</section><pageno>425</pageno></item>
+<item level="2"><number>25.2</number><section>Misconfigured Networks</section><pageno>427</pageno></item>
+<item level="2"><number>25.3</number><section>Implementation Bugs</section><pageno>428</pageno></item>
+<item level="2"><number>25.4</number><section>Troublemakers</section><pageno>428</pageno></item>
+<item level="2"><number>25.5</number><section>Design Flaws</section><pageno>429</pageno></item>
+
+  <item level="1"><number>26</number><section>At Home in the Network Neighborhood</section><pageno>431</pageno></item>
+
+  <item level="0"><number>IV</number><section>Appendices</section><pageno>433</pageno></item>
+<item level="1"><number>A</number><section>Making a Good Cup of&#160;Tea</section><pageno>435</pageno></item>
+<item level="2"><number>A.1</number><section>Basics of Making Tea</section><pageno>435</pageno></item>
+<item level="2"><number>A.2</number><section>About Tea</section><pageno>436</pageno></item>
+<item level="2"><number>A.3</number><section>Nasty Habits</section><pageno>437</pageno></item>
+<item level="2"><number>A.4</number><section>Decaffeinating Tea</section><pageno>438</pageno></item>
+
+  <item level="1"><number>B</number><section>Known NetBIOS Suf&#64257;x Values</section><pageno>439</pageno></item>
+<item level="2"><number>B.1</number><section>NetBIOS Name Suffix Bytes</section><pageno>439</pageno></item>
+<item level="2"><number>B.2</number><section>Special Handling of NetBIOS Names in WINS</section><pageno>447</pageno></item>
+
+  <item level="1"><number>C</number><section>The SMB URL</section><pageno>451</pageno></item>
+<item level="2"><number>C.1</number><section>The Origins of the SMB URL</section><pageno>451</pageno></item>
+<item level="2"><number>C.2</number><section>Of Round Pegs, Square Holes, and Big Mallets</section><pageno>452</pageno></item>
+<item level="2"><number>C.3</number><section>Form Versus Function</section><pageno>453</pageno></item>
+<item level="2"><number>C.4</number><section>Additional Parts</section><pageno>456</pageno></item>
+<item level="2"><number>C.5</number><section>A Simple SMB URL Parser</section><pageno>458</pageno></item>
+
+  <item level="1"><number>D</number><section>CIFS Technical Reference</section><pageno>463</pageno></item>
+
+  <item level="1"><section>Glossary</section><pageno>613</pageno></item>
+
+  <item level="1"><section>References</section><pageno>623</pageno></item>
+
+  <item level="1"><section>Index</section><pageno>632</pageno></item>
+ 
+</content></oim>

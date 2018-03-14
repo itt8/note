@@ -1,0 +1,192 @@
+<?xml version="1.0" encoding="US-ASCII"?>
+<!DOCTYPE oim SYSTEM "oimxml.dtd" [
+  <!ENTITY nbsp  "&#160;">
+  <!ENTITY lsquo "&#8216;">
+  <!ENTITY rsquo "&#8217;">
+  <!ENTITY minus "&#8211;">
+  <!ENTITY times "&#xd7;">
+  <!ENTITY copy "&#xa9;">
+  <!ENTITY eacute "&#233;">
+] >
+<oim xmlns:dk="http://www.kirsanov.com">
+<frontmatter>
+
+<halftitle>
+<title>
+  <line>Implementing</line> 
+  <line>CIFS</line> 
+</title>
+</halftitle>
+
+<titlepage>
+<title>
+  <line>Implementing</line>
+  <line>CIFS:</line>
+  <line>The Common</line>
+  <line>Internet</line>
+  <line>File System</line>
+</title>
+<author>Christopher R. Hertel</author>
+<logo>
+  <line>PRENTICE HALL</line>
+  <line>Professional Technical Reference</line>
+  <line>Upper Saddle River, NJ 07458</line>
+  <line>www.phptr.com/perens</line>
+  <line>www.ubiqx.org/cifs</line>
+</logo>
+</titlepage>
+
+<copyright>
+<p><b>Library of Congress Cataloging-in-Publication Data</b></p>
+
+<p>A CIP record of this book can be obtained from the Library of Congress.</p>
+
+<p>
+<line>Production Supervisor: <em>Faye Gemmellaro</em></line>
+<line>Manufacturing Buyer: <em>Maura Zaldivar</em></line>
+<line>Cover Design Director: <em>Jerry Votta</em></line>
+<line>Executive Editor: <em>Jill Harry</em></line>
+<line>Editorial Assistant: <em>Brenda Mulligan</em></line>
+<line>Marketing Manager: <em>Dan DePasquale</em></line>
+</p>
+
+<logo type="large">
+  <line>Published by Pearson Education, Inc.</line>
+  <line>Publishing as Prentice Hall Professional Technical Reference</line>
+  <line>Upper Saddle River, New Jersey 07458</line>
+</logo>
+
+<p>Introduction, Parts 1, 2, and 3, Appendices A, B, C, Glossary, and
+References copyright &copy; 2004 Christopher&nbsp;R.&nbsp;Hertel. 
+This material may be distributed only subject to
+the terms and conditions set forth in the Open Publication License,
+v1.0 or later (the latest version is presently available at
+<em>www.opencontent.org/openpub/</em>).</p>
+
+<p>Code examples are licensed under the terms of the GNU Lesser
+General Public License. This allows you to build libraries from the
+licensed code and use these libraries with your own code, even if your
+code is proprietary. This library source code, however, must be made
+available if you distribute your product. See the LGPL for details.</p>
+
+<box>
+<p>Appendix D, "CIFS Technical Reference" copyright
+&copy; 2001, 2002 Storage Networking Industry Association (SNIA). The
+SNIA CIFS Technical Reference is included by kind permission of the
+SNIA. Please see page v of the CIFS Technical Reference for SNIA
+copyright information.</p>
+
+<p>All rights reserved.</p>
+</box>
+
+<p><b>Prentice Hall offers excellent discounts on this book when
+ordered in quantity for bulk purchases or special sales.  For more
+information, please contact: U.S. Corporate and Government Sales,
+1-800-382-3419, <dk:nobr>corpsales@pearsontechgroup.com.</dk:nobr> For
+sales outside of the United States, please contact: International
+Sales, 1-317-581-3793, international@pearsontechgroup.com.</b></p>
+
+<p>Company and product names mentioned herein are the trademarks 
+or registered trademarks of their respective owners.</p>
+
+<!--
+<p>No part of this book may be reproduced, in any form or by any
+means, without permission in writing from the publisher.</p>
+-->
+
+<p>Printed in the United States of America</p>
+
+<p>First Printing</p>
+
+<p>ISBN 0-13-047116-X</p>
+
+<p><line>Pearson Education LTD.</line>
+<line>Pearson Education Australia PTY, Limited</line>
+<line>Pearson Education Singapore, Pte. Ltd.</line>
+<line>Pearson Education North Asia Ltd.</line>
+<line>Pearson Education Canada, Ltd.</line>
+<line>Pearson Educaci&#0243;n de Mexico, S.A. de C.V.</line> 
+<line>Pearson Education<emdash/>Japan</line>
+<line>Pearson Education Malaysia, Pte. Ltd.</line>
+</p>
+
+</copyright>
+
+<dedication>
+<p><line>Queen Victoria, it is said, so enjoyed <em>Alice's Adventures in
+Wonderland</em> that she asked for a copy of the author's next
+work. Carroll obliged with&nbsp;the&nbsp;<em>Syllabus of Plane Algebraical Geometry</em>.</line>
+<line>Her Majesty was not amused.</line></p>
+
+<p><line>In that same spirit, I dedicate this effort</line>
+<line>to the memory of my mother.</line></p>
+</dedication>
+
+<endorsements>
+<title>Praise for <cite>Implementing CIFS</cite></title>
+
+<endorsement>
+<p>I think <em>Implementing CIFS</em> is simply the best conceptual overview of SMB I&nbsp;have seen.</p>
+<attribution>
+<author>Stanley Hopcroft<!--<idx>Hopcroft, Stanley</idx>--></author>
+<description>Network Specialist</description>
+</attribution>
+</endorsement>
+
+<endorsement>
+<p>You've done an incredibly nice job of steering the line between a damn good
+read and an essential systems manual.</p>
+<attribution>
+<author>Danny Smith<!--<idx>Smith, Danny</idx>--></author>
+<description><line>Senior Systems Administrator</line>
+<line>Cinesite Digital Studios</line></description>
+</attribution>
+</endorsement>
+
+<endorsement>
+<p>You know you totally rule. I am in awe of your RFCness.</p>
+<attribution>
+<author>Mark W. &#8220;catfood&#8221; Schumann<!--<idx>Schumann, Mark W.</idx>--></author>
+<description>Software Under Flap</description>
+</attribution>
+</endorsement>
+
+<endorsement>
+<p>I was just reading your book. It's very funny! :~)</p>
+<attribution>
+<author>Michael B. Allen<!--<idx>Allen, Michael B.</idx>--></author>
+<description>jCIFS Team</description>
+</attribution>
+</endorsement>
+
+</endorsements>
+
+<cover-art>
+<title>About the Cover Art</title>
+
+<p dk:indent='no'>
+On June 28, 1778, two years after American Independence had been
+declared, a young woman made her way through the sweltering heat of a
+Revolutionary battlefield carrying pitchers of water to heat-weakened
+men.  Mary Ludwig Hays - "Molly Pitcher," as
+she was called - looked up to see that one of the men who had fallen
+from heatstroke was her own husband, John.  She resolutely made her
+way to his cannon just as an officer was preparing to order it retired
+for want of a gunner.  Setting down her pitchers, Molly picked up the
+ramrod and took her husband's place at the muzzle.</p>
+
+<p>The story of the woman gunner was told and retold by the
+soldiers of the Revolution, and "Molly Pitcher" became a legend around
+battlefield campfires.  She came to symbolize all of the women who
+took up arms for American Independence.</p>
+
+<p>During the war, General George Washington made Mary Hays a
+sergeant, and afterward she was pensioned as a lieutenant by the
+Continental Army.  Mary Hays lived into her 70s and is buried in
+Carlisle, PA.</p>
+
+<author>Amy J. Gavel, Esq.</author>
+<date>July, 2003</date>
+</cover-art>
+
+</frontmatter></oim>

@@ -1,0 +1,178 @@
+<?xml version="1.0" encoding="US-ASCII"?>
+<!DOCTYPE oim SYSTEM "oimxml.dtd" [
+  <!ENTITY nbsp  "&#160;">
+  <!ENTITY lsquo "&#8216;">
+  <!ENTITY rsquo "&#8217;">
+  <!ENTITY minus "&#8211;">
+  <!ENTITY times "&#xd7;">
+  <!ENTITY copy "&#xa9;">
+  <!ENTITY eacute "&#233;">
+] >
+<oim xmlns:dk="http://www.kirsanov.com">
+<partopen dk:number="IV" id="Appendices">
+<title>Appendices</title></partopen>
+
+<chapter id="Appendix-A">
+<chapopen><title>Making a Good Cup of&nbsp;Tea</title>
+
+<epigraph dk:padding-top="48">
+<p><line>I'm not a connoisseur.</line>
+<line>I actually drink the stuff.</line></p>
+<attribution>Me</attribution>
+</epigraph>
+</chapopen>
+
+<h1>Basics of Making Tea</h1><h1s>
+
+<p><idx start="a_tea">tea</idx>Most of the world knows how to make tea, but there is at least one
+major industrialized nation in which the preparation of a decent cup
+of tea is a lost art.  These are very basic guidelines for the
+uninitiated, covering black tea <dk:nobr>in particular.</dk:nobr></p>
+
+<ul>
+<li><p>Use loose tea; avoid teabags.  Your best bet is to find a good tea
+shop with knowledgeable staff.  If you live in the US, you may have to
+look online.</p></li>
+
+<li><p>Use a good teapot.  A mostly-spherical ceramic pot is a good
+place to start.  Make sure that the lid won't fall out when you pour.</p></li>
+
+<li><p>Warm the teapot by filling it with hot water.</p></li>
+
+<li><p>Bring fresh aerated water to a full boil.  Just before it
+reaches boiling, empty your teapot and put in the tea.</p></li>
+
+<li><p>As soon as the water boils, pour it into the teapot.  Cover the
+teapot with a towel or tea cozy.</p></li>
+
+<li><p>Let the pot sit quietly for about four minutes.</p></li>
+
+<li><p>Pour the tea from the pot through a strainer into your cup.</p></li>
+</ul>
+
+<p>You will want to experiment with this a few times to find out how
+much tea to use, whether or not you like milk in your tea, and how
+much sugar (if any) you like.  If you use milk, add it to the cup
+before you pour the tea.  For a typical American mug, use
+approximately one glorp of milk, which is just a bit more than a full
+slosh.  A glorp should more than cover the bottom of the mug and turn
+the tea a pleasant, warming, light brown color.</p>
+
+<p><b>Never</b> use cream in tea.  Use whole milk, preferably at room
+temperature.  The term "Cream Tea" refers to tea served with
+scones,<idx>scones</idx> jam, and whipped (or, preferably, Devonshire
+Clotted) cream.  The cream and jam go onto the scones, not into the
+tea.</p>
+
+<p>When putting tea into the teapot, forget everything you ever
+learned about coffee.  The rule of thumb for tea is "one teaspoonful
+of tea for every cup plus one for the pot."  Note, however, that the
+name "teaspoon" really does have meaning.  If you use too much tea,
+the result will be heavy and bitter.  Too little tea and you will have
+what Jonathan Swift described as "water bewitched."</p>
+
+<email>
+<pre>From: Matthew Geddes<idx>Geddes, Matthew</idx>, Xavier College, South Australia
+  To: tng-technical@lists.dcerpc.org
+
+I was just reading Appendix A and thought it might be worth 
+mentioning that tea should only be drunk from white cups. For some
+reason, it don't taste right out of coffee cups (well, non-white 
+ones anyway). And china also appears to make the tea taste better.
+</pre>
+</email>
+
+</h1s><h1>About Tea</h1><h1s>
+
+<p>A neighbor of mine lived in India for a while, and told me that he
+had once toured a tea packing plant. He said that the best tea was
+sold to places like Australia, Russia, and the
+Middle East which have long had access to the very best quality tea.
+The middle quality tea was either kept for local consumption, or sold
+to Western Europe.  The bottom quality tea was sent to the United
+States.  This means that Americans need to do some looking if they
+want to find good tea.</p>
+
+<p>Tea can be green, Oolong,<idx>Oolong</idx> or black, depending upon
+the degree of fermentation.  A green tea is unfermented and will have
+the least caffeine,<idx>caffeine</idx> Oolong tea is partially
+fermented, and black tea is fully fermented.</p>
+
+<p>The terms Assam,<idx>Assam</idx> Ceylon,<idx>Ceylon</idx>
+Darjeeling,<idx>Darjeeling</idx> and Yunnan<idx>Yunnan</idx> all refer
+to the region in which the tea is grown. Each has its own
+characteristics.  There are also special words describing which leaf
+of the tea shoot was picked and how the leaves were processed.  Earl
+Grey tea is actually a blended black tea with a special flavoring
+added, and note that the term "Orange Pekoe" refers to the size of the
+processed tea leaves, not the variety of tea.  A box labeled Orange
+Pekoe is typically a box of unspecified tea, probably packed into
+teabags.</p>
+
+<email>
+<pre>From: Olaf Barthel<idx>Barthel, Olaf</idx>
+  To: Chris Hertel
+
+...Incidentally, "pekoe" reportedly is chinese for "white down" and
+refers to the young tender tea leaves. It doesn't have to be bad 
+tea, although it's often hard to tell what the heck "orange pekoe" 
+is supposed to be.</pre>
+</email>
+
+<p>Tea is not really tea unless it is made from the leaves of a
+specific plant, <i>Camellia sinensis</i>.<idx>Camellia sinensis</idx>
+There are several products called "herbal tea" that are not tea at
+all, but fall instead into the category of "herbal infusion."</p>
+
+</h1s><h1>Nasty Habits</h1><h1s>
+
+<p>The teabags sold in UK supermarkets tend to make stronger tea than
+their rather frightening American counterparts.  If you can get hold
+of some British teabags, you can make tea the way they do at London
+train stations.  We call this British Rail tea.</p>
+
+<p>When you order a cup of tea at a London train station they dump
+milk, sugar, teabag, and boiling water into the cup at the same time
+and then hand it to you.  This makes for a uniquely generic flavor
+that is just right for an early morning zombie
+commute.  You can achieve similar results on a larger scale by using a
+full-sized insulated carafe instead of a cup.  This should last you
+all morning, and keep you "going" all afternoon.<fn>Caffeine is a
+diuretic. Tea generally has less caffeine<idx>caffeine</idx> than
+coffee, but if you drink an entire carafe's worth of either over the
+course of a morning you will need to visit the facilities.</fn></p>
+
+</h1s><h1>Decaffeinating Tea</h1><h1s>
+
+<p>You can decaffeinate tea at home by following these steps:</p>
+
+<ul>
+
+<li><p>Add a little extra tea to the pot.  (This process will rob a
+little flavor from the tea.  Adding more tea helps compensate.)</p></li>
+
+<li><p>When the water boils, pour it on and wait about twenty to
+thirty seconds.</p></li>
+
+<li><p>Pour the water out through a strainer, returning any captured
+leaves to the pot.</p></li>
+
+<li><p>Pour on freshly boiled water, and steep as usual.</p></li>
+</ul>
+
+<p>This process will remove about eighty percent of the caffeine,<idx>caffeine</idx>
+which dissolves very quickly in water.</p>
+
+<p dk:padding-top="12pt"><em>Author's note:</em> I am not British.  I live in
+Minnesota where hot drinks are required for winter survival.  I did
+live in the UK for a year, many years ago.  Being a foreigner I had to
+"try harder" in order to fit in - so I learned.  Several years later
+someone accused me of being a "tea expert."  I am no such thing.  In
+fact, I know very little about tea.  Unfortunately, the tiny amount of
+knowledge I do have seems to be more than most American restaurant and
+caf&eacute; employees can claim on the subject.<idx
+end="a_tea">tea</idx></p>
+
+</h1s>
+</chapter>
+</oim>
