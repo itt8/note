@@ -20,3 +20,6 @@ gitignore [Document](https://git-scm.com/docs/gitignore).
 1. [Implementing CIFS -- The Common Internet FileSystem (Christopher R. Hertel)](._c/smb_cifs)
 
 1. [vi-vim-tutorial-svg](._c/vi-vim-tutorial-svg)
+
+1. [Advanced Programming in the UNIX Environment, Third Edition](https://github.com/merlindu/apue.3e)
+
