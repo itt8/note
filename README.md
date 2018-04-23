@@ -3,7 +3,7 @@
 
 
 ## git使用 ##
-git[官方文档](https://git-scm.com/documentation).
+git [官方文档](https://git-scm.com/documentation).
 
 gitignore [Document](https://git-scm.com/docs/gitignore).
 
