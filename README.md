@@ -15,11 +15,11 @@ gitignore [Document](https://git-scm.com/docs/gitignore).
 
 1. [C/C++基础知识](._c/c_cpp)
 
-1. [Linux设备驱动开发详解：基于最新的Linux 4.0内核](._c/linux_device_driver)
+1. [Linux设备驱动开发详解：基于最新的Linux 4.0内核](contents/linux_device_driver)
 
-1. [Implementing CIFS -- The Common Internet FileSystem (Christopher R. Hertel)](._c/smb_cifs)
+1. [Implementing CIFS -- The Common Internet FileSystem (Christopher R. Hertel)](contents/smb_cifs)
 
-1. [vi-vim-tutorial-svg](._c/vi-vim-tutorial-svg)
+1. [vi-vim-tutorial-svg](contents/vi-vim-tutorial-svg)
 
 1. [Advanced Programming in the UNIX Environment, Third Edition](https://github.com/merlindu/apue.3e)
 
