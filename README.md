@@ -9,7 +9,7 @@ gitignore [Document](https://git-scm.com/docs/gitignore).
 
 
 ## Markdown ##
-参考[Markdown语法说明](http://wowubuntu.com/markdown "简体中文版")或[github上的教程](https://github.com/merlindu/Markdown-Syntax-CN).
+参考[Markdown语法说明](http://wowubuntu.com/markdown "简体中文版")或[github上的教程](https://github.com/merlindu/Markdown-Syntax-CN)或[简洁版](Markdown.md).
 
 # 笔记列表 #
 
