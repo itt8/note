@@ -13,7 +13,7 @@ gitignore [Document](https://git-scm.com/docs/gitignore).
 
 # 笔记列表 #
 
-1. [C/C++基础知识](._c/c_cpp)
+1. [C/C++基础知识](contents/c_cpp)
 
 1. [Linux设备驱动开发详解：基于最新的Linux 4.0内核](contents/linux_device_driver)
 
