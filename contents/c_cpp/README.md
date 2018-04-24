@@ -1,5 +1,4 @@
 # C语言基础 #
-## 面试必备 ##
 
 1. [C语言数组游标与数组名称可以互换](files.md/01.md)
 1. [C语言数组赋值:不能一下子赋值,必须循环挨个赋值](files.md/02.md)
@@ -31,4 +30,4 @@
 1. [C语言数组初始化技巧](files.md/28.md)
 1. [C语言函数指针的介绍和用途](files.md/29.md)
 
-引用[源](https://github.com/hit9/oldblog/tree/gh-pages/blog-src/blog/C)
+<!-- 引用[源](https://github.com/hit9/oldblog/tree/gh-pages/blog-src/blog/C) -->
