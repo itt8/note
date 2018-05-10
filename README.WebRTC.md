@@ -18,13 +18,16 @@ https://source.codeaurora.org/quic/lc/chromium/tools/depot_tools
 		"""Removes 'git+' fake prefix from git URL."""
 		if url.startswith('git+http://') or url.startswith('git+https://'):
 			url = url[4:]
-		url = url.replace('webrtc.googlesource.com/src.git', 'source.codeaurora.org/quic/lc/external/webrtc')
-		url = url.replace('chromium.googlesource.com', 'source.codeaurora.org/quic/lc')
-		url = url.replace('boringssl.googlesource.com', 'github.com/google')
+
+		prefix_china='source.codeaurora.org/quic/lc'
 		url = url.replace('swiftshader.googlesource.com', 'github.com/google')
-		url = url.replace('source.codeaurora.org/quic/lc/external/swarming.client', 'github.com/AtariOS/swarming.client')
+		url = url.replace('chromium.googlesource.com/external/swarming.client', 'github.com/AtariOS/swarming.client')
 		url = url.replace('android.googlesource.com/platform/external/deqp', 'github.com/elongbug/deqp')
-		SCMWrapper.__init__(self, url, *args, **kwargs)
+		url = url.replace('boringssl.googlesource.com', 'github.com/google')
+		if re.match('^.*chromium\.googlesource\.com\\/.+\.git', url):
+			url = url.replace('.git', '').replace('chromium.googlesource.com', prefix_china)
+		url = url.replace('webrtc.googlesource.com/src', 'github.com/merlindu/WebRTC')
+		url = url.replace('webrtc.googlesource.com', prefix_china+'/external/webrtc').replace('.git', '')
 
 
 ## get source ##
