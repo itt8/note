@@ -35,7 +35,7 @@ https://source.codeaurora.org/quic/lc/chromium/tools/depot_tools
 	#add depot_tools path to env PATH
 	mkdir webrtc-checkout
 	cd webrtc-checkout
-	fetch --nohooks webrtc
+	DEPOT_TOOLS_UPDATE=0 fetch --nohooks webrtc
 	gclient sync
 
 ## update code ##
