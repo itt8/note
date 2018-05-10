@@ -2,10 +2,6 @@
 
 https://source.codeaurora.org/
 
-
-## depot_tools ##
-https://source.codeaurora.org/quic/lc/chromium/tools/depot_tools
-
 ## replace url in gclient_scm.py ##
 	class GitWrapper(SCMWrapper):
 		"""Wrapper for Git"""
@@ -31,7 +27,7 @@ https://source.codeaurora.org/quic/lc/chromium/tools/depot_tools
 
 
 ## get source ##
-	git clone https://source.codeaurora.org/quic/lc/chromium/tools/depot_tools
+	git clone https://github.com/merlindu/WebRTC-depot_tools.git
 	#add depot_tools path to env PATH
 	mkdir webrtc-checkout
 	cd webrtc-checkout
