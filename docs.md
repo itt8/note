@@ -1,4 +1,4 @@
-[Armv8-M Memory Model and MemoryProtection User Guide V1.1][id_link1](107565_0101_01_en)
+[Armv8-M Memory Model and MemoryProtection User Guide][id_link1] (Version 1.1)(107565_0101_01_en)
  ___ 
 [Arm® Cortex®-M85 Processor Technical Reference Manual][id_link2] (Revision:r1p0) (101924_0100_06_en)
 
