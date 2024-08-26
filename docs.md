@@ -3,6 +3,7 @@
 [Arm® Cortex®-M85 Processor Technical Reference Manual][id_link2] (Revision:r1p0) (101924_0100_06_en)
  ___ 
 [Arm® Cortex®-M55 Processor Technical Reference Manual][id_link3] (Revision: r1p1) online html format
+ ___ 
 [姚永斌. 超标量处理器设计.北京：清华大学出版社，2014][id_link4] (pdf)
 
 
